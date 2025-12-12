@@ -833,7 +833,8 @@ function bindFilterUI() {
 
   } catch (e) {
     console.error(e);
-    el.text.textContent = "初期化に失敗しました。Console を確認してください。";
+    el.text.textContent = "テーマを始めに選択してください。";
     el.input.disabled = true;
   }
 })();
+
