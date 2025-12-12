@@ -5,35 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <!-- SEO（最重要） -->
-  <title>大人のタイピング練習ゲーム｜無料・ブラウザでWPM計測＆ランキング</title>
-  <meta name="description" content="大人向けのタイピング練習ゲーム。ブラウザで無料、インストール不要。短文タイピングでWPM（速度）を計測し、ランキングにスコア送信できます。" />
+  <title>漢字変換対応のタイピング練習｜雑学文章で実用入力と知識を学べる（ランキング対応）</title>
+  <meta name="description" content="漢字変換を含めた実用的なタイピング練習ができる無料ブラウザソフト。雑学を題材にした文章で、入力スピード・正確性の向上と知識習得を同時に行え、ランキングにも対応しています。" />
 
-  <!-- 重複URL対策（GitHub Pagesでは重要） -->
+  <!-- canonical -->
   <link rel="canonical" href="https://espresso-taro.github.io/Otonano-typing-game/" />
 
-  <!-- OGP（SNS共有/検索評価の補助） -->
+  <!-- OGP -->
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="大人のタイピング練習ゲーム｜無料・ブラウザでWPM計測＆ランキング" />
-  <meta property="og:description" content="ブラウザで無料。短文タイピングでWPM計測、ランキングにスコア送信できます。" />
+  <meta property="og:title" content="漢字変換対応のタイピング練習｜雑学文章で実用入力と知識を学べる（ランキング対応）" />
+  <meta property="og:description" content="雑学文章で漢字変換を含む実用的なタイピング練習ができます。無料・ブラウザ対応、ランキング機能あり。" />
   <meta property="og:url" content="https://espresso-taro.github.io/Otonano-typing-game/" />
-  <!-- 画像を用意できたら有効化（例：assets/ogp.png） -->
-  <!-- <meta property="og:image" content="https://espresso-taro.github.io/Otonano-typing-game/assets/ogp.png" /> -->
   <meta name="twitter:card" content="summary" />
 
-  <!-- 最低限の見た目（読みやすさ＝滞在時間に効く） -->
+  <!-- Style -->
   <style>
     :root { --max: 980px; }
     body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif; margin: 0; line-height: 1.8; }
     header, main, footer { max-width: var(--max); margin: 0 auto; padding: 16px; }
     header { padding-top: 28px; }
     h1 { font-size: 1.8rem; margin: 0 0 10px; }
-    .lead { font-size: 1.05rem; margin: 0 0 14px; }
+    .lead { font-size: 1.05rem; margin-bottom: 14px; }
     .muted { color: #555; }
     .card { border: 1px solid #ddd; border-radius: 12px; padding: 14px; background: #fff; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
     .cta { display: inline-block; padding: 10px 14px; border: 1px solid #222; border-radius: 10px; text-decoration: none; color: inherit; }
     #text { font-size: 1.2em; background: #f3f3f3; padding: 10px; border-radius: 10px; }
-    #input { width: 100%; font-size: 1.2em; margin-top: 10px; padding: 10px; box-sizing: border-box; border-radius: 10px; border: 1px solid #ccc; }
+    #input { width: 100%; font-size: 1.2em; margin-top: 10px; padding: 10px; border-radius: 10px; border: 1px solid #ccc; }
     #result { margin-top: 10px; font-weight: 700; }
     #ranking li { margin-bottom: 4px; }
     .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
@@ -41,7 +39,6 @@
     #submitBtn { font-size: 1rem; padding: 10px 12px; border-radius: 10px; border: 1px solid #222; background: #fff; }
     details { border: 1px solid #ddd; border-radius: 12px; padding: 10px 12px; background: #fff; }
     details + details { margin-top: 10px; }
-    footer { padding-bottom: 28px; }
   </style>
 
   <!-- 構造化データ：WebSite -->
@@ -49,44 +46,14 @@
   {
     "@context":"https://schema.org",
     "@type":"WebSite",
-    "name":"大人のタイピング練習ゲーム",
+    "name":"漢字変換対応のタイピング練習",
     "url":"https://espresso-taro.github.io/Otonano-typing-game/",
     "inLanguage":"ja",
-    "description":"大人向けのタイピング練習ゲーム。無料・ブラウザでWPM計測＆ランキング。"
+    "description":"雑学文章を使って、漢字変換を含む実用的なタイピング練習と知識習得ができる無料ブラウザソフト。ランキング対応。"
   }
   </script>
 
-  <!-- 構造化データ：FAQ（検索結果での表示改善に効くことがある） -->
-  <script type="application/ld+json">
-  {
-    "@context":"https://schema.org",
-    "@type":"FAQPage",
-    "mainEntity":[
-      {
-        "@type":"Question",
-        "name":"無料で使えますか？",
-        "acceptedAnswer":{"@type":"Answer","text":"はい。ブラウザで無料で遊べます。インストール不要です。"}
-      },
-      {
-        "@type":"Question",
-        "name":"WPMとは何ですか？",
-        "acceptedAnswer":{"@type":"Answer","text":"WPMはWords Per Minuteの略で、1分あたりに入力できる単語数の目安です。このゲームでは「5文字=1単語」として計算しています。"}
-      },
-      {
-        "@type":"Question",
-        "name":"ランキングはどうやって保存されていますか？",
-        "acceptedAnswer":{"@type":"Answer","text":"スコア（名前とWPM）をFirestoreに保存し、上位10件を表示しています。"}
-      },
-      {
-        "@type":"Question",
-        "name":"スマホでも遊べますか？",
-        "acceptedAnswer":{"@type":"Answer","text":"閲覧は可能ですが、タイピング練習としてはPCキーボードの利用を推奨します。"}
-      }
-    ]
-  }
-  </script>
-
-  <!-- Firebase SDKs -->
+  <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import {
@@ -100,19 +67,18 @@
       projectId: "otonano-typing-game",
       storageBucket: "otonano-typing-game.appspot.com",
       messagingSenderId: "475283850178",
-      appId: "1:475283850178:web:193d28f17be20a232f4c5b",
-      measurementId: "G-JE1X0NCNHB"
+      appId: "1:475283850178:web:193d28f17be20a232f4c5b"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
     const texts = [
-      "こんにちは、これはタイピング練習です。",
-      "毎日少しずつ上達しましょう！",
-      "JavaScriptは楽しい言語です。",
-      "空は青くて気持ちいいですね。",
-      "正確さとスピードの両方が大切です。"
+      "カフェインは眠気を抑えるが、摂りすぎると集中力を下げる。",
+      "日本語入力では正確な漢字変換が作業効率を大きく左右する。",
+      "タイピングは速度よりも正確性を意識すると結果的に速くなる。",
+      "人間の集中力は約90分周期で上下すると言われている。",
+      "継続的な練習は短時間でも確実に成果を生む。"
     ];
 
     let target = "";
@@ -140,8 +106,7 @@
         const input = inputBox.value;
         if (input === target && !ended) {
           ended = true;
-          const endTime = Date.now();
-          const seconds = (endTime - startTime) / 1000;
+          const seconds = (Date.now() - startTime) / 1000;
           const wpm = Math.round((input.length / 5) / (seconds / 60));
           document.getElementById("result").textContent = `完了！WPM: ${wpm}`;
           submitBtn.disabled = false;
@@ -154,23 +119,13 @@
       submitBtn.addEventListener("click", async () => {
         const name = document.getElementById("name").value;
         const wpm = parseInt(submitBtn.dataset.wpm);
-        if (!name || isNaN(wpm)) {
-          alert("名前を入力してください");
-          return;
-        }
+        if (!name || isNaN(wpm)) return alert("名前を入力してください");
 
-        try {
-          await addDoc(collection(db, "scores"), {
-            name: name,
-            wpm: wpm,
-            timestamp: serverTimestamp()
-          });
-          alert("保存しました！");
-          loadRanking();
-          setNewText();
-        } catch (error) {
-          alert("保存に失敗しました: " + error);
-        }
+        await addDoc(collection(db, "scores"), {
+          name, wpm, timestamp: serverTimestamp()
+        });
+        loadRanking();
+        setNewText();
       });
 
       async function loadRanking() {
@@ -179,9 +134,9 @@
         const q = query(collection(db, "scores"), orderBy("wpm", "desc"), limit(10));
         const snapshot = await getDocs(q);
         snapshot.forEach(doc => {
-          const data = doc.data();
+          const d = doc.data();
           const li = document.createElement("li");
-          li.textContent = `${data.name} - ${data.wpm} WPM`;
+          li.textContent = `${d.name} - ${d.wpm} WPM`;
           list.appendChild(li);
         });
       }
@@ -194,81 +149,29 @@
 
 <body>
   <header>
-    <h1>大人のタイピング練習ゲーム</h1>
+    <h1>漢字変換対応のタイピング練習</h1>
     <p class="lead">
-      無料・ブラウザでできるタイピング練習。短文を入力して <strong>WPM（速度）</strong> を計測し、ランキングにスコア送信できます。
+      雑学を題材にした文章で、漢字変換を含む実用的なタイピング練習ができます。
+      入力スピードと正確性を高めながら、知識も同時に学べるのが特徴です。
     </p>
-    <p class="muted">おすすめ：毎日3〜5分、まずはミスを減らしてから速度を上げると伸びやすいです。</p>
     <p><a class="cta" href="#play">今すぐ練習する</a></p>
   </header>
 
   <main>
-    <section id="play" class="card" aria-label="タイピング練習">
+    <section id="play" class="card">
       <h2>タイピング練習</h2>
-
       <p id="text">読み込み中...</p>
-      <input type="text" id="input" placeholder="ここにタイピング" disabled />
+      <input id="input" placeholder="ここに入力" disabled />
       <div id="result"></div>
 
-      <h3>スコア送信（ランキングに反映）</h3>
+      <h3>ランキングに登録</h3>
       <div class="row">
-        <input type="text" id="name" placeholder="あなたの名前" />
-        <button id="submitBtn" disabled>スコア送信</button>
+        <input id="name" placeholder="名前" />
+        <button id="submitBtn" disabled>送信</button>
       </div>
 
-      <h2>🏆 ランキングTOP10</h2>
+      <h2>🏆 ランキング TOP10</h2>
       <ul id="ranking"></ul>
-
-      <noscript>
-        <p class="muted">このゲームはJavaScriptが必要です。ブラウザ設定でJavaScriptを有効にしてください。</p>
-      </noscript>
-    </section>
-
-    <section>
-      <h2>特徴</h2>
-      <div class="grid">
-        <div class="card"><strong>無料・インストール不要</strong><br>ブラウザだけで練習できます。</div>
-        <div class="card"><strong>WPMを自動計測</strong><br>完了時に速度（WPM）を表示します。</div>
-        <div class="card"><strong>ランキング機能</strong><br>スコア送信でTOP10に反映されます。</div>
-        <div class="card"><strong>短文で続けやすい</strong><br>短時間でも継続しやすい練習形式です。</div>
-      </div>
-    </section>
-
-    <section>
-      <h2>遊び方</h2>
-      <ol>
-        <li>表示された文章を、そのまま入力します</li>
-        <li>最初の1文字入力で計測開始、全文一致で完了します</li>
-        <li>完了後にWPMが表示され、名前を入れてランキング送信できます</li>
-      </ol>
-      <p class="muted">コツ：最初は速度より正確性を優先 → ミスが減ったらスピードを上げるのが効果的です。</p>
-    </section>
-
-    <section>
-      <h2>よくある質問</h2>
-      <details>
-        <summary>無料で使えますか？</summary>
-        <p>はい。ブラウザで無料で遊べます。インストール不要です。</p>
-      </details>
-      <details>
-        <summary>WPMとは何ですか？</summary>
-        <p>WPMは1分あたりの入力量の目安です。このゲームでは「5文字=1単語」としてWPMを計算しています。</p>
-      </details>
-      <details>
-        <summary>ランキングはどうやって保存されていますか？</summary>
-        <p>スコア（名前とWPM）をFirestoreに保存し、上位10件を表示しています。</p>
-      </details>
-      <details>
-        <summary>スマホでも遊べますか？</summary>
-        <p>閲覧は可能ですが、タイピング練習としてはPCキーボードを推奨します。</p>
-      </details>
-    </section>
-
-    <section>
-      <h2>更新情報</h2>
-      <ul>
-        <li>2025-12-XX: 初回公開</li>
-      </ul>
     </section>
   </main>
 
@@ -277,4 +180,3 @@
   </footer>
 </body>
 </html>
-
