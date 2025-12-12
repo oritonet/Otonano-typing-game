@@ -4,14 +4,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+  <!-- SEO -->
   <title>漢字変換対応のタイピング練習｜雑学・豆知識で日本語入力と知識を同時に鍛える（ランキング対応）</title>
+  <meta name="description" content="漢字変換を含む実用的な日本語タイピング練習ができる無料ブラウザソフト。雑学・豆知識文章で入力スピード・正確性と知識を同時に鍛えられます。難易度分け・日替わりテーマ・カテゴリ別ランキング対応。" />
+  <link rel="canonical" href="https://espresso-taro.github.io/Otonano-typing-game/" />
+
+  <!-- OGP -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="漢字変換対応のタイピング練習｜雑学・豆知識で日本語入力と知識を同時に鍛える（ランキング対応）" />
+  <meta property="og:description" content="雑学・豆知識文章で漢字変換を含む実用タイピング練習。難易度精密化・日替わりテーマ・カテゴリ別ランキング対応。" />
+  <meta property="og:url" content="https://espresso-taro.github.io/Otonano-typing-game/" />
+  <meta name="twitter:card" content="summary" />
 
   <style>
     :root { --max: 980px; }
     body {
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
       margin: 0;
-      line-height: 1.9;
+      line-height: 1.85;
       background: #fafafa;
     }
     header, main, footer {
@@ -19,7 +29,11 @@
       margin: 0 auto;
       padding: 16px;
     }
-    h1 { font-size: 1.9rem; margin-bottom: 8px; }
+    header { padding-top: 28px; }
+    h1 { font-size: 1.9rem; margin: 0 0 10px; }
+    h2 { margin-top: 28px; }
+    .lead { font-size: 1.05rem; margin: 0 0 12px; }
+    .muted { color: #555; }
 
     .card {
       border: 1px solid #ddd;
@@ -28,7 +42,26 @@
       background: #fff;
     }
 
-    /* 見本文（色分け表示） */
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    select, label.checkbox, button, input[type="text"] {
+      font-size: 0.95rem;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      background: #fff;
+    }
+    button {
+      border: 1px solid #222;
+      cursor: pointer;
+    }
+    label.checkbox {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid #ccc;
+    }
+
+    /* 見本文：リアルタイム色分け */
     #text {
       font-size: 1.25em;
       background: #f3f3f3;
@@ -36,142 +69,642 @@
       border-radius: 10px;
       white-space: pre-wrap;
       word-break: break-all;
-      line-height: 2;
+      line-height: 2.0;
     }
-    .ok { color: #0066cc; font-weight: 600; }
-    .ng { color: #cc0000; font-weight: 600; }
+    .ok { color: #0b5ed7; font-weight: 700; }
+    .ng { color: #c00000; font-weight: 700; }
 
-    /* 入力欄（大きく） */
+    /* 入力欄：大きく、見やすく */
     #input {
       width: 100%;
-      min-height: 140px;
+      min-height: 160px;
       font-size: 1.25em;
-      margin-top: 14px;
+      margin-top: 12px;
       padding: 14px;
       border-radius: 12px;
       border: 2px solid #bbb;
       box-sizing: border-box;
-      font-family: "Noto Sans Mono", ui-monospace, monospace;
-      line-height: 1.8;
+      font-family: ui-monospace, "Noto Sans Mono", Menlo, Monaco, Consolas, monospace;
+      line-height: 1.85;
+      resize: vertical;
     }
 
-    #result { margin-top: 12px; font-weight: 700; }
+    #result { margin-top: 10px; font-weight: 700; }
 
-    .row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-      margin-top: 10px;
-    }
-
-    button {
-      font-size: 1rem;
-      padding: 10px 14px;
-      border-radius: 10px;
-      border: 1px solid #222;
+    .pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border: 1px solid #ddd;
+      border-radius: 999px;
       background: #fff;
-      cursor: pointer;
+      font-size: 0.9rem;
+      margin: 0 6px 6px 0;
     }
 
-    footer { color: #666; padding-bottom: 30px; }
+    ul { padding-left: 1.2em; }
+    #ranking li, #dailyRanking li { margin-bottom: 4px; }
+
+    details {
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: #fff;
+    }
+    details + details { margin-top: 10px; }
+    footer { padding-bottom: 28px; color: #666; }
   </style>
 
   <script type="module">
-    let texts = [];
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import {
+      getFirestore, collection, addDoc, getDocs,
+      orderBy, query, serverTimestamp, limit
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // ===== Firebase =====
+    const firebaseConfig = {
+      apiKey: "AIzaSyAqDSPE_HkPbi-J-SqPL4Ys-wR4RaA8wKA",
+      authDomain: "otonano-typing-game.firebaseapp.com",
+      projectId: "otonano-typing-game",
+      storageBucket: "otonano-typing-game.appspot.com",
+      messagingSenderId: "475283850178",
+      appId: "1:475283850178:web:193d28f17be20a232f4c5b"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // ===== 難易度（精密化） =====
+    // score = length + 句読点係数 + カタカナ比率係数
+    const PUNCT_WEIGHT = 6;   // 句読点1つあたり
+    const KATA_WEIGHT  = 80;  // カタカナ比率(0-1)×80
+    const EASY_SCORE_MAX   = 145;
+    const NORMAL_SCORE_MAX = 190;
+
+    function punctCount(text) {
+      const m = text.match(/[、。,.!！?？]/g);
+      return m ? m.length : 0;
+    }
+    function katakanaRatio(text) {
+      const total = (text.match(/[ぁ-んァ-ヶー一-龥A-Za-z0-9]/g) || []).length;
+      if (total === 0) return 0;
+      const kata = (text.match(/[ァ-ヶー]/g) || []).length;
+      return kata / total;
+    }
+    function difficultyByFeatures(len, pCount, kRatio) {
+      const score = Math.round(len + (pCount * PUNCT_WEIGHT) + (kRatio * KATA_WEIGHT));
+      let diff = "むずかしい";
+      if (score <= EASY_SCORE_MAX) diff = "かんたん";
+      else if (score <= NORMAL_SCORE_MAX) diff = "ふつう";
+      return { diff, score };
+    }
+
+    // ===== Utils =====
+    function toSafeKey(s) {
+      return String(s)
+        .normalize("NFKC")
+        .replace(/\s+/g, "_")
+        .replace(/[\/\\?%*:|"<>]/g, "_")
+        .replace(/[^0-9A-Za-zぁ-んァ-ン一-龥_（）()・、。-]/g, "_")
+        .slice(0, 120);
+    }
+    function todayKey() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+    function hashString(str) {
+      let h = 2166136261;
+      for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return (h >>> 0);
+    }
+    function escapeHtml(s) {
+      return String(s)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    // ===== Data =====
+    let items = []; // {genre,category,theme,text,length,punct,kataRatio,difficulty,score}
+    let categories = [];
+    let themeByCategory = new Map(); // category -> themes[]
+    let allThemes = [];
+
+    // 今日のテーマ（全テーマから日付ハッシュで固定）
+    let dailyTheme = null;
+
+    // ===== UI refs =====
+    let selDifficulty, selCategory, selTheme, chkDailyTheme, selRankScope;
+    let rankLabel, dailyRankLabel, dailyInfoEl, badgesEl;
+    let inputBox, submitBtn;
+
+    // ===== Typing state =====
     let target = "";
     let startTime = 0;
     let ended = false;
     let keystrokes = 0;
 
+    // ===== 直近10問の再出題回避 =====
     const HISTORY_MAX = 10;
-    const history = [];
+    const recentTexts = []; // text を保存
 
-    async function loadTexts() {
-      const res = await fetch("./data/trivia.json");
-      texts = await res.json();
+    function pushHistory(text) {
+      if (!text) return;
+      recentTexts.unshift(text);
+      if (recentTexts.length > HISTORY_MAX) recentTexts.length = HISTORY_MAX;
+    }
+    function isRecentlyUsed(text) {
+      return recentTexts.includes(text);
     }
 
-    function pushHistory(t) {
-      history.unshift(t);
-      if (history.length > HISTORY_MAX) history.pop();
+    async function loadItems() {
+      const res = await fetch("./data/trivia.json", { cache: "no-store" });
+      const json = await res.json();
+
+      items = json
+        .filter(x => x && typeof x.text === "string")
+        .map(x => {
+          const len = (typeof x.length === "number") ? x.length : x.text.length;
+          const p = punctCount(x.text);
+          const kr = katakanaRatio(x.text);
+          const { diff, score } = difficultyByFeatures(len, p, kr);
+          return {
+            genre: x.genre ?? "",
+            category: x.category ?? "",
+            theme: x.theme ?? "",
+            text: x.text,
+            length: len,
+            punct: p,
+            kataRatio: kr,
+            difficulty: diff,
+            score
+          };
+        });
+
+      const catSet = new Set(items.map(x => x.category).filter(Boolean));
+      categories = Array.from(catSet).sort((a,b) => a.localeCompare(b, "ja"));
+
+      themeByCategory = new Map();
+      for (const c of categories) themeByCategory.set(c, new Set());
+      for (const it of items) {
+        if (!it.category || !it.theme) continue;
+        if (!themeByCategory.has(it.category)) themeByCategory.set(it.category, new Set());
+        themeByCategory.get(it.category).add(it.theme);
+      }
+
+      const themeSet = new Set(items.map(x => x.theme).filter(Boolean));
+      allThemes = Array.from(themeSet).sort((a,b) => a.localeCompare(b, "ja"));
+
+      if (allThemes.length > 0) {
+        const idx = hashString(todayKey()) % allThemes.length;
+        dailyTheme = allThemes[idx];
+      } else {
+        dailyTheme = null;
+      }
+
+      hydrateSelects();
+      applyThemeOptionsByCategory();
+      updateDailyThemeUI();
+      updateBadges(null);
+
+      // 初期ランキング（固定TOP + 通常）
+      await loadDailyRanking();
+      await loadRanking();
     }
 
-    function pickText() {
-      const pool = texts.filter(t => !history.includes(t.text));
-      return (pool.length ? pool : texts)[Math.floor(Math.random() * texts.length)];
+    function hydrateSelects() {
+      selDifficulty.innerHTML = `
+        <option value="all">難易度：すべて</option>
+        <option value="かんたん">難易度：かんたん</option>
+        <option value="ふつう">難易度：ふつう</option>
+        <option value="むずかしい">難易度：むずかしい</option>
+      `;
+
+      selCategory.innerHTML =
+        `<option value="all">カテゴリ：すべて</option>` +
+        categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+
+      selTheme.innerHTML = `<option value="all">テーマ：すべて</option>`;
+
+      selRankScope.innerHTML = `
+        <option value="overall">ランキング：全体</option>
+        <option value="category">ランキング：カテゴリ別（現在のカテゴリ）</option>
+        <option value="theme">ランキング：テーマ別（現在のテーマ）</option>
+        <option value="daily">ランキング：今日のテーマ</option>
+      `;
     }
 
-    function setNewText() {
-      const item = pickText();
-      target = item.text;
-      pushHistory(target);
+    // 要望：カテゴリに属するテーマだけ表示（カテゴリが「すべて」なら全テーマ）
+    function applyThemeOptionsByCategory() {
+      const daily = chkDailyTheme.checked && !!dailyTheme;
+      if (daily) return; // 日替わり固定中は theme 選択は disabled（候補更新不要）
 
-      document.getElementById("input").value = "";
-      document.getElementById("input").disabled = false;
-      document.getElementById("input").focus();
-      document.getElementById("result").textContent = "";
+      const cat = selCategory.value;
+      const currentTheme = selTheme.value;
 
+      let themes = [];
+      if (cat === "all") {
+        themes = allThemes;
+      } else {
+        const set = themeByCategory.get(cat);
+        themes = set ? Array.from(set).sort((a,b) => a.localeCompare(b, "ja")) : [];
+      }
+
+      selTheme.innerHTML =
+        `<option value="all">テーマ：すべて</option>` +
+        themes.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
+
+      selTheme.value = themes.includes(currentTheme) ? currentTheme : "all";
+    }
+
+    function getActiveFilters() {
+      const daily = chkDailyTheme.checked && !!dailyTheme;
+
+      const difficulty = selDifficulty.value;
+      const category = daily ? "all" : selCategory.value;
+      const theme = daily ? dailyTheme : selTheme.value;
+
+      return { daily, difficulty, category, theme };
+    }
+
+    function filterPool() {
+      const { daily, difficulty, category, theme } = getActiveFilters();
+      return items.filter(x => {
+        if (difficulty !== "all" && x.difficulty !== difficulty) return false;
+        if (!daily && category !== "all" && x.category !== category) return false;
+        if (theme !== "all" && x.theme !== theme) return false;
+        return true;
+      });
+    }
+
+    function pickNextItem(pool) {
+      if (pool.length === 0) return null;
+
+      // 直近10問を回避（候補が少なければ例外的に許容）
+      const notRecent = pool.filter(x => !isRecentlyUsed(x.text));
+      const candidates = (notRecent.length > 0) ? notRecent : pool;
+
+      return candidates[Math.floor(Math.random() * candidates.length)];
+    }
+
+    // ===== 見本文：正解青／誤り赤（最初の誤り以降を赤に寄せる） =====
+    function renderTarget(typed) {
+      const textEl = document.getElementById("text");
+      const t = target ?? "";
+      const v = typed ?? "";
+
+      // typed が target より長い場合もある（その時点で誤り）
+      const typedLen = v.length;
+      const targetLen = t.length;
+
+      let mismatch = -1;
+      const minLen = Math.min(typedLen, targetLen);
+      for (let i = 0; i < minLen; i++) {
+        if (v[i] !== t[i]) { mismatch = i; break; }
+      }
+      if (mismatch === -1 && typedLen > targetLen) mismatch = targetLen;
+
+      // mismatch === -1 : すべて一致（入力途中）
+      // mismatch >= 0 : mismatch以降は「誤り扱い」
+      let html = "";
+      if (mismatch === -1) {
+        // 先頭から typedLen までは正解
+        const okPart = t.slice(0, typedLen);
+        const rest = t.slice(typedLen);
+        html =
+          `<span class="ok">${escapeHtml(okPart)}</span>` +
+          `${escapeHtml(rest)}`;
+      } else {
+        const okPart = t.slice(0, mismatch);
+        const ngPart = t.slice(mismatch, Math.min(typedLen, targetLen));
+        const rest = t.slice(Math.min(typedLen, targetLen));
+        html =
+          `<span class="ok">${escapeHtml(okPart)}</span>` +
+          `<span class="ng">${escapeHtml(ngPart)}</span>` +
+          `${escapeHtml(rest)}`;
+      }
+      textEl.innerHTML = html;
+    }
+
+    function resetTypingState() {
       startTime = 0;
       ended = false;
       keystrokes = 0;
-
-      renderText("");
+      submitBtn.disabled = true;
+      document.getElementById("result").textContent = "";
     }
 
-    function renderText(input) {
-      let html = "";
-      for (let i = 0; i < target.length; i++) {
-        if (i < input.length) {
-          html += input[i] === target[i]
-            ? `<span class="ok">${target[i]}</span>`
-            : `<span class="ng">${target[i]}</span>`;
-        } else {
-          html += target[i];
-        }
+    function setNewText({ fromSkip = false } = {}) {
+      const pool = filterPool();
+      if (pool.length === 0) {
+        target = "";
+        document.getElementById("text").textContent = "該当する文章がありません。条件を変更してください。";
+        inputBox.value = "";
+        inputBox.disabled = true;
+        resetTypingState();
+        updateBadges(null);
+        return;
       }
-      document.getElementById("text").innerHTML = html;
+
+      const pick = pickNextItem(pool);
+      target = pick.text;
+
+      // 履歴：スキップ・通常どちらでも「出題済」として扱う（再出題回避を強める）
+      pushHistory(target);
+
+      inputBox.disabled = false;
+      inputBox.value = "";
+      inputBox.focus();
+
+      resetTypingState();
+      renderTarget("");
+
+      updateBadges(pick);
+
+      // ランキング更新（固定TOP + 通常）
+      loadDailyRanking();
+      loadRanking();
     }
 
+    function updateDailyThemeUI() {
+      const daily = chkDailyTheme.checked && !!dailyTheme;
+
+      selCategory.disabled = daily;
+      selTheme.disabled = daily;
+
+      if (dailyTheme) {
+        dailyInfoEl.textContent = `今日（${todayKey()}）のテーマ：${dailyTheme}` + (daily ? "（固定中）" : "");
+        dailyInfoEl.style.display = "block";
+      } else {
+        dailyInfoEl.textContent = "";
+        dailyInfoEl.style.display = "none";
+      }
+    }
+
+    function updateBadges(pickItem) {
+      const { daily, difficulty, category, theme } = getActiveFilters();
+      const badges = [];
+
+      badges.push(daily ? `日替わり：ON（${dailyTheme ?? "—"}）` : "日替わり：OFF");
+      badges.push(`難易度設定：${difficulty === "all" ? "すべて" : difficulty}`);
+      badges.push(`カテゴリ：${daily ? "—" : (category === "all" ? "すべて" : category)}`);
+      badges.push(`テーマ：${theme === "all" ? "すべて" : theme}`);
+
+      // 要望：問題数は非表示（ここでは出さない）
+      if (pickItem) {
+        const kataPct = Math.round(pickItem.kataRatio * 100);
+        badges.push(`出題難易度：${pickItem.difficulty}`);
+        badges.push(`文字数：${pickItem.length}`);
+        badges.push(`句読点：${pickItem.punct}`);
+        badges.push(`カタカナ比率：${kataPct}%`);
+      }
+
+      badgesEl.innerHTML = badges.map(b => `<span class="pill">${escapeHtml(b)}</span>`).join("");
+      updateRankingLabels();
+    }
+
+    // ===== ランキング（裏分岐） =====
+    function getRankingKey(scope) {
+      const { daily, difficulty, category, theme } = getActiveFilters();
+      const diffKey = (difficulty === "all") ? "diff_all" : `diff_${difficulty}`;
+
+      if (scope === "overall") return `rk_overall__${diffKey}`;
+      if (scope === "daily") {
+        const t = dailyTheme ?? "no_theme";
+        return `rk_daily__${toSafeKey(t)}__${diffKey}`;
+      }
+      if (scope === "category") {
+        const c = daily ? "all" : category;
+        return `rk_category__${toSafeKey(c)}__${diffKey}`;
+      }
+      if (scope === "theme") {
+        const t = (theme === "all") ? "all" : theme;
+        return `rk_theme__${toSafeKey(t)}__${diffKey}`;
+      }
+      return `rk_overall__${diffKey}`;
+    }
+
+    function getCollectionNameByScope(scope) {
+      return `scores__${toSafeKey(getRankingKey(scope))}`;
+    }
+
+    function updateRankingLabels() {
+      const { daily, difficulty, category, theme } = getActiveFilters();
+      const diffText = (difficulty === "all") ? "（難易度：すべて）" : `（難易度：${difficulty}）`;
+
+      dailyRankLabel.textContent = `🏆 今日のテーマ「${dailyTheme ?? "—"}」ランキング TOP10 ${diffText}`;
+
+      const scope = selRankScope.value;
+      let label = "ランキング";
+      if (scope === "overall") label = `ランキング：全体 TOP10 ${diffText}`;
+      if (scope === "daily") label = `ランキング：今日のテーマ「${dailyTheme ?? "—"}」TOP10 ${diffText}`;
+      if (scope === "category") {
+        const c = daily ? "—" : (category === "all" ? "すべて" : category);
+        label = `ランキング：カテゴリ「${c}」TOP10 ${diffText}`;
+      }
+      if (scope === "theme") {
+        const t = (theme === "all") ? "すべて" : theme;
+        label = `ランキング：テーマ「${t}」TOP10 ${diffText}`;
+      }
+      rankLabel.textContent = label;
+    }
+
+    async function loadDailyRanking() {
+      const list = document.getElementById("dailyRanking");
+      list.innerHTML = "";
+
+      const colName = getCollectionNameByScope("daily");
+
+      try {
+        const q = query(collection(db, colName), orderBy("wpm", "desc"), limit(10));
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+          const li = document.createElement("li");
+          li.textContent = "まだスコアがありません。最初の記録を作りましょう。";
+          list.appendChild(li);
+          return;
+        }
+
+        snapshot.forEach(doc => {
+          const d = doc.data();
+          const li = document.createElement("li");
+          li.textContent = `${d.name} - ${d.wpm} WPM`;
+          list.appendChild(li);
+        });
+      } catch (e) {
+        const li = document.createElement("li");
+        li.textContent = "ランキングの読み込みに失敗しました。";
+        list.appendChild(li);
+      }
+    }
+
+    async function loadRanking() {
+      const list = document.getElementById("ranking");
+      list.innerHTML = "";
+
+      const scope = selRankScope.value;
+      const colName = getCollectionNameByScope(scope);
+
+      try {
+        const q = query(collection(db, colName), orderBy("wpm", "desc"), limit(10));
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+          const li = document.createElement("li");
+          li.textContent = "まだスコアがありません。最初の記録を作りましょう。";
+          list.appendChild(li);
+          return;
+        }
+
+        snapshot.forEach(doc => {
+          const d = doc.data();
+          const li = document.createElement("li");
+          li.textContent = `${d.name} - ${d.wpm} WPM`;
+          list.appendChild(li);
+        });
+      } catch (e) {
+        const li = document.createElement("li");
+        li.textContent = "ランキングの読み込みに失敗しました。";
+        list.appendChild(li);
+      }
+    }
+
+    // ===== スコア計測（日本語向け：CPM/KPM + 参考WPM） =====
+    function computeMetrics(typed, seconds, keystrokesCount) {
+      const minutes = seconds / 60;
+      const cpm = Math.round(typed.length / minutes);
+      const kpm = Math.round(keystrokesCount / minutes);
+      const wpm = Math.round((typed.length / 5) / minutes); // 参考（英語互換）
+      return { cpm, kpm, wpm };
+    }
+
+    // ===== 保存（おすすめ：複数ランキングに同時保存） =====
+    // UXが良くなる（どのランキングを見ても空になりにくい）
+    async function saveScoreToMultipleBoards({ name, wpm }) {
+      const targets = ["overall", "daily", "category", "theme"].map(scope => {
+        const colName = getCollectionNameByScope(scope);
+        return addDoc(collection(db, colName), {
+          name,
+          wpm,
+          timestamp: serverTimestamp()
+        });
+      });
+      await Promise.allSettled(targets);
+    }
+
+    // ===== Main =====
     window.addEventListener("DOMContentLoaded", async () => {
-      await loadTexts();
-      setNewText();
+      selDifficulty = document.getElementById("difficulty");
+      selCategory = document.getElementById("category");
+      selTheme = document.getElementById("theme");
+      chkDailyTheme = document.getElementById("dailyTheme");
+      selRankScope = document.getElementById("rankScope");
+      rankLabel = document.getElementById("rankLabel");
+      dailyRankLabel = document.getElementById("dailyRankLabel");
+      dailyInfoEl = document.getElementById("dailyInfo");
+      badgesEl = document.getElementById("modeBadges");
+      inputBox = document.getElementById("input");
+      submitBtn = document.getElementById("submitBtn");
 
-      const input = document.getElementById("input");
-      const result = document.getElementById("result");
+      // Controls
+      selDifficulty.addEventListener("change", () => setNewText());
+      selCategory.addEventListener("change", () => {
+        applyThemeOptionsByCategory();
+        setNewText();
+      });
+      selTheme.addEventListener("change", () => setNewText());
 
-      input.addEventListener("keydown", e => {
-        if (e.key.length === 1 || e.key === "Backspace") {
+      chkDailyTheme.addEventListener("change", () => {
+        updateDailyThemeUI();
+        applyThemeOptionsByCategory();
+        setNewText();
+      });
+
+      selRankScope.addEventListener("change", () => {
+        updateRankingLabels();
+        loadRanking();
+      });
+
+      document.getElementById("skipBtn").addEventListener("click", () => setNewText({ fromSkip: true }));
+
+      // Load data
+      try {
+        await loadItems();
+      } catch (e) {
+        document.getElementById("text").textContent = "データの読み込みに失敗しました。data/trivia.json の置き場所とJSON形式を確認してください。";
+        inputBox.disabled = true;
+        return;
+      }
+
+      // Typing: keystrokes count
+      inputBox.addEventListener("keydown", (e) => {
+        // 1文字入力、スペース、Backspace/Delete を打鍵として数える（IME中も概ね反映される）
+        if (e.key.length === 1 || e.key === "Backspace" || e.key === "Delete") {
           keystrokes++;
         }
       });
 
-      input.addEventListener("input", () => {
-        const val = input.value;
-        renderText(val);
+      // Typing: live render + finish
+      inputBox.addEventListener("input", () => {
+        const typed = inputBox.value;
 
-        if (val.length === 1 && startTime === 0) {
+        // 見本文更新（正解青、誤り赤）
+        renderTarget(typed);
+
+        // 計測開始：最初の1文字（空→1文字になった瞬間）
+        if (typed.length === 1 && startTime === 0 && target) {
           startTime = Date.now();
+          keystrokes = 0; // 計測開始時点でリセット（開始前に押したキーを除外）
         }
 
-        if (val === target && !ended) {
+        // 完了判定
+        if (!ended && typed === target) {
           ended = true;
-          const sec = (Date.now() - startTime) / 1000;
-          const min = sec / 60;
+          const seconds = (Date.now() - startTime) / 1000;
+          const { cpm, kpm, wpm } = computeMetrics(typed, seconds, keystrokes);
 
-          const cpm = Math.round(val.length / min);
-          const kpm = Math.round(keystrokes / min);
-          const wpm = Math.round((val.length / 5) / min);
+          document.getElementById("result").innerHTML =
+            `完了！<br>` +
+            `<strong>CPM（文字/分）:</strong> ${cpm}<br>` +
+            `<strong>KPM（打鍵/分）:</strong> ${kpm}<br>` +
+            `<strong>参考WPM:</strong> ${wpm}`;
 
-          result.innerHTML =
-            `完了！<br>
-             CPM（文字/分）：${cpm}<br>
-             KPM（打鍵/分）：${kpm}<br>
-             参考WPM：${wpm}`;
+          submitBtn.disabled = false;
+          submitBtn.dataset.wpm = String(wpm);
         }
       });
 
-      document.getElementById("skipBtn").addEventListener("click", setNewText);
+      // Submit
+      submitBtn.addEventListener("click", async () => {
+        const name = document.getElementById("name").value.trim();
+        const wpm = parseInt(submitBtn.dataset.wpm, 10);
+
+        if (!name || Number.isNaN(wpm)) {
+          alert("名前を入力してください");
+          return;
+        }
+
+        try {
+          await saveScoreToMultipleBoards({ name, wpm });
+          await loadDailyRanking();
+          await loadRanking();
+          setNewText();
+        } catch (e) {
+          alert("保存に失敗しました。Firestore設定や権限を確認してください。");
+        }
+      });
+
+      // First render
+      updateRankingLabels();
+      setNewText();
     });
   </script>
 </head>
@@ -179,22 +712,82 @@
 <body>
   <header>
     <h1>漢字変換対応のタイピング練習</h1>
-    <p>雑学・豆知識の文章を使って、日本語入力の正確性と速度を同時に鍛えます。</p>
+    <p class="lead">
+      雑学・豆知識の文章で、漢字変換を含む実用的な日本語入力を練習できます。
+      難易度は length に加えて「句読点数」「カタカナ比率」も考慮して精密化しています。
+    </p>
+    <p class="muted">正解している部分は青、間違い始めた箇所から赤で表示されます。</p>
   </header>
 
   <main>
-    <section class="card">
+    <section id="play" class="card" aria-label="タイピング練習">
       <h2>タイピング練習</h2>
 
-      <div id="text">読み込み中...</div>
+      <div class="row" style="margin-bottom:10px;">
+        <select id="difficulty" aria-label="難易度"></select>
+        <select id="category" aria-label="カテゴリ"></select>
+        <select id="theme" aria-label="テーマ"></select>
+        <label class="checkbox" title="今日のテーマに固定します（毎日変わります）">
+          <input type="checkbox" id="dailyTheme" />
+          日替わりテーマ
+        </label>
+      </div>
+
+      <p id="dailyInfo" class="muted" style="display:none; margin: 0 0 10px;"></p>
+      <div id="modeBadges" style="margin: 0 0 10px;"></div>
+
+      <p id="text">読み込み中...</p>
 
       <textarea id="input" placeholder="ここにタイピング" disabled></textarea>
 
-      <div class="row">
-        <button id="skipBtn">別の文章にする</button>
+      <div class="row" style="margin-top: 10px;">
+        <button id="skipBtn" type="button">別の文章にする</button>
       </div>
 
       <div id="result"></div>
+
+      <h3 style="margin-top:16px;">スコア送信（ランキングに反映）</h3>
+      <div class="row">
+        <input type="text" id="name" placeholder="あなたの名前" />
+        <button id="submitBtn" disabled>スコア送信</button>
+      </div>
+
+      <!-- 固定TOP：今日のテーマランキング -->
+      <h2 style="margin-top: 22px;">今日のテーマランキング</h2>
+      <div class="muted" id="dailyRankLabel" style="margin-bottom: 8px;"></div>
+      <ul id="dailyRanking"></ul>
+
+      <!-- 通常ランキング -->
+      <h2 style="margin-top: 22px;">ランキング</h2>
+      <div class="row" style="margin-top: 0;">
+        <select id="rankScope" aria-label="ランキング範囲"></select>
+        <div id="rankLabel" class="muted"></div>
+      </div>
+      <ul id="ranking" style="margin-top: 10px;"></ul>
+
+      <noscript>
+        <p class="muted">このゲームはJavaScriptが必要です。ブラウザ設定でJavaScriptを有効にしてください。</p>
+      </noscript>
+    </section>
+
+    <section style="margin-top: 16px;">
+      <h2>よくある質問</h2>
+      <details>
+        <summary>同じ文章が何度も出ませんか？</summary>
+        <p>直近10問は再出題されにくいように制御しています（候補が少ない場合は例外）。</p>
+      </details>
+      <details>
+        <summary>難易度はどう決まりますか？</summary>
+        <p>length（文字数）に加えて、句読点の数とカタカナ比率も加味して判定します。</p>
+      </details>
+      <details>
+        <summary>テーマの候補が少ないのはなぜ？</summary>
+        <p>選んだカテゴリに属するテーマだけを表示するためです（カテゴリを「すべて」にすると全テーマが出ます）。</p>
+      </details>
+      <details>
+        <summary>ランキングはどう保存されていますか？</summary>
+        <p>全体／今日のテーマ／カテゴリ／テーマの各ランキングに、裏で分岐して保存しています。</p>
+      </details>
     </section>
   </main>
 
