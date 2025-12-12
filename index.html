@@ -21,24 +21,87 @@
   <!-- Style -->
   <style>
     :root { --max: 980px; }
-    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif; margin: 0; line-height: 1.8; }
-    header, main, footer { max-width: var(--max); margin: 0 auto; padding: 16px; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
+      margin: 0;
+      line-height: 1.8;
+      background: #fafafa;
+    }
+    header, main, footer {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 16px;
+    }
     header { padding-top: 28px; }
-    h1 { font-size: 1.8rem; margin: 0 0 10px; }
+    h1 { font-size: 1.9rem; margin: 0 0 10px; }
+    h2 { margin-top: 36px; }
     .lead { font-size: 1.05rem; margin-bottom: 14px; }
     .muted { color: #555; }
-    .card { border: 1px solid #ddd; border-radius: 12px; padding: 14px; background: #fff; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
-    .cta { display: inline-block; padding: 10px 14px; border: 1px solid #222; border-radius: 10px; text-decoration: none; color: inherit; }
-    #text { font-size: 1.2em; background: #f3f3f3; padding: 10px; border-radius: 10px; }
-    #input { width: 100%; font-size: 1.2em; margin-top: 10px; padding: 10px; border-radius: 10px; border: 1px solid #ccc; }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 16px;
+      background: #fff;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .cta {
+      display: inline-block;
+      padding: 10px 14px;
+      border: 1px solid #222;
+      border-radius: 10px;
+      text-decoration: none;
+      color: inherit;
+      background: #fff;
+    }
+    #text {
+      font-size: 1.2em;
+      background: #f3f3f3;
+      padding: 10px;
+      border-radius: 10px;
+    }
+    #input {
+      width: 100%;
+      font-size: 1.2em;
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
     #result { margin-top: 10px; font-weight: 700; }
     #ranking li { margin-bottom: 4px; }
-    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-    #name { font-size: 1rem; padding: 10px; border-radius: 10px; border: 1px solid #ccc; }
-    #submitBtn { font-size: 1rem; padding: 10px 12px; border-radius: 10px; border: 1px solid #222; background: #fff; }
-    details { border: 1px solid #ddd; border-radius: 12px; padding: 10px 12px; background: #fff; }
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    #name {
+      font-size: 1rem;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+    }
+    #submitBtn {
+      font-size: 1rem;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #222;
+      background: #fff;
+      cursor: pointer;
+    }
+    details {
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: #fff;
+    }
     details + details { margin-top: 10px; }
+    footer { padding-bottom: 28px; }
   </style>
 
   <!-- 構造化データ：WebSite -->
@@ -74,11 +137,11 @@
     const db = getFirestore(app);
 
     const texts = [
-      "カフェインは眠気を抑えるが、摂りすぎると集中力を下げる。",
-      "日本語入力では正確な漢字変換が作業効率を大きく左右する。",
-      "タイピングは速度よりも正確性を意識すると結果的に速くなる。",
-      "人間の集中力は約90分周期で上下すると言われている。",
-      "継続的な練習は短時間でも確実に成果を生む。"
+      "日本語入力では漢字変換の正確さが作業効率を大きく左右する。",
+      "短時間でも継続したタイピング練習は確実に成果につながる。",
+      "集中力は長時間よりも適切な区切りを入れることで維持しやすい。",
+      "正確性を優先した入力は、結果的にタイピング速度の向上につながる。",
+      "知識を伴う文章入力は、単調な練習よりも記憶に残りやすい。"
     ];
 
     let target = "";
@@ -119,8 +182,10 @@
       submitBtn.addEventListener("click", async () => {
         const name = document.getElementById("name").value;
         const wpm = parseInt(submitBtn.dataset.wpm);
-        if (!name || isNaN(wpm)) return alert("名前を入力してください");
-
+        if (!name || isNaN(wpm)) {
+          alert("名前を入力してください");
+          return;
+        }
         await addDoc(collection(db, "scores"), {
           name, wpm, timestamp: serverTimestamp()
         });
@@ -160,6 +225,7 @@
   <main>
     <section id="play" class="card">
       <h2>タイピング練習</h2>
+
       <p id="text">読み込み中...</p>
       <input id="input" placeholder="ここに入力" disabled />
       <div id="result"></div>
@@ -172,6 +238,59 @@
 
       <h2>🏆 ランキング TOP10</h2>
       <ul id="ranking"></ul>
+
+      <noscript>
+        <p class="muted">このゲームはJavaScriptが必要です。ブラウザ設定でJavaScriptを有効にしてください。</p>
+      </noscript>
+    </section>
+
+    <section>
+      <h2>特徴</h2>
+      <div class="grid">
+        <div class="card"><strong>無料・インストール不要</strong><br>ブラウザだけで練習できます。</div>
+        <div class="card"><strong>漢字変換を含む実用練習</strong><br>実務に近い日本語入力を想定しています。</div>
+        <div class="card"><strong>ランキング対応</strong><br>スコアを保存して成長を可視化できます。</div>
+        <div class="card"><strong>雑学で知識も習得</strong><br>入力しながら自然に知識が身につきます。</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>遊び方</h2>
+      <ol>
+        <li>表示された文章をそのまま入力します</li>
+        <li>最初の1文字で計測開始、全文一致で完了します</li>
+        <li>結果を確認し、希望すればランキングに登録します</li>
+      </ol>
+      <p class="muted">
+        コツ：最初は速度より正確性を優先し、慣れてきたら徐々にスピードを上げましょう。
+      </p>
+    </section>
+
+    <section>
+      <h2>よくある質問</h2>
+      <details>
+        <summary>無料で使えますか？</summary>
+        <p>はい。すべての機能を無料で利用できます。</p>
+      </details>
+      <details>
+        <summary>漢字変換の練習になりますか？</summary>
+        <p>なります。実用的な日本語文章を使うため、自然な漢字変換の練習が可能です。</p>
+      </details>
+      <details>
+        <summary>ランキングは公開されますか？</summary>
+        <p>はい。入力した名前とWPMがランキングに表示されます。</p>
+      </details>
+      <details>
+        <summary>スマホでも使えますか？</summary>
+        <p>閲覧は可能ですが、タイピング練習としてはPCキーボードを推奨します。</p>
+      </details>
+    </section>
+
+    <section>
+      <h2>更新情報</h2>
+      <ul>
+        <li>2025-12-XX: 初回公開</li>
+      </ul>
     </section>
   </main>
 
