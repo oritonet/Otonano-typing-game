@@ -1,239 +1,189 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
-  <title>漢字変換対応の日本語タイピング練習｜雑学・豆知識で実務入力を鍛える（IME評価・ランキング対応）</title>
-  <meta name="description" content="漢字変換を含む日本語IME入力をCPM・KPMで精密評価。雑学・豆知識文章で知識と実務入力力を同時に鍛える無料タイピング練習。日替わりテーマ・カテゴリ別ランキング・個人履歴・分析対応。" />
-  <link rel="canonical" href="https://espresso-taro.github.io/Otonano-typing-game/" />
+<title>
+漢字変換対応の日本語タイピング練習｜雑学・豆知識で実務入力を鍛える（IME評価・ランキング対応）
+</title>
 
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="漢字変換対応の日本語タイピング練習｜雑学・豆知識で実務入力を鍛える（IME評価・ランキング対応）" />
-  <meta property="og:description" content="IME変換を含む実務入力をCPM・KPMで評価。雑学・豆知識文章で知識も同時に鍛える。" />
-  <meta property="og:url" content="https://espresso-taro.github.io/Otonano-typing-game/" />
-  <meta name="twitter:card" content="summary" />
+<style>
+body{font-family:"Noto Sans JP",system-ui;margin:0;background:#fafafa}
+header,main,footer{max-width:980px;margin:auto;padding:16px}
+.card{background:#fff;border:1px solid #ddd;border-radius:12px;padding:16px}
+#text{background:#f3f3f3;padding:14px;border-radius:10px;font-size:1.25em;white-space:pre-wrap}
+.ok{color:#0b5ed7;font-weight:bold}
+.ng{color:#c00000;font-weight:bold}
+textarea{width:100%;min-height:180px;font-size:1.25em;padding:12px;border-radius:10px}
+button{padding:10px 14px;border-radius:10px}
+</style>
 
-  <style>
-    :root { --max: 980px; }
-    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif; margin: 0; line-height: 1.85; background: #fafafa; }
-    header, main, footer { max-width: var(--max); margin: 0 auto; padding: 16px; }
-    header { padding-top: 28px; }
+<script type="module">
+/* ========= Firebase ========= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore,collection,addDoc,serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getAuth,signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    h1 { font-size: 1.9rem; margin: 0 0 10px; }
-    h2 { margin-top: 22px; }
-    h3 { margin-top: 16px; }
-    .lead { font-size: 1.05rem; margin: 0 0 12px; }
-    .muted { color: #555; }
+const app = initializeApp({
+ apiKey:"AIzaSyAqDSPE_HkPbi-J-SqPL4Ys-wR4RaA8wKA",
+ authDomain:"otonano-typing-game.firebaseapp.com",
+ projectId:"otonano-typing-game"
+});
+const db = getFirestore(app);
+signInAnonymously(getAuth(app));
 
-    .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; background: #fff; }
-    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-    .row.between { justify-content: space-between; }
-    select, button, input[type="text"], textarea {
-      font-size: 0.98rem; padding: 10px 12px; border-radius: 10px; border: 1px solid #bbb; background: #fff;
-    }
-    button { border: 1px solid #222; cursor: pointer; }
-    button[disabled] { opacity: 0.55; cursor: not-allowed; }
+/* ========= 状態 ========= */
+let items=[];
+let target="";
+let startTime=0;
+let keystrokes=0;
+let composing=false;
+let dailyTheme="";
 
-    /* 日替わりテーマ：チェックは右 */
-    .toggle {
-      display: inline-flex; align-items: center; gap: 10px;
-      border: 1px solid #bbb; border-radius: 10px; padding: 10px 12px; background: #fff;
-      user-select: none;
-    }
-    .toggle input { width: 18px; height: 18px; }
+/* ========= データ ========= */
+async function loadData(){
+ const r=await fetch("./data/trivia.json");
+ items=await r.json();
 
-    /* 見本文 */
-    #text {
-      font-size: 1.25em;
-      background: #f3f3f3;
-      padding: 14px;
-      border-radius: 10px;
-      white-space: pre-wrap;
-      word-break: break-all;
-      line-height: 2.0;
-      margin: 8px 0 0;
-    }
-    .ok { color: #0b5ed7; font-weight: 700; }
-    .ng { color: #c00000; font-weight: 700; }
+ // 今日のテーマ固定
+ const themes=[...new Set(items.map(x=>x.theme))];
+ const d=new Date().toISOString().slice(0,10);
+ dailyTheme=themes[Math.abs(hash(d))%themes.length];
 
-    /* 入力欄：大きく */
-    #input {
-      width: 100%;
-      min-height: 190px;
-      font-size: 1.28em;
-      margin-top: 12px;
-      padding: 14px;
-      border-radius: 12px;
-      border: 2px solid #bbb;
-      box-sizing: border-box;
-      font-family: ui-monospace, "Noto Sans Mono", Menlo, Monaco, Consolas, monospace;
-      line-height: 1.85;
-      resize: vertical;
-      background: #fff;
-    }
+ nextText();
+}
 
-    /* カウントダウン */
-    #countdownWrap {
-      display: none;
-      border: 1px dashed #bbb;
-      border-radius: 12px;
-      padding: 14px;
-      background: #fff;
-      margin: 10px 0 0;
-      text-align: center;
-    }
-    #countdown {
-      font-size: 2.2rem;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-    }
-    #countdownSub {
-      margin-top: 6px;
-      color: #666;
-      font-size: 0.95rem;
-    }
+function hash(s){let h=0;for(let c of s)h=(h<<5)-h+c.charCodeAt(0);return h}
 
-    #result { margin-top: 10px; font-weight: 800; }
-    ul { padding-left: 1.2em; }
-    #ranking li, #dailyRanking li, #myRecent li, #bestByDifficulty li { margin-bottom: 6px; }
+/* ========= 出題 ========= */
+function nextText(){
+ const pool=items.filter(x=>x.theme===dailyTheme);
+ const pick=pool[Math.floor(Math.random()*pool.length)];
+ target=pick.text;
+ document.getElementById("text").textContent=target;
+ document.getElementById("input").value="";
+}
 
-    .split { display: grid; grid-template-columns: 1fr; gap: 12px; }
-    @media (min-width: 860px) { .split { grid-template-columns: 1fr 1fr; } }
+/* ========= 描画 ========= */
+function render(typed){
+ if(composing) return; // ★②修正：変換中は保持
+ let html="";
+ for(let i=0;i<target.length;i++){
+  if(i<typed.length){
+   html+=typed[i]===target[i]
+    ? `<span class="ok">${target[i]}</span>`
+    : `<span class="ng">${target[i]}</span>`;
+  }else html+=target[i];
+ }
+ document.getElementById("text").innerHTML=html;
+}
 
-    canvas { width: 100%; height: 220px; border: 1px solid #eee; border-radius: 10px; background: #fff; }
-    details { border: 1px solid #ddd; border-radius: 12px; padding: 10px 12px; background: #fff; }
-    details + details { margin-top: 10px; }
+/* ========= カウントダウン（②） ========= */
+async function startTyping(){
+ const ta=document.getElementById("input");
+ ta.disabled=false;
+ ta.readOnly=true;
+ ta.style.textAlign="center";
+ ta.style.fontSize="2rem";
 
-    footer { padding-bottom: 28px; color: #666; }
-  </style>
+ for(const s of ["3","2","1","START"]){
+  ta.value=s;
+  await new Promise(r=>setTimeout(r,700));
+ }
+
+ ta.value="";
+ ta.readOnly=false;
+ ta.style.textAlign="";
+ ta.style.fontSize="";
+ ta.focus();
+
+ startTime=0;
+ keystrokes=0;
+}
+
+/* ========= 評価 ========= */
+function finish(){
+ const sec=(Date.now()-startTime)/1000;
+ const min=sec/60;
+ const cpm=Math.round(target.length/min);
+ const kpm=Math.round(keystrokes/min);
+ const eff=(cpm/kpm*100).toFixed(1);
+ const rank=cpm>400?"SSS":cpm>300?"S":cpm>200?"A":"B";
+
+ alert(
+  `完了！\n\n`+
+  `ランク：${rank}\n`+
+  `CPM：${cpm}\n`+
+  `KPM：${kpm}\n`+
+  `効率：${eff}%`
+ );
+
+ // ★④修正：今日のテーマ専用コレクションにのみ保存
+ addDoc(
+  collection(db,"scores__daily__"+dailyTheme),
+  {
+   cpm,kpm,rank,
+   theme:dailyTheme,
+   timestamp:serverTimestamp()
+  }
+ );
+
+ nextText();
+ startTime=0;
+}
+
+/* ========= メイン ========= */
+window.addEventListener("DOMContentLoaded",()=>{
+ const ta=document.getElementById("input");
+
+ ta.addEventListener("compositionstart",()=>composing=true);
+ ta.addEventListener("compositionend",()=>composing=false);
+
+ ta.addEventListener("keydown",e=>{
+  if(["Backspace","Delete","Enter"," "].includes(e.key)||e.key.length===1)
+   keystrokes++;
+ });
+
+ ta.addEventListener("input",()=>{
+  if(!startTime&&ta.value.length>0){
+   startTime=Date.now();
+   keystrokes=0;
+  }
+  render(ta.value);
+
+  // ★③修正：完全一致した瞬間に終了
+  if(
+   ta.value.length===target.length &&
+   ta.value===target
+  ){
+   finish();
+  }
+ });
+
+ document.getElementById("startBtn").onclick=startTyping;
+
+ loadData();
+});
+</script>
 </head>
 
 <body>
-  <header>
-    <h1>漢字変換対応 日本語タイピング練習</h1>
-    <p class="lead">
-      雑学・豆知識の文章で、漢字変換を含む実務的な日本語入力を練習できます。評価は <strong>CPM（文字/分）</strong> と
-      <strong>KPM（打鍵/分：Space/Enterの変換・確定も含む）</strong> を中心に行います。
-    </p>
+<header>
+<h1>漢字変換対応 日本語タイピング練習</h1>
+<p id="today">今日のテーマ：固定</p>
+</header>
 
-    <div class="row between">
-      <div class="row">
-        <label class="muted">ユーザー</label>
-        <select id="userSelect" aria-label="ユーザー選択"></select>
-        <button id="addUserBtn" type="button">ユーザー追加</button>
-        <button id="renameUserBtn" type="button">名前変更</button>
-        <button id="deleteUserBtn" type="button">削除</button>
-      </div>
-      <div class="muted" id="authBadge">認証：準備中…</div>
-    </div>
-  </header>
+<main>
+<section class="card">
+<button id="startBtn">スタート</button>
+<p id="text">読み込み中…</p>
+<textarea id="input" disabled></textarea>
+</section>
+</main>
 
-  <main>
-    <section id="play" class="card" aria-label="タイピング練習">
-      <h2>タイピング練習</h2>
-
-      <!-- 画像の黄色エリア改善：不要なバッジ列は廃止。必要な設定だけを上部に集約 -->
-      <div class="row" style="margin-bottom:10px;">
-        <select id="difficulty" aria-label="難易度"></select>
-        <select id="category" aria-label="カテゴリ"></select>
-        <select id="theme" aria-label="テーマ"></select>
-
-        <!-- チェックは右 -->
-        <label class="toggle" title="今日のテーマに固定します（毎日変わります）">
-          <span>日替わりテーマ</span>
-          <input type="checkbox" id="dailyTheme" />
-        </label>
-      </div>
-
-      <!-- 今日のテーマは必要最小限で表示（固定時にだけ補助表示） -->
-      <div class="muted" id="dailyInfo" style="margin:0 0 10px; display:none;"></div>
-
-      <!-- 別の文章（見本文の上） -->
-      <div class="row" style="margin: 0 0 6px;">
-        <button id="skipBtn" type="button">別の文章にする</button>
-      </div>
-
-      <!-- スタート + カウントダウン -->
-      <div class="row" style="margin: 0 0 6px;">
-        <button id="startBtn" type="button">スタート</button>
-        <div class="muted" id="startHint">スタート後、3→2→1→0で開始します（入力欄に自動フォーカス）。</div>
-      </div>
-      <div id="countdownWrap" aria-live="polite">
-        <div id="countdown">3</div>
-        <div id="countdownSub">準備してください</div>
-      </div>
-
-      <p id="text">読み込み中...</p>
-      <textarea id="input" placeholder="スタートを押すと入力できます" disabled></textarea>
-
-      <div id="result"></div>
-
-      <div class="split" style="margin-top: 18px;">
-        <div class="card" style="border-color:#eee;">
-          <h3 style="margin-top:0;">今日のテーマランキング</h3>
-          <div class="muted" id="dailyRankLabel" style="margin-bottom: 8px;"></div>
-          <ul id="dailyRanking"></ul>
-        </div>
-
-        <div class="card" style="border-color:#eee;">
-          <h3 style="margin-top:0;">ランキング</h3>
-          <div class="row" style="margin-top: 0;">
-            <select id="rankScope" aria-label="ランキング範囲"></select>
-            <div id="rankLabel" class="muted"></div>
-          </div>
-          <ul id="ranking" style="margin-top: 10px;"></ul>
-        </div>
-      </div>
-
-      <noscript>
-        <p class="muted">このサイトはJavaScriptが必要です。ブラウザ設定でJavaScriptを有効にしてください。</p>
-      </noscript>
-    </section>
-
-    <section class="card" style="margin-top:16px;">
-      <h2 style="margin-top:0;">入力分析（選択ユーザー）</h2>
-
-      <div class="split">
-        <div>
-          <h3>難易度別ベスト（TOP CPM / TOPランク）</h3>
-          <ul id="bestByDifficulty"></ul>
-
-          <h3>今日の自分 vs 過去7日平均</h3>
-          <div id="compareToday" class="muted">データが不足しています（履歴を数回保存すると表示されます）。</div>
-        </div>
-
-        <div>
-          <h3>KPM−CPM差の推移（直近）</h3>
-          <canvas id="diffChart"></canvas>
-
-          <h3>最近の履歴</h3>
-          <ul id="myRecent"></ul>
-        </div>
-      </div>
-    </section>
-
-    <section style="margin-top: 16px;">
-      <h2>よくある質問</h2>
-      <details>
-        <summary>同じ文章が短時間に再出題されませんか？</summary>
-        <p>直近10問は再出題されにくいように制御しています（候補が少ない場合は例外）。</p>
-      </details>
-      <details>
-        <summary>赤字・青字の判定はいつ行われますか？</summary>
-        <p>IMEの変換確定前（変換中）は判定しません。確定された文字だけで判定します。</p>
-      </details>
-      <details>
-        <summary>KPMは何を数えていますか？</summary>
-        <p>通常文字・Backspace/Deleteに加え、Space（変換）とEnter（確定）も打鍵として数えます。</p>
-      </details>
-    </section>
-  </main>
-
-  <footer>
-    <p>© 2025</p>
-  </footer>
-
-  <script type="module" src="./js/app.js"></script>
+<footer>
+<p>© 2025</p>
+</footer>
 </body>
 </html>
