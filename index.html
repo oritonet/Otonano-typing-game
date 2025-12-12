@@ -6,14 +6,13 @@
 
   <!-- SEO -->
   <title>漢字変換対応のタイピング練習｜雑学・豆知識で日本語入力と知識を同時に鍛える（ランキング対応）</title>
-  <meta name="description" content="漢字変換を含む実用的な日本語タイピング練習ができる無料ブラウザソフト。雑学・豆知識を題材にした文章で、入力スピード・正確性と知識を同時に鍛えられます。ランキング対応。" />
-
+  <meta name="description" content="漢字変換を含む実用的な日本語タイピング練習ができる無料ブラウザソフト。雑学・豆知識を題材にした文章で、入力スピード・正確性と知識を同時に鍛えられます。難易度分け・日替わりテーマ・カテゴリ別ランキング対応。" />
   <link rel="canonical" href="https://espresso-taro.github.io/Otonano-typing-game/" />
 
   <!-- OGP -->
   <meta property="og:type" content="website" />
   <meta property="og:title" content="漢字変換対応のタイピング練習｜雑学・豆知識で日本語入力と知識を同時に鍛える（ランキング対応）" />
-  <meta property="og:description" content="雑学・豆知識文章で漢字変換を含む実用的なタイピング練習ができます。無料・ブラウザ対応、ランキング機能あり。" />
+  <meta property="og:description" content="雑学・豆知識文章で漢字変換を含む実用タイピング練習。難易度分け・日替わりテーマ・カテゴリ別ランキング対応。" />
   <meta property="og:url" content="https://espresso-taro.github.io/Otonano-typing-game/" />
   <meta name="twitter:card" content="summary" />
 
@@ -31,15 +30,20 @@
       padding: 16px;
     }
     header { padding-top: 28px; }
-    h1 { font-size: 1.9rem; margin-bottom: 10px; }
-    h2 { margin-top: 36px; }
-    .lead { font-size: 1.05rem; }
+    h1 { font-size: 1.9rem; margin: 0 0 10px; }
+    h2 { margin-top: 34px; }
+    .lead { font-size: 1.05rem; margin: 0 0 12px; }
     .muted { color: #555; }
     .card {
       border: 1px solid #ddd;
       border-radius: 12px;
       padding: 16px;
       background: #fff;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
     }
     .cta {
       display: inline-block;
@@ -67,26 +71,67 @@
     }
     #result { margin-top: 10px; font-weight: 700; }
     #ranking li { margin-bottom: 4px; }
-    .row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    #name, #submitBtn {
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .row > * { flex: 0 0 auto; }
+    #name {
       font-size: 1rem;
       padding: 10px;
       border-radius: 10px;
+      border: 1px solid #ccc;
+      min-width: 220px;
     }
-    #name { border: 1px solid #ccc; }
     #submitBtn {
+      font-size: 1rem;
+      padding: 10px 12px;
+      border-radius: 10px;
       border: 1px solid #222;
       background: #fff;
       cursor: pointer;
     }
+    select, label.checkbox {
+      font-size: 0.95rem;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      background: #fff;
+    }
+    label.checkbox {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid #ccc;
+    }
+    .pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border: 1px solid #ddd;
+      border-radius: 999px;
+      background: #fff;
+      font-size: 0.9rem;
+      margin: 0 6px 6px 0;
+    }
+    details {
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: #fff;
+    }
+    details + details { margin-top: 10px; }
+    footer { padding-bottom: 28px; }
   </style>
 
-  <!-- Firebase + JSON -->
+  <!-- 構造化データ：WebSite -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"WebSite",
+    "name":"漢字変換対応のタイピング練習",
+    "url":"https://espresso-taro.github.io/Otonano-typing-game/",
+    "inLanguage":"ja",
+    "description":"雑学・豆知識文章で、漢字変換を含む実用的なタイピング練習。難易度分け・日替わりテーマ・カテゴリ別ランキング対応。"
+  }
+  </script>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import {
@@ -94,6 +139,7 @@
       orderBy, query, serverTimestamp, limit
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+    // ===== Firebase =====
     const firebaseConfig = {
       apiKey: "AIzaSyAqDSPE_HkPbi-J-SqPL4Ys-wR4RaA8wKA",
       authDomain: "otonano-typing-game.firebaseapp.com",
@@ -102,40 +148,353 @@
       messagingSenderId: "475283850178",
       appId: "1:475283850178:web:193d28f17be20a232f4c5b"
     };
-
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    let texts = [];
+    // ===== Difficulty rules (length 기반) =====
+    // ここは後で調整しやすいように定数化
+    const EASY_MAX = 120;    // 120文字以下
+    const NORMAL_MAX = 150;  // 121〜150文字
+    // 151文字以上 = むずかしい
+
+    function calcDifficulty(len) {
+      if (len <= EASY_MAX) return "かんたん";
+      if (len <= NORMAL_MAX) return "ふつう";
+      return "むずかしい";
+    }
+
+    // Firestore のコレクション名に使える安全なキーに変換
+    function toSafeKey(s) {
+      // "/" は Firestore で区切り扱いなので絶対に避ける
+      return String(s)
+        .normalize("NFKC")
+        .replace(/\s+/g, "_")
+        .replace(/[\/\\?%*:|"<>]/g, "_")
+        .replace(/[^0-9A-Za-zぁ-んァ-ン一-龥_（）()・、。-]/g, "_")
+        .slice(0, 120);
+    }
+
+    // 今日の日付キー（JST想定。GitHub Pagesの表示はユーザー端末時刻）
+    function todayKey() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    // 日付から安定した擬似乱数（テーマ固定用）
+    function hashString(str) {
+      let h = 2166136261;
+      for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return (h >>> 0);
+    }
+
+    // ===== Data =====
+    let items = [];              // {genre,category,theme,text,length,difficulty}
+    let categories = [];
+    let themes = [];
     let target = "";
     let startTime = 0;
     let ended = false;
 
-    async function loadTexts() {
-      const res = await fetch("./data/trivia.json");
+    // UI elements
+    let selDifficulty, selCategory, selTheme, chkDailyTheme, selRankScope, rankLabel;
+
+    // 現在の「日替わりテーマ」
+    let dailyTheme = null;
+
+    async function loadItems() {
+      const res = await fetch("./data/trivia.json", { cache: "no-store" });
       const json = await res.json();
-      texts = json.map(item => item.text);
+
+      items = json
+        .filter(x => x && typeof x.text === "string")
+        .map(x => {
+          const len = (typeof x.length === "number") ? x.length : x.text.length;
+          return {
+            genre: x.genre ?? "",
+            category: x.category ?? "",
+            theme: x.theme ?? "",
+            text: x.text,
+            length: len,
+            difficulty: calcDifficulty(len)
+          };
+        });
+
+      // category/theme の一覧を作る（空は除外）
+      const catSet = new Set(items.map(x => x.category).filter(Boolean));
+      const themeSet = new Set(items.map(x => x.theme).filter(Boolean));
+      categories = Array.from(catSet).sort((a,b) => a.localeCompare(b, "ja"));
+      themes = Array.from(themeSet).sort((a,b) => a.localeCompare(b, "ja"));
+
+      // 今日のテーマを決定（themes がある前提）
+      if (themes.length > 0) {
+        const idx = hashString(todayKey()) % themes.length;
+        dailyTheme = themes[idx];
+      } else {
+        dailyTheme = null;
+      }
+
+      // UI に選択肢を流し込む
+      hydrateSelects();
+      updateDailyThemeUI();
+      updateCurrentModeBadges();
     }
 
+    function hydrateSelects() {
+      // difficulty
+      selDifficulty.innerHTML = `
+        <option value="all">難易度：すべて</option>
+        <option value="かんたん">難易度：かんたん（〜${EASY_MAX}文字）</option>
+        <option value="ふつう">難易度：ふつう（${EASY_MAX+1}〜${NORMAL_MAX}文字）</option>
+        <option value="むずかしい">難易度：むずかしい（${NORMAL_MAX+1}文字〜）</option>
+      `;
+
+      // category
+      selCategory.innerHTML = `<option value="all">カテゴリ：すべて</option>` +
+        categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+
+      // theme
+      selTheme.innerHTML = `<option value="all">テーマ：すべて</option>` +
+        themes.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
+
+      // ranking scope
+      selRankScope.innerHTML = `
+        <option value="overall">ランキング：全体</option>
+        <option value="category">ランキング：カテゴリ別（現在のカテゴリ）</option>
+        <option value="theme">ランキング：テーマ別（現在のテーマ）</option>
+        <option value="daily">ランキング：今日のテーマ</option>
+      `;
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function getActiveFilters() {
+      const daily = chkDailyTheme.checked && !!dailyTheme;
+
+      const difficulty = selDifficulty.value;
+      const category = daily ? "all" : selCategory.value;
+      const theme = daily ? dailyTheme : selTheme.value;
+
+      return { daily, difficulty, category, theme };
+    }
+
+    function filterPool() {
+      const { daily, difficulty, category, theme } = getActiveFilters();
+
+      return items.filter(x => {
+        if (difficulty !== "all" && x.difficulty !== difficulty) return false;
+        if (!daily && category !== "all" && x.category !== category) return false;
+        if (theme !== "all" && x.theme !== theme) return false;
+        return true;
+      });
+    }
+
+    // 連続同一問題の回避（軽い対策）
+    let lastText = "";
+
     function setNewText() {
-      if (texts.length === 0) return;
-      target = texts[Math.floor(Math.random() * texts.length)];
-      document.getElementById("text").textContent = target;
+      const pool = filterPool();
+      const textEl = document.getElementById("text");
+
+      if (pool.length === 0) {
+        target = "";
+        textEl.textContent = "該当する文章がありません。条件を変更してください。";
+        const input = document.getElementById("input");
+        input.value = "";
+        input.disabled = true;
+        document.getElementById("result").textContent = "";
+        document.getElementById("submitBtn").disabled = true;
+        updateCurrentModeBadges();
+        return;
+      }
+
+      // ランダム選択（できれば前回と違うもの）
+      let pick;
+      for (let i = 0; i < 6; i++) {
+        const cand = pool[Math.floor(Math.random() * pool.length)];
+        if (cand.text !== lastText || pool.length === 1) { pick = cand; break; }
+      }
+      if (!pick) pick = pool[Math.floor(Math.random() * pool.length)];
+
+      lastText = pick.text;
+      target = pick.text;
+
+      textEl.textContent = target;
+
       const input = document.getElementById("input");
       input.value = "";
       input.disabled = false;
       input.focus();
+
       ended = false;
       startTime = 0;
       document.getElementById("result").textContent = "";
       document.getElementById("submitBtn").disabled = true;
+
+      updateCurrentModeBadges(pick);
+      loadRanking(); // 条件が変わる可能性があるので都度更新
     }
 
-    window.addEventListener("DOMContentLoaded", async () => {
-      await loadTexts();
-      loadRanking();
-      setNewText();
+    function updateDailyThemeUI() {
+      const daily = chkDailyTheme.checked;
 
+      selCategory.disabled = daily;
+      selTheme.disabled = daily;
+
+      const dailyInfo = document.getElementById("dailyInfo");
+      if (daily && dailyTheme) {
+        dailyInfo.textContent = `今日（${todayKey()}）のテーマ：${dailyTheme}`;
+        dailyInfo.style.display = "block";
+      } else {
+        dailyInfo.textContent = "";
+        dailyInfo.style.display = "none";
+      }
+    }
+
+    function updateCurrentModeBadges(pickItem = null) {
+      const box = document.getElementById("modeBadges");
+      const { daily, difficulty, category, theme } = getActiveFilters();
+      const poolCount = filterPool().length;
+
+      const badges = [];
+      badges.push(`問題数：${poolCount}`);
+      badges.push(daily ? `日替わり：ON（${dailyTheme ?? "—"}）` : "日替わり：OFF");
+      badges.push(`難易度：${difficulty === "all" ? "すべて" : difficulty}`);
+      badges.push(`カテゴリ：${daily ? "—" : (category === "all" ? "すべて" : category)}`);
+      badges.push(`テーマ：${theme === "all" ? "すべて" : theme}`);
+
+      if (pickItem) {
+        badges.push(`出題の難易度：${pickItem.difficulty}`);
+        badges.push(`文字数：${pickItem.length}`);
+      }
+
+      box.innerHTML = badges.map(b => `<span class="pill">${escapeHtml(b)}</span>`).join("");
+      updateRankingLabel();
+    }
+
+    // ===== Ranking (分岐：コレクション名をキーで切り替える) =====
+    function getRankingKey() {
+      const { daily, difficulty, category, theme } = getActiveFilters();
+      const scope = selRankScope.value;
+
+      // 難易度はランキングキーに含める（「難易度別ランキング」を自然に実現）
+      const diffKey = (difficulty === "all") ? "diff_all" : `diff_${difficulty}`;
+
+      if (scope === "overall") {
+        return `rk_overall__${diffKey}`;
+      }
+      if (scope === "daily") {
+        const t = dailyTheme ?? "no_theme";
+        return `rk_daily__${toSafeKey(t)}__${diffKey}`;
+      }
+      if (scope === "category") {
+        // 日替わりON時はカテゴリが固定されないため、カテゴリ別は「無効」扱いにせず、テーマからカテゴリを推測しない
+        // ここでは「選択中のカテゴリ」を使う（ONのときは all 扱い）
+        const c = daily ? "all" : category;
+        if (c === "all") return `rk_category__all__${diffKey}`;
+        return `rk_category__${toSafeKey(c)}__${diffKey}`;
+      }
+      if (scope === "theme") {
+        const t = (theme === "all") ? "all" : theme;
+        return `rk_theme__${toSafeKey(t)}__${diffKey}`;
+      }
+      return `rk_overall__${diffKey}`;
+    }
+
+    function getRankingCollectionName() {
+      // コレクション爆発を抑えつつ、複合インデックス不要にするため「キーごとにコレクション分け」
+      // ※ 1キー = 1ランキング
+      const key = getRankingKey();
+      return `scores__${toSafeKey(key)}`;
+    }
+
+    function updateRankingLabel() {
+      const scope = selRankScope.value;
+      const { daily, difficulty, category, theme } = getActiveFilters();
+
+      const diffText = (difficulty === "all") ? "（難易度：すべて）" : `（難易度：${difficulty}）`;
+
+      let label = "ランキング";
+      if (scope === "overall") label = `ランキング：全体 ${diffText}`;
+      if (scope === "daily") label = `ランキング：今日のテーマ「${dailyTheme ?? "—"}」 ${diffText}`;
+      if (scope === "category") {
+        const c = daily ? "—" : (category === "all" ? "すべて" : category);
+        label = `ランキング：カテゴリ「${c}」 ${diffText}`;
+      }
+      if (scope === "theme") {
+        const t = (theme === "all") ? "すべて" : theme;
+        label = `ランキング：テーマ「${t}」 ${diffText}`;
+      }
+
+      rankLabel.textContent = label;
+    }
+
+    async function loadRanking() {
+      const list = document.getElementById("ranking");
+      list.innerHTML = "";
+
+      const colName = getRankingCollectionName();
+      try {
+        const q = query(collection(db, colName), orderBy("wpm", "desc"), limit(10));
+        const snapshot = await getDocs(q);
+        if (snapshot.empty) {
+          const li = document.createElement("li");
+          li.textContent = "まだスコアがありません。最初の記録を作りましょう。";
+          list.appendChild(li);
+          return;
+        }
+        snapshot.forEach(doc => {
+          const d = doc.data();
+          const li = document.createElement("li");
+          li.textContent = `${d.name} - ${d.wpm} WPM`;
+          list.appendChild(li);
+        });
+      } catch (e) {
+        const li = document.createElement("li");
+        li.textContent = "ランキングの読み込みに失敗しました。";
+        list.appendChild(li);
+      }
+    }
+
+    // ===== Main =====
+    window.addEventListener("DOMContentLoaded", async () => {
+      // UI hooks
+      selDifficulty = document.getElementById("difficulty");
+      selCategory = document.getElementById("category");
+      selTheme = document.getElementById("theme");
+      chkDailyTheme = document.getElementById("dailyTheme");
+      selRankScope = document.getElementById("rankScope");
+      rankLabel = document.getElementById("rankLabel");
+
+      // Controls events
+      selDifficulty.addEventListener("change", () => setNewText());
+      selCategory.addEventListener("change", () => setNewText());
+      selTheme.addEventListener("change", () => setNewText());
+      chkDailyTheme.addEventListener("change", () => { updateDailyThemeUI(); setNewText(); });
+      selRankScope.addEventListener("change", () => { updateRankingLabel(); loadRanking(); });
+
+      // Load data
+      try {
+        await loadItems();
+      } catch (e) {
+        document.getElementById("text").textContent = "データの読み込みに失敗しました。data/trivia.json を確認してください。";
+        document.getElementById("input").disabled = true;
+        return;
+      }
+
+      // Typing events
       const inputBox = document.getElementById("input");
       const submitBtn = document.getElementById("submitBtn");
 
@@ -147,34 +506,39 @@
           const wpm = Math.round((input.length / 5) / (seconds / 60));
           document.getElementById("result").textContent = `完了！WPM: ${wpm}`;
           submitBtn.disabled = false;
-          submitBtn.dataset.wpm = wpm;
-        } else if (input.length === 1 && startTime === 0) {
+          submitBtn.dataset.wpm = String(wpm);
+        } else if (input.length === 1 && startTime === 0 && target) {
           startTime = Date.now();
         }
       });
 
       submitBtn.addEventListener("click", async () => {
-        const name = document.getElementById("name").value;
-        const wpm = parseInt(submitBtn.dataset.wpm);
-        if (!name || isNaN(wpm)) return alert("名前を入力してください");
-        await addDoc(collection(db, "scores"), { name, wpm, timestamp: serverTimestamp() });
-        loadRanking();
-        setNewText();
-      });
-    });
+        const name = document.getElementById("name").value.trim();
+        const wpm = parseInt(submitBtn.dataset.wpm, 10);
+        if (!name || Number.isNaN(wpm)) {
+          alert("名前を入力してください");
+          return;
+        }
 
-    async function loadRanking() {
-      const list = document.getElementById("ranking");
-      list.innerHTML = "";
-      const q = query(collection(db, "scores"), orderBy("wpm", "desc"), limit(10));
-      const snapshot = await getDocs(q);
-      snapshot.forEach(doc => {
-        const d = doc.data();
-        const li = document.createElement("li");
-        li.textContent = `${d.name} - ${d.wpm} WPM`;
-        list.appendChild(li);
+        // どのランキングに保存するか（裏で分岐）
+        const colName = getRankingCollectionName();
+
+        try {
+          await addDoc(collection(db, colName), {
+            name,
+            wpm,
+            timestamp: serverTimestamp()
+          });
+          loadRanking();
+          setNewText();
+        } catch (e) {
+          alert("保存に失敗しました。Firestore設定や権限を確認してください。");
+        }
       });
-    }
+
+      // First render
+      setNewText();
+    });
   </script>
 </head>
 
@@ -183,31 +547,104 @@
     <h1>漢字変換対応のタイピング練習</h1>
     <p class="lead">
       雑学・豆知識を題材にした文章で、漢字変換を含む実用的な日本語入力を練習できます。
-      タイピング練習と知識習得を同時に行えるのが特徴です。
+      length による難易度分け、日替わりテーマ、カテゴリ別ランキングに対応しています。
     </p>
     <p><a class="cta" href="#play">今すぐ練習する</a></p>
   </header>
 
   <main>
-    <section id="play" class="card">
+    <section id="play" class="card" aria-label="タイピング練習">
       <h2>タイピング練習</h2>
-      <p id="text">読み込み中...</p>
-      <input id="input" placeholder="ここに入力" disabled />
-      <div id="result"></div>
 
-      <h3>ランキングに登録</h3>
-      <div class="row">
-        <input id="name" placeholder="名前" />
-        <button id="submitBtn" disabled>送信</button>
+      <div class="row" style="margin-bottom:10px;">
+        <select id="difficulty" aria-label="難易度"></select>
+        <select id="category" aria-label="カテゴリ"></select>
+        <select id="theme" aria-label="テーマ"></select>
+        <label class="checkbox" title="今日のテーマに固定します（毎日変わります）">
+          <input type="checkbox" id="dailyTheme" />
+          日替わりテーマ
+        </label>
       </div>
 
-      <h2>🏆 ランキング TOP10</h2>
+      <p id="dailyInfo" class="muted" style="display:none; margin: 0 0 10px;"></p>
+      <div id="modeBadges" style="margin: 0 0 10px;"></div>
+
+      <p id="text">読み込み中...</p>
+      <input type="text" id="input" placeholder="ここにタイピング" disabled />
+      <div id="result"></div>
+
+      <h3>スコア送信（ランキングに反映）</h3>
+      <div class="row">
+        <input type="text" id="name" placeholder="あなたの名前" />
+        <button id="submitBtn" disabled>スコア送信</button>
+      </div>
+
+      <div class="row" style="margin-top: 16px;">
+        <select id="rankScope" aria-label="ランキング範囲"></select>
+        <div id="rankLabel" class="muted"></div>
+      </div>
+
+      <h2 style="margin-top:12px;">🏆 ランキング TOP10</h2>
       <ul id="ranking"></ul>
 
       <noscript>
         <p class="muted">このゲームはJavaScriptが必要です。ブラウザ設定でJavaScriptを有効にしてください。</p>
       </noscript>
     </section>
+
+    <section>
+      <h2>特徴</h2>
+      <div class="grid">
+        <div class="card"><strong>無料・インストール不要</strong><br>ブラウザだけで練習できます。</div>
+        <div class="card"><strong>漢字変換を含む実用練習</strong><br>実務に近い日本語入力を想定。</div>
+        <div class="card"><strong>難易度分け（length）</strong><br>文章の長さで段階的に練習できます。</div>
+        <div class="card"><strong>日替わりテーマ</strong><br>毎日テーマが変わり、飽きにくい設計です。</div>
+        <div class="card"><strong>カテゴリ別ランキング</strong><br>裏でランキングを分岐し、成長を比較できます。</div>
+        <div class="card"><strong>雑学・豆知識で一石二鳥</strong><br>入力しながら自然に知識も増えます。</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>遊び方</h2>
+      <ol>
+        <li>難易度・カテゴリ・テーマを選びます（または日替わりをON）</li>
+        <li>表示された文章をそのまま入力します</li>
+        <li>最初の1文字で計測開始、全文一致で完了します</li>
+        <li>WPMを確認し、必要ならランキングに送信します</li>
+      </ol>
+      <p class="muted">コツ：最初は速度より正確性。ミスが減ってからスピードを上げると伸びやすいです。</p>
+    </section>
+
+    <section>
+      <h2>よくある質問</h2>
+      <details>
+        <summary>難易度はどう決まりますか？</summary>
+        <p>JSONのlength（文字数）を使って、かんたん・ふつう・むずかしいに分類しています。</p>
+      </details>
+      <details>
+        <summary>日替わりテーマは何が変わりますか？</summary>
+        <p>その日のテーマ（例：映画、科学など）に固定され、同じ日にアクセスすると同じテーマになります。</p>
+      </details>
+      <details>
+        <summary>カテゴリ別ランキングはどう保存されていますか？</summary>
+        <p>ランキング範囲（全体／カテゴリ／テーマ／今日）と難易度に応じて、Firestoreの保存先（コレクション）を裏で分岐しています。</p>
+      </details>
+      <details>
+        <summary>スマホでも遊べますか？</summary>
+        <p>閲覧は可能ですが、タイピング練習としてはPCキーボードを推奨します。</p>
+      </details>
+    </section>
+
+    <section>
+      <h2>更新情報</h2>
+      <ul>
+        <li>2025-12-XX: 初回公開</li>
+      </ul>
+    </section>
   </main>
+
+  <footer class="muted">
+    <p>© 2025</p>
+  </footer>
 </body>
 </html>
