@@ -10,6 +10,7 @@ export class TypingEngine {
     this.keystrokes = 0;
     this.isComposing = false;
     this.started = false;
+    this.finished = false;
   }
 
   setText(text) {
@@ -22,6 +23,7 @@ export class TypingEngine {
     this.startTime = 0;
     this.keystrokes = 0;
     this.started = false;
+    this.finished = false;
     this.inputEl.value = "";
   }
 
@@ -55,7 +57,8 @@ export class TypingEngine {
 
     this.inputEl.addEventListener("compositionend", () => {
       this.isComposing = false;
-      this.render(); // 確定後にのみ再評価
+      this.render(); // 確定後のみ再描画
+      this.checkFinish(); // ★ 確定直後に終了判定
     });
 
     this.inputEl.addEventListener("keydown", e => {
@@ -68,25 +71,16 @@ export class TypingEngine {
     });
 
     this.inputEl.addEventListener("input", () => {
-      if (!this.started) return;
+      if (!this.started || this.finished) return;
 
-      const typed = this.inputEl.value;
-
-      if (typed.length === 1 && this.startTime === 0) {
+      if (this.inputEl.value.length === 1 && this.startTime === 0) {
         this.startTime = Date.now();
         this.keystrokes = 0;
       }
 
       if (!this.isComposing) {
         this.render();
-      }
-
-      // ★ 完全一致で即終了
-      if (
-        typed.length === this.target.length &&
-        typed === this.target
-      ) {
-        this.finish();
+        this.checkFinish(); // ★ 入力ごとに終了判定
       }
     });
   }
@@ -107,7 +101,24 @@ export class TypingEngine {
     this.textEl.innerHTML = html;
   }
 
+  checkFinish() {
+    const typed = this.inputEl.value;
+
+    // ★ IME確定後 & 完全一致のみ終了
+    if (
+      !this.isComposing &&
+      typed.length === this.target.length &&
+      typed === this.target
+    ) {
+      this.finish();
+    }
+  }
+
   finish() {
+    if (this.finished) return;
+    this.finished = true;
+    this.started = false;
+
     const seconds = (Date.now() - this.startTime) / 1000;
     const minutes = seconds / 60;
 
@@ -123,18 +134,16 @@ export class TypingEngine {
     else if (cpm >= 200 && eff >= 0.72) rank = "B";
     else if (cpm >= 150) rank = "C";
 
+    // ★ alertはここで完全に止まる
     alert(
       `完了！\n\n` +
-      `ランク: ${rank}\n` +
-      `CPM: ${cpm}\n` +
-      `KPM: ${kpm}\n` +
-      `効率: ${(eff * 100).toFixed(1)}%`
+      `ランク：${rank}\n` +
+      `CPM：${cpm}\n` +
+      `KPM：${kpm}\n` +
+      `効率：${(eff * 100).toFixed(1)}%`
     );
 
-    this.started = false;
-
-    this.onComplete({
-      cpm, kpm, eff, rank
-    });
+    // 次の処理は alert 後に行う
+    this.onComplete({ cpm, kpm, eff, rank });
   }
 }
