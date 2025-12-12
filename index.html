@@ -1,15 +1,91 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>タイピング練習 × Firestore</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- SEO（最重要） -->
+  <title>大人のタイピング練習ゲーム｜無料・ブラウザでWPM計測＆ランキング</title>
+  <meta name="description" content="大人向けのタイピング練習ゲーム。ブラウザで無料、インストール不要。短文タイピングでWPM（速度）を計測し、ランキングにスコア送信できます。" />
+
+  <!-- 重複URL対策（GitHub Pagesでは重要） -->
+  <link rel="canonical" href="https://oritonet.github.io/Otonano-typing-game/" />
+
+  <!-- OGP（SNS共有/検索評価の補助） -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="大人のタイピング練習ゲーム｜無料・ブラウザでWPM計測＆ランキング" />
+  <meta property="og:description" content="ブラウザで無料。短文タイピングでWPM計測、ランキングにスコア送信できます。" />
+  <meta property="og:url" content="https://oritonet.github.io/Otonano-typing-game/" />
+  <!-- 画像を用意できたら有効化（例：assets/ogp.png） -->
+  <!-- <meta property="og:image" content="https://oritonet.github.io/Otonano-typing-game/assets/ogp.png" /> -->
+  <meta name="twitter:card" content="summary" />
+
+  <!-- 最低限の見た目（読みやすさ＝滞在時間に効く） -->
   <style>
-    body { font-family: sans-serif; padding: 20px; line-height: 1.8; }
-    #text { font-size: 1.2em; background: #f0f0f0; padding: 10px; }
-    #input { width: 100%; font-size: 1.2em; margin-top: 10px; }
-    #result { margin-top: 10px; font-weight: bold; }
+    :root { --max: 980px; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif; margin: 0; line-height: 1.8; }
+    header, main, footer { max-width: var(--max); margin: 0 auto; padding: 16px; }
+    header { padding-top: 28px; }
+    h1 { font-size: 1.8rem; margin: 0 0 10px; }
+    .lead { font-size: 1.05rem; margin: 0 0 14px; }
+    .muted { color: #555; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 14px; background: #fff; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+    .cta { display: inline-block; padding: 10px 14px; border: 1px solid #222; border-radius: 10px; text-decoration: none; color: inherit; }
+    #text { font-size: 1.2em; background: #f3f3f3; padding: 10px; border-radius: 10px; }
+    #input { width: 100%; font-size: 1.2em; margin-top: 10px; padding: 10px; box-sizing: border-box; border-radius: 10px; border: 1px solid #ccc; }
+    #result { margin-top: 10px; font-weight: 700; }
     #ranking li { margin-bottom: 4px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    #name { font-size: 1rem; padding: 10px; border-radius: 10px; border: 1px solid #ccc; }
+    #submitBtn { font-size: 1rem; padding: 10px 12px; border-radius: 10px; border: 1px solid #222; background: #fff; }
+    details { border: 1px solid #ddd; border-radius: 12px; padding: 10px 12px; background: #fff; }
+    details + details { margin-top: 10px; }
+    footer { padding-bottom: 28px; }
   </style>
+
+  <!-- 構造化データ：WebSite -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"WebSite",
+    "name":"大人のタイピング練習ゲーム",
+    "url":"https://oritonet.github.io/Otonano-typing-game/",
+    "inLanguage":"ja",
+    "description":"大人向けのタイピング練習ゲーム。無料・ブラウザでWPM計測＆ランキング。"
+  }
+  </script>
+
+  <!-- 構造化データ：FAQ（検索結果での表示改善に効くことがある） -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"FAQPage",
+    "mainEntity":[
+      {
+        "@type":"Question",
+        "name":"無料で使えますか？",
+        "acceptedAnswer":{"@type":"Answer","text":"はい。ブラウザで無料で遊べます。インストール不要です。"}
+      },
+      {
+        "@type":"Question",
+        "name":"WPMとは何ですか？",
+        "acceptedAnswer":{"@type":"Answer","text":"WPMはWords Per Minuteの略で、1分あたりに入力できる単語数の目安です。このゲームでは「5文字=1単語」として計算しています。"}
+      },
+      {
+        "@type":"Question",
+        "name":"ランキングはどうやって保存されていますか？",
+        "acceptedAnswer":{"@type":"Answer","text":"スコア（名前とWPM）をFirestoreに保存し、上位10件を表示しています。"}
+      },
+      {
+        "@type":"Question",
+        "name":"スマホでも遊べますか？",
+        "acceptedAnswer":{"@type":"Answer","text":"閲覧は可能ですが、タイピング練習としてはPCキーボードの利用を推奨します。"}
+      }
+    ]
+  }
+  </script>
+
   <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -115,17 +191,89 @@
     });
   </script>
 </head>
+
 <body>
-  <h1>タイピング練習</h1>
-  <p id="text">読み込み中...</p>
-  <input type="text" id="input" placeholder="ここにタイピング" disabled />
-  <div id="result"></div>
+  <header>
+    <h1>大人のタイピング練習ゲーム</h1>
+    <p class="lead">
+      無料・ブラウザでできるタイピング練習。短文を入力して <strong>WPM（速度）</strong> を計測し、ランキングにスコア送信できます。
+    </p>
+    <p class="muted">おすすめ：毎日3〜5分、まずはミスを減らしてから速度を上げると伸びやすいです。</p>
+    <p><a class="cta" href="#play">今すぐ練習する</a></p>
+  </header>
 
-  <h3>名前と一緒に送信</h3>
-  <input type="text" id="name" placeholder="あなたの名前" />
-  <button id="submitBtn" disabled>スコア送信</button>
+  <main>
+    <section id="play" class="card" aria-label="タイピング練習">
+      <h2>タイピング練習</h2>
 
-  <h2>🏆 ランキングTOP10</h2>
-  <ul id="ranking"></ul>
+      <p id="text">読み込み中...</p>
+      <input type="text" id="input" placeholder="ここにタイピング" disabled />
+      <div id="result"></div>
+
+      <h3>スコア送信（ランキングに反映）</h3>
+      <div class="row">
+        <input type="text" id="name" placeholder="あなたの名前" />
+        <button id="submitBtn" disabled>スコア送信</button>
+      </div>
+
+      <h2>🏆 ランキングTOP10</h2>
+      <ul id="ranking"></ul>
+
+      <noscript>
+        <p class="muted">このゲームはJavaScriptが必要です。ブラウザ設定でJavaScriptを有効にしてください。</p>
+      </noscript>
+    </section>
+
+    <section>
+      <h2>特徴</h2>
+      <div class="grid">
+        <div class="card"><strong>無料・インストール不要</strong><br>ブラウザだけで練習できます。</div>
+        <div class="card"><strong>WPMを自動計測</strong><br>完了時に速度（WPM）を表示します。</div>
+        <div class="card"><strong>ランキング機能</strong><br>スコア送信でTOP10に反映されます。</div>
+        <div class="card"><strong>短文で続けやすい</strong><br>短時間でも継続しやすい練習形式です。</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>遊び方</h2>
+      <ol>
+        <li>表示された文章を、そのまま入力します</li>
+        <li>最初の1文字入力で計測開始、全文一致で完了します</li>
+        <li>完了後にWPMが表示され、名前を入れてランキング送信できます</li>
+      </ol>
+      <p class="muted">コツ：最初は速度より正確性を優先 → ミスが減ったらスピードを上げるのが効果的です。</p>
+    </section>
+
+    <section>
+      <h2>よくある質問</h2>
+      <details>
+        <summary>無料で使えますか？</summary>
+        <p>はい。ブラウザで無料で遊べます。インストール不要です。</p>
+      </details>
+      <details>
+        <summary>WPMとは何ですか？</summary>
+        <p>WPMは1分あたりの入力量の目安です。このゲームでは「5文字=1単語」としてWPMを計算しています。</p>
+      </details>
+      <details>
+        <summary>ランキングはどうやって保存されていますか？</summary>
+        <p>スコア（名前とWPM）をFirestoreに保存し、上位10件を表示しています。</p>
+      </details>
+      <details>
+        <summary>スマホでも遊べますか？</summary>
+        <p>閲覧は可能ですが、タイピング練習としてはPCキーボードを推奨します。</p>
+      </details>
+    </section>
+
+    <section>
+      <h2>更新情報</h2>
+      <ul>
+        <li>2025-12-XX: 初回公開</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="muted">
+    <p>GitHub: <a href="https://github.com/oritonet/Otonano-typing-game">Otonano-typing-game</a></p>
+  </footer>
 </body>
 </html>
