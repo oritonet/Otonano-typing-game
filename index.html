@@ -1,239 +1,124 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <title>漢字変換対応の日本語タイピング練習｜雑学・豆知識で実務入力を鍛える（IME評価・ランキング対応）</title>
-  <meta name="description" content="漢字変換を含む日本語IME入力をCPM・KPMで精密評価。雑学・豆知識文章で知識と実務入力力を同時に鍛える無料タイピング練習。日替わりテーマ・カテゴリ別ランキング・個人履歴・分析対応。" />
-  <link rel="canonical" href="https://espresso-taro.github.io/Otonano-typing-game/" />
-
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="漢字変換対応の日本語タイピング練習｜雑学・豆知識で実務入力を鍛える（IME評価・ランキング対応）" />
-  <meta property="og:description" content="IME変換を含む実務入力をCPM・KPMで評価。雑学・豆知識文章で知識も同時に鍛える。" />
-  <meta property="og:url" content="https://espresso-taro.github.io/Otonano-typing-game/" />
-  <meta name="twitter:card" content="summary" />
-
+  <meta charset="UTF-8">
+  <title>タイピング練習 × Firestore</title>
   <style>
-    :root { --max: 980px; }
-    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif; margin: 0; line-height: 1.85; background: #fafafa; }
-    header, main, footer { max-width: var(--max); margin: 0 auto; padding: 16px; }
-    header { padding-top: 28px; }
-
-    h1 { font-size: 1.9rem; margin: 0 0 10px; }
-    h2 { margin-top: 22px; }
-    h3 { margin-top: 16px; }
-    .lead { font-size: 1.05rem; margin: 0 0 12px; }
-    .muted { color: #555; }
-
-    .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; background: #fff; }
-    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-    .row.between { justify-content: space-between; }
-    select, button, input[type="text"], textarea {
-      font-size: 0.98rem; padding: 10px 12px; border-radius: 10px; border: 1px solid #bbb; background: #fff;
-    }
-    button { border: 1px solid #222; cursor: pointer; }
-    button[disabled] { opacity: 0.55; cursor: not-allowed; }
-
-    /* 日替わりテーマ：チェックは右 */
-    .toggle {
-      display: inline-flex; align-items: center; gap: 10px;
-      border: 1px solid #bbb; border-radius: 10px; padding: 10px 12px; background: #fff;
-      user-select: none;
-    }
-    .toggle input { width: 18px; height: 18px; }
-
-    /* 見本文 */
-    #text {
-      font-size: 1.25em;
-      background: #f3f3f3;
-      padding: 14px;
-      border-radius: 10px;
-      white-space: pre-wrap;
-      word-break: break-all;
-      line-height: 2.0;
-      margin: 8px 0 0;
-    }
-    .ok { color: #0b5ed7; font-weight: 700; }
-    .ng { color: #c00000; font-weight: 700; }
-
-    /* 入力欄：大きく */
-    #input {
-      width: 100%;
-      min-height: 190px;
-      font-size: 1.28em;
-      margin-top: 12px;
-      padding: 14px;
-      border-radius: 12px;
-      border: 2px solid #bbb;
-      box-sizing: border-box;
-      font-family: ui-monospace, "Noto Sans Mono", Menlo, Monaco, Consolas, monospace;
-      line-height: 1.85;
-      resize: vertical;
-      background: #fff;
-    }
-
-    /* カウントダウン */
-    #countdownWrap {
-      display: none;
-      border: 1px dashed #bbb;
-      border-radius: 12px;
-      padding: 14px;
-      background: #fff;
-      margin: 10px 0 0;
-      text-align: center;
-    }
-    #countdown {
-      font-size: 2.2rem;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-    }
-    #countdownSub {
-      margin-top: 6px;
-      color: #666;
-      font-size: 0.95rem;
-    }
-
-    #result { margin-top: 10px; font-weight: 800; }
-    ul { padding-left: 1.2em; }
-    #ranking li, #dailyRanking li, #myRecent li, #bestByDifficulty li { margin-bottom: 6px; }
-
-    .split { display: grid; grid-template-columns: 1fr; gap: 12px; }
-    @media (min-width: 860px) { .split { grid-template-columns: 1fr 1fr; } }
-
-    canvas { width: 100%; height: 220px; border: 1px solid #eee; border-radius: 10px; background: #fff; }
-    details { border: 1px solid #ddd; border-radius: 12px; padding: 10px 12px; background: #fff; }
-    details + details { margin-top: 10px; }
-
-    footer { padding-bottom: 28px; color: #666; }
+    body { font-family: sans-serif; padding: 20px; line-height: 1.8; }
+    #text { font-size: 1.2em; background: #f0f0f0; padding: 10px; }
+    #input { width: 100%; font-size: 1.2em; margin-top: 10px; }
+    #result { margin-top: 10px; font-weight: bold; }
+    #ranking li { margin-bottom: 4px; }
   </style>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
 </head>
-
 <body>
-  <header>
-    <h1>漢字変換対応 日本語タイピング練習</h1>
-    <p class="lead">
-      雑学・豆知識の文章で、漢字変換を含む実務的な日本語入力を練習できます。評価は <strong>CPM（文字/分）</strong> と
-      <strong>KPM（打鍵/分：Space/Enterの変換・確定も含む）</strong> を中心に行います。
-    </p>
 
-    <div class="row between">
-      <div class="row">
-        <label class="muted">ユーザー</label>
-        <select id="userSelect" aria-label="ユーザー選択"></select>
-        <button id="addUserBtn" type="button">ユーザー追加</button>
-        <button id="renameUserBtn" type="button">名前変更</button>
-        <button id="deleteUserBtn" type="button">削除</button>
-      </div>
-      <div class="muted" id="authBadge">認証：準備中…</div>
-    </div>
-  </header>
+<h1>タイピング練習</h1>
 
-  <main>
-    <section id="play" class="card" aria-label="タイピング練習">
-      <h2>タイピング練習</h2>
+<p id="text">読み込み中...</p>
+<input type="text" id="input" placeholder="ここにタイピング" disabled />
+<div id="result"></div>
 
-      <!-- 画像の黄色エリア改善：不要なバッジ列は廃止。必要な設定だけを上部に集約 -->
-      <div class="row" style="margin-bottom:10px;">
-        <select id="difficulty" aria-label="難易度"></select>
-        <select id="category" aria-label="カテゴリ"></select>
-        <select id="theme" aria-label="テーマ"></select>
+<h3>名前と一緒に送信</h3>
+<input type="text" id="name" placeholder="あなたの名前" />
+<button onclick="submitScore()" disabled id="submitBtn">スコア送信</button>
 
-        <!-- チェックは右 -->
-        <label class="toggle" title="今日のテーマに固定します（毎日変わります）">
-          <span>日替わりテーマ</span>
-          <input type="checkbox" id="dailyTheme" />
-        </label>
-      </div>
+<h2>🏆 ランキングTOP10</h2>
+<ul id="ranking"></ul>
 
-      <!-- 今日のテーマは必要最小限で表示（固定時にだけ補助表示） -->
-      <div class="muted" id="dailyInfo" style="margin:0 0 10px; display:none;"></div>
+<script>
+  // ✅ あなたの Firebase 設定をここに貼る（スニペット）
+  const firebaseConfig = {
+    apiKey: "AIzaSyAqDSPE_HkPbi-J-SqPL4Ys-wR4RaA8wKA",
+    authDomain: "otonano-typing-game.firebaseapp.com",
+    projectId: "otonano-typing-game",
+  };
 
-      <!-- 別の文章（見本文の上） -->
-      <div class="row" style="margin: 0 0 6px;">
-        <button id="skipBtn" type="button">別の文章にする</button>
-      </div>
+  const app = firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
 
-      <!-- スタート + カウントダウン -->
-      <div class="row" style="margin: 0 0 6px;">
-        <button id="startBtn" type="button">スタート</button>
-        <div class="muted" id="startHint">スタート後、3→2→1→0で開始します（入力欄に自動フォーカス）。</div>
-      </div>
-      <div id="countdownWrap" aria-live="polite">
-        <div id="countdown">3</div>
-        <div id="countdownSub">準備してください</div>
-      </div>
+  // 🔠 タイピング対象の文章リスト（短め）
+  const texts = [
+    "こんにちは、これはタイピング練習です。",
+    "毎日少しずつ上達しましょう！",
+    "JavaScriptは楽しい言語です。",
+    "空は青くて気持ちいいですね。",
+    "正確さとスピードの両方が大切です。"
+  ];
 
-      <p id="text">読み込み中...</p>
-      <textarea id="input" placeholder="スタートを押すと入力できます" disabled></textarea>
+  let target = "";
+  let startTime = 0;
+  let ended = false;
 
-      <div id="result"></div>
+  function setNewText() {
+    target = texts[Math.floor(Math.random() * texts.length)];
+    document.getElementById("text").textContent = target;
+    const input = document.getElementById("input");
+    input.value = "";
+    input.disabled = false;
+    input.focus();
+    ended = false;
+    startTime = 0;
+    document.getElementById("result").textContent = "";
+    document.getElementById("submitBtn").disabled = true;
+  }
 
-      <div class="split" style="margin-top: 18px;">
-        <div class="card" style="border-color:#eee;">
-          <h3 style="margin-top:0;">今日のテーマランキング</h3>
-          <div class="muted" id="dailyRankLabel" style="margin-bottom: 8px;"></div>
-          <ul id="dailyRanking"></ul>
-        </div>
+  document.getElementById("input").addEventListener("input", () => {
+    const input = document.getElementById("input").value;
+    if (input === target && !ended) {
+      ended = true;
+      const endTime = Date.now();
+      const seconds = (endTime - startTime) / 1000;
+      const wpm = Math.round((input.length / 5) / (seconds / 60));
+      document.getElementById("result").textContent = `完了！WPM: ${wpm}`;
+      document.getElementById("submitBtn").disabled = false;
+      document.getElementById("submitBtn").dataset.wpm = wpm;
+    } else if (input.length === 1 && startTime === 0) {
+      startTime = Date.now();
+    }
+  });
 
-        <div class="card" style="border-color:#eee;">
-          <h3 style="margin-top:0;">ランキング</h3>
-          <div class="row" style="margin-top: 0;">
-            <select id="rankScope" aria-label="ランキング範囲"></select>
-            <div id="rankLabel" class="muted"></div>
-          </div>
-          <ul id="ranking" style="margin-top: 10px;"></ul>
-        </div>
-      </div>
+  function submitScore() {
+    const name = document.getElementById("name").value;
+    const wpm = parseInt(document.getElementById("submitBtn").dataset.wpm);
+    if (!name || isNaN(wpm)) {
+      alert("名前を入力してください");
+      return;
+    }
 
-      <noscript>
-        <p class="muted">このサイトはJavaScriptが必要です。ブラウザ設定でJavaScriptを有効にしてください。</p>
-      </noscript>
-    </section>
+    db.collection("scores").add({
+      name: name,
+      wpm: wpm,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => {
+      alert("保存しました！");
+      loadRanking();
+      setNewText();
+    });
+  }
 
-    <section class="card" style="margin-top:16px;">
-      <h2 style="margin-top:0;">入力分析（選択ユーザー）</h2>
+  function loadRanking() {
+    const list = document.getElementById("ranking");
+    list.innerHTML = "";
 
-      <div class="split">
-        <div>
-          <h3>難易度別ベスト（TOP CPM / TOPランク）</h3>
-          <ul id="bestByDifficulty"></ul>
+    db.collection("scores")
+      .orderBy("wpm", "desc")
+      .limit(10)
+      .get()
+      .then(snapshot => {
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const li = document.createElement("li");
+          li.textContent = `${data.name} - ${data.wpm} WPM`;
+          list.appendChild(li);
+        });
+      });
+  }
 
-          <h3>今日の自分 vs 過去7日平均</h3>
-          <div id="compareToday" class="muted">データが不足しています（履歴を数回保存すると表示されます）。</div>
-        </div>
-
-        <div>
-          <h3>KPM−CPM差の推移（直近）</h3>
-          <canvas id="diffChart"></canvas>
-
-          <h3>最近の履歴</h3>
-          <ul id="myRecent"></ul>
-        </div>
-      </div>
-    </section>
-
-    <section style="margin-top: 16px;">
-      <h2>よくある質問</h2>
-      <details>
-        <summary>同じ文章が短時間に再出題されませんか？</summary>
-        <p>直近10問は再出題されにくいように制御しています（候補が少ない場合は例外）。</p>
-      </details>
-      <details>
-        <summary>赤字・青字の判定はいつ行われますか？</summary>
-        <p>IMEの変換確定前（変換中）は判定しません。確定された文字だけで判定します。</p>
-      </details>
-      <details>
-        <summary>KPMは何を数えていますか？</summary>
-        <p>通常文字・Backspace/Deleteに加え、Space（変換）とEnter（確定）も打鍵として数えます。</p>
-      </details>
-    </section>
-  </main>
-
-  <footer>
-    <p>© 2025</p>
-  </footer>
-
-  <script type="module" src="./js/app.js"></script>
+  loadRanking();
+  setNewText();
+</script>
 </body>
 </html>
