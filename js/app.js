@@ -4,126 +4,143 @@ import { TypingEngine } from "./typingEngine.js";
 import { RankingService } from "./ranking.js";
 import { UserManager } from "./userManager.js";
 
-function $(id){ return document.getElementById(id); }
+function $(id) { return document.getElementById(id); }
 
-function todayKey(){
-  const d=new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+function showError(msg) {
+  const box = $("errorBox");
+  box.style.display = "block";
+  box.textContent = msg;
 }
-function hashString(str){
-  let h=2166136261;
-  for(let i=0;i<str.length;i++){
+
+function clearError() {
+  const box = $("errorBox");
+  box.style.display = "none";
+  box.textContent = "";
+}
+
+function todayKey() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function hashString(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
     h ^= str.charCodeAt(i);
-    h = Math.imul(h,16777619);
+    h = Math.imul(h, 16777619);
   }
-  return (h>>>0);
+  return (h >>> 0);
 }
 
-async function loadTrivia(){
-  const res = await fetch("./data/trivia.json",{cache:"no-store"});
-  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+async function loadTriviaJson() {
+  // 重要：file:// だとここが失敗しやすい。必ず http(s) で開く。
+  const res = await fetch("./data/trivia.json", { cache: "no-store" });
+  if (!res.ok) throw new Error(`JSON取得に失敗: HTTP ${res.status}`);
   const json = await res.json();
-  if(!Array.isArray(json)) throw new Error("JSON配列ではありません");
+  if (!Array.isArray(json)) throw new Error("trivia.json が配列(JSON array)ではありません");
   return json;
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
+  clearError();
+
+  // UI
   const authStateEl = $("authState");
   const todayThemeEl = $("todayTheme");
+  const textEl = $("text");
+  const inputEl = $("input");
 
-  const { db, onAuthReady, getUid } = initFirebase({
-    onAuthState: (t) => { if (authStateEl) authStateEl.textContent = t; }
+  // 端末ユーザー（localStorage）
+  const users = new UserManager($("userSelect"));
+  $("addUser").addEventListener("click", () => {
+    const n = prompt("この端末で使うユーザー名（最大10名）");
+    if (n) users.add(n.trim());
+  });
+  $("userSelect").addEventListener("change", (e) => users.select(e.target.value));
+
+  // Firebase 初期化（匿名認証必須）
+  const { app, db, auth, onAuthReady, getUid } = initFirebase({
+    onAuthState: (stateText) => { authStateEl.textContent = stateText; }
   });
 
+  // JSON 読込
   let items = [];
   try {
-    items = await loadTrivia();
+    items = await loadTriviaJson();
   } catch (e) {
-    alert(`JSON読み込み失敗: ${e?.message ?? e}\nfile://直開きは不可。GitHub Pagesかローカルサーバで開いてください。`);
+    showError(
+      "trivia.json の読み込みに失敗しました。\n" +
+      "・GitHub Pages かローカルサーバで開いていますか？（file:// は不可）\n" +
+      "・data/trivia.json の場所は index.html と同階層の data/ ですか？\n\n" +
+      `詳細: ${e?.message ?? e}`
+    );
+    textEl.textContent = "データ読み込みエラー";
+    inputEl.disabled = true;
     return;
   }
 
+  // theme一覧 -> 今日のテーマ
   const themes = Array.from(new Set(items.map(x => x?.theme).filter(Boolean)));
-  if (!themes.length) {
-    alert("theme が見つかりません。trivia.json の各要素に theme を入れてください。");
+  if (themes.length === 0) {
+    showError("trivia.json に theme が見つかりません。各要素に theme を入れてください。");
+    textEl.textContent = "theme がありません";
+    inputEl.disabled = true;
     return;
   }
-
   const dailyTheme = themes[hashString(todayKey()) % themes.length];
-  if (todayThemeEl) todayThemeEl.textContent = `今日のテーマ：${dailyTheme}`;
+  todayThemeEl.textContent = `今日のテーマ：${dailyTheme}`;
 
-  // 今日テーマの問題だけ出す（混入しない）
-  const dailyPool = () => items.filter(x => x?.text && x?.theme === dailyTheme);
-
-  let currentItem = null;
-  const pick = () => {
-    const pool = dailyPool();
-    if (!pool.length) return null;
+  // 出題プール（今日テーマのみ）
+  function pickDailyItem() {
+    const pool = items.filter(x => x?.text && x?.theme === dailyTheme);
+    if (pool.length === 0) return null;
     return pool[Math.floor(Math.random() * pool.length)];
-  };
+  }
 
-  currentItem = pick();
+  let currentItem = pickDailyItem();
   if (!currentItem) {
-    alert("今日のテーマに該当する問題がありません。trivia.json を確認してください。");
+    showError("今日のテーマに該当する文章がありません。trivia.json の theme を確認してください。");
+    textEl.textContent = "出題できません";
+    inputEl.disabled = true;
     return;
   }
 
-  // 端末ユーザー
-  const users = new UserManager($("userSelect"));
-  $("addUser")?.addEventListener("click", () => {
-    const n = prompt("ユーザー名（端末内最大10名）");
-    if (n) users.add(n);
-  });
-  $("userSelect")?.addEventListener("change", (e) => users.select(e.target.value));
-
-  // Ranking
+  // ランキング（今日テーマ専用・混入防止）
   const ranking = new RankingService({ db });
 
-  // Typing
+  // TypingEngine（IME対応・カウント表示・確定後のみ判定・一致即終了）
   const engine = new TypingEngine({
-    textEl: $("text"),
-    inputEl: $("input"),
+    textEl,
+    inputEl,
     getTargetText: () => currentItem?.text ?? "",
-    onComplete: async (m) => {
+    onComplete: async (metrics) => {
+      // 認証準備完了まで待つ（ここが抜けると「認証できない」に見える）
       await onAuthReady();
+
       const uid = getUid();
-      if (!uid) { alert("匿名認証が未完了です。再読み込みしてください。"); return; }
-
-      const name = users.current || "NoName";
-
-      // ★日替わりテーマ以外は保存しない（ranking側で遮断）
-      await ranking.saveDaily({
-        uid,
-        name,
-        dailyTheme,
-        itemTheme: currentItem.theme,
-        difficultyKey: "diff_all", // 完全版の難易度キーに接続するならここを差し替え
-        cpm: m.cpm,
-        kpm: m.kpm,
-        rank: m.rank
-      });
-
-      // 今日のテーマTOP10を表示（DOMがある場合）
-      const listEl = $("dailyRanking");
-      if (listEl) {
-        const rows = await ranking.loadDailyTop10({ dailyTheme, difficultyKey: "diff_all" });
-        listEl.innerHTML = "";
-        if (!rows.length) {
-          const li = document.createElement("li");
-          li.textContent = "まだスコアがありません。";
-          listEl.appendChild(li);
-        } else {
-          for (const r of rows) {
-            const li = document.createElement("li");
-            li.textContent = RankingService.formatRow(r);
-            listEl.appendChild(li);
-          }
-        }
+      if (!uid) {
+        showError("匿名認証が完了していません。ページを再読み込みしてください。");
+        return;
       }
 
-      // 次の問題
-      currentItem = pick();
-      if (!currentItem) return;
+      // ★ 今日テーマ以外は保存しない（厳密）
+      await ranking.saveDailyOnly({
+        uid,
+        displayName: users.current || "NoName",
+        dailyTheme,
+        itemTheme: currentItem.theme,
+        metrics
+      });
+
+      // 次の問題へ
+      currentItem = pickDailyItem();
+      if (!currentItem) {
+        showError("次の問題が選べません（今日テーマの文章がありません）。");
+        return;
+      }
       engine.setText(currentItem.text);
     }
   });
@@ -131,23 +148,19 @@ window.addEventListener("DOMContentLoaded", async () => {
   engine.setText(currentItem.text);
   engine.bind();
 
-  $("startBtn")?.addEventListener("click", () => engine.startCountdown());
-  $("nextBtn")?.addEventListener("click", () => {
-    currentItem = pick();
-    if (currentItem) engine.setText(currentItem.text);
+  $("startBtn").addEventListener("click", async () => {
+    await engine.startCountdown();
   });
 
-  // 初回ランキング表示
-  try {
-    const listEl = $("dailyRanking");
-    if (listEl) {
-      const rows = await ranking.loadDailyTop10({ dailyTheme, difficultyKey: "diff_all" });
-      listEl.innerHTML = "";
-      for (const r of rows) {
-        const li = document.createElement("li");
-        li.textContent = RankingService.formatRow(r);
-        listEl.appendChild(li);
-      }
-    }
-  } catch {}
+  $("nextBtn").addEventListener("click", () => {
+    currentItem = pickDailyItem();
+    if (!currentItem) return;
+    engine.setText(currentItem.text);
+    // 自動開始したいならここで startCountdown() を呼ぶ
+  });
+
+  // 認証の完了を待てるようにする（表示更新）
+  onAuthReady().catch((e) => {
+    showError(`匿名認証に失敗: ${e?.message ?? e}`);
+  });
 });
