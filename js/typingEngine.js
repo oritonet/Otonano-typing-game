@@ -128,41 +128,41 @@ export class TypingEngine {
 
   async startCountdown() {
     if (!this.target) return;
-    if (this.started && !this.ended) {
-      // すでに開始中ならフォーカスだけ
-      this.inputEl.focus();
-      return;
-    }
-
+  
     this.resetRoundUI();
-
-    // 3,2,1,0
-    this.countdownWrapEl.style.display = "block";
-    this.countdownSubEl.textContent = "準備してください";
-
-    const seq = [3, 2, 1, 0];
-    for (const n of seq) {
-      this.countdownEl.textContent = String(n);
-      this.countdownSubEl.textContent = (n === 0) ? "開始" : "準備してください";
+  
+    this.started = false;
+    this.ended = false;
+  
+    this.inputEl.disabled = false;
+    this.inputEl.readOnly = true;
+    this.inputEl.value = "";
+  
+    const seq = ["3", "2", "1", "START"];
+    for (const s of seq) {
+      this.inputEl.value = s;
+      this.inputEl.style.textAlign = "center";
+      this.inputEl.style.fontSize = "2rem";
       await new Promise(r => setTimeout(r, 700));
     }
-
-    this.countdownWrapEl.style.display = "none";
-
+  
     // 開始
+    this.inputEl.value = "";
+    this.inputEl.readOnly = false;
+    this.inputEl.style.textAlign = "";
+    this.inputEl.style.fontSize = "";
+  
     this.started = true;
-    this.ended = false;
     this.startTime = 0;
     this.keystrokes = 0;
-
-    this.inputEl.disabled = false;
     this.inputEl.focus();
   }
 
+
   _renderNoJudge() {
-    // 変換確定前は色判定しない（=見本文を素のテキストで表示）
-    this.textEl.textContent = this.target;
+    // 何もしない（直前の描画状態を保持）
   }
+
 
   renderJudged() {
     const t = this.target ?? "";
@@ -282,3 +282,4 @@ export class TypingEngine {
     ctx.fillText("KPM−CPM 差（小さいほど効率的）", pad, 14);
   }
 }
+
