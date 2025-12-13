@@ -353,6 +353,9 @@ let countdownTimer = null;
 async function startWithCountdown() {
   if (!currentItem) return;
 
+  // ★ スタートボタンを隠す（入力欄クリックを邪魔しない）
+  startBtn.style.display = "none";
+  
   // カウント中に連打させない
   startBtn.disabled = true;
   skipBtn.disabled = true;
@@ -869,3 +872,4 @@ onAuthStateChanged(auth, async (user) => {
   await init();
   await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
 });
+
