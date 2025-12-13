@@ -78,6 +78,8 @@ const mDiff = document.getElementById("mDiff");
 const mScore = document.getElementById("mScore");
 const mMeta = document.getElementById("mMeta");
 
+const lengthGroupEl = document.getElementById("lengthGroup");
+
 /* =========================
    Utils
 ========================= */
@@ -115,13 +117,30 @@ const KATA_WEIGHT = 80;
 const EASY_SCORE_MAX = 145;
 const NORMAL_SCORE_MAX = 190;
 
-function difficultyByFeatures(len, pCount, kRatio) {
-  const score = Math.round(len + (pCount * PUNCT_WEIGHT) + (kRatio * KATA_WEIGHT));
-  let diff = "むずかしい";
-  if (score <= EASY_SCORE_MAX) diff = "かんたん";
-  else if (score <= NORMAL_SCORE_MAX) diff = "ふつう";
-  return { diff, score };
+function kanjiRatio(text) {
+  const total = text.length || 1;
+  const kanji = (text.match(/[一-龥]/g) || []).length;
+  return kanji / total;
 }
+function digitCount(text) {
+  const m = text.match(/[0-9]/g);
+  return m ? m.length : 0;
+}
+
+// 新：難易度は文章長を使わない（漢字率＋記号＋数字）
+function difficultyByText(text) {
+  const kr = kanjiRatio(text);
+  const p = punctCount(text);
+  const d = digitCount(text);
+
+  // 難易度スコア（例）：漢字率を主、記号/数字を加点
+  const score = kr * 100 + p * 6 + d * 10;
+
+  if (score < 25) return "easy";
+  if (score < 55) return "normal";
+  return "hard";
+}
+
 
 function showModal() {
   modalBackdrop.style.display = "flex";
@@ -131,6 +150,13 @@ function hideModal() {
   modalBackdrop.style.display = "none";
   modalBackdrop.setAttribute("aria-hidden", "true");
 }
+
+function lengthGroupOf(len) {
+  if (len <= 40) return "short";
+  if (len <= 80) return "medium";
+  return "long";
+}
+
 
 /* =========================
    Services
@@ -197,10 +223,9 @@ function buildIndices(raw) {
         theme: x.theme ?? "",
         text: x.text,
         length: len,
-        punct: p,
-        kataRatio: kr,
-        difficulty: diff,
-        diffScore: score
+        // 新しい属性
+        difficulty: difficultyByText(x.text),     // easy/normal/hard
+        lengthGroup: lengthGroupOf(len),          // short/medium/long
       };
     });
 
@@ -229,11 +254,18 @@ function buildIndices(raw) {
 function hydrateSelects() {
   difficultyEl.innerHTML = `
     <option value="all">難易度：すべて</option>
-    <option value="かんたん">難易度：かんたん</option>
-    <option value="ふつう">難易度：ふつう</option>
-    <option value="むずかしい">難易度：むずかしい</option>
+    <option value="easy">難易度：かんたん</option>
+    <option value="normal">難易度：ふつう</option>
+    <option value="hard">難易度：むずかしい</option>
   `;
-
+  
+  lengthGroupEl.innerHTML = `
+    <option value="all">文章長：すべて</option>
+    <option value="short">文章長：短</option>
+    <option value="medium">文章長：中</option>
+    <option value="long">文章長：長</option>
+  `;
+  
   categoryEl.innerHTML =
     `<option value="all">カテゴリ：すべて</option>` +
     categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
@@ -296,13 +328,16 @@ function getActiveFilters() {
   const difficulty = difficultyEl.value;
   const category = daily ? "all" : categoryEl.value;
   const theme = daily ? dailyTheme : themeEl.value;
-  return { daily, difficulty, category, theme };
+  const lengthGroup = lengthGroupEl.value;
+  return { daily, difficulty, lengthGroup, category, theme };
+
 }
 
 function filterPool() {
-  const { daily, difficulty, category, theme } = getActiveFilters();
+  const { daily, difficulty, lengthGroup, category, theme } = getActiveFilters();
   return items.filter(x => {
     if (difficulty !== "all" && x.difficulty !== difficulty) return false;
+    if (lengthGroup !== "all" && x.lengthGroup !== lengthGroup) return false;
     if (!daily && category !== "all" && x.category !== category) return false;
     if (theme !== "all" && x.theme !== theme) return false;
     return true;
@@ -800,6 +835,14 @@ dailyThemeEl.addEventListener("change", () => {
   loadRanking();
 });
 
+lengthGroupEl.addEventListener("change", () => {
+  setNewText();
+  updateLabels();
+  loadDailyRanking();
+  loadRanking();
+  // 分析も更新したい場合はここで loadMyAnalytics も呼ぶ（手順5）
+});
+
 difficultyEl.addEventListener("change", () => {
   setNewText();
   updateLabels();
@@ -907,6 +950,7 @@ onAuthStateChanged(auth, async (user) => {
   await init();
   await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
 });
+
 
 
 
