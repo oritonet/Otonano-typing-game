@@ -346,6 +346,12 @@ const engine = new TypingEngine({
 
 engine.attach();
 
+inputEl.addEventListener("input", () => {
+  if (engine.started && inputEl.value === "ここに入力") {
+    inputEl.value = "";
+  }
+});
+
 /* =========================
    Countdown + Start
 ========================= */
@@ -375,9 +381,14 @@ async function startWithCountdown() {
     if (n <= 0) {
       clearInterval(countdownTimer);
       countdownTimer = null;
-
+      
       engine.enableReadyState();
+      
+      // 開始直後のガイド表示
+      inputEl.value = "ここに入力";
+      
       engine.startNow();
+
 
       startBtn.disabled = false;
       skipBtn.disabled = false;
@@ -406,8 +417,7 @@ function setNewText() {
 
   engine.setTarget(pick.text, pick);
 
-  // スタートを押すまで入力禁止
-  inputEl.value = "入力を開始してください";
+  inputEl.value = "スペース or スタートボタンで入力開始";
   inputEl.disabled = true;
   
   // ★ 次の問題ではスタートボタンを再表示
@@ -824,6 +834,24 @@ userMgr.onChange = async () => {
   if (user) await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
 };
 
+document.addEventListener("keydown", (e) => {
+  // Spaceキーのみ
+  if (e.code !== "Space") return;
+
+  // 出題前・未初期化は無視
+  if (!currentItem) return;
+
+  // すでに開始 or カウントダウン中は無効
+  if (engine.started || countdownTimer) return;
+
+  // 入力可能状態なら無効（＝開始後）
+  if (!inputEl.disabled) return;
+
+  e.preventDefault(); // スクロール防止
+  startWithCountdown();
+});
+
+
 /* =========================
    Init
 ========================= */
@@ -875,6 +903,7 @@ onAuthStateChanged(auth, async (user) => {
   await init();
   await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
 });
+
 
 
 
