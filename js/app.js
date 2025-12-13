@@ -378,11 +378,14 @@ async function startWithCountdown() {
     if (n <= 0) {
       clearInterval(countdownTimer);
       countdownTimer = null;
-      
+
+      // カウントダウン用スタイルを解除（上下中央寄せを元に戻す）
+      inputEl.classList.remove("countdown");
+      inputEl.style.paddingTop = "";
+      inputEl.style.paddingBottom = "";
+
       engine.enableReadyState();
       
-      // カウントダウン用スタイルを解除
-      inputEl.classList.remove("countdown");
       
       engine.startNow();
 
@@ -904,6 +907,7 @@ onAuthStateChanged(auth, async (user) => {
   await init();
   await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
 });
+
 
 
 
