@@ -158,19 +158,23 @@ export class TypingEngine {
 
   computeMetrics({ committed, seconds, keystrokes }) {
     const minutes = seconds / 60;
-
-    const cpm = Math.round((committed.length / minutes));
+  
+    // 新：スコア（=CPM）は「出題文の長さ ÷ 完了時間」
+    const targetLen = (this.target ?? "").length;
+    const cpm = Math.round((targetLen / minutes));
+  
+    // KPM等を残すならそのまま（使わなくてもOK）
     const kpm = Math.round((keystrokes / minutes));
-
     const eff = (kpm > 0) ? (cpm / kpm) : 0;
     const diff = Math.max(0, kpm - cpm);
-
+  
+    // ランク/ランキングScore は後で ranking.js と合わせて見直す（手順4）
     const rank = this.calcRank(cpm, kpm);
-
-    const rankingScore = this.calcRankingScore(cpm, kpm);
-
+    const rankingScore = cpm; // ← いったん「スコア=CPM」に寄せる
+  
     return { cpm, kpm, eff, diff, rank, rankingScore };
   }
+
 
   // ランク（SSS〜D）
   calcRank(cpm, kpm) {
@@ -229,5 +233,6 @@ export class TypingEngine {
     this.textEl.innerHTML = html;
   }
 }
+
 
 
