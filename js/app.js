@@ -387,9 +387,6 @@ async function startWithCountdown() {
       // カウントダウン用スタイルを解除
       inputEl.classList.remove("countdown");
       
-      // 開始直後ガイド
-      inputEl.value = "ここに入力";
-      
       engine.startNow();
 
 
@@ -907,6 +904,7 @@ onAuthStateChanged(auth, async (user) => {
   await init();
   await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
 });
+
 
 
 
