@@ -285,18 +285,18 @@ function buildIndices(raw) {
 ========================= */
 function hydrateSelects() {
   difficultyEl.innerHTML = `
-    <option value="easy">易</option>
-    <option value="normal" selected>普</option>
-    <option value="hard">難</option>
-    <option value="extreme">極</option>
+    <option value="easy">難易度：易</option>
+    <option value="normal" selected>難易度：普</option>
+    <option value="hard">難易度：難</option>
+    <option value="extreme">難易度：極</option>
   `;
 
   lengthGroupEl.innerHTML = `
-    <option value="xs">極短</option>
-    <option value="short">短</option>
-    <option value="medium" selected>中</option>
-    <option value="long">長</option>
-    <option value="xl">極長</option>
+    <option value="xs">文章長：極短</option>
+    <option value="short">文章長：短</option>
+    <option value="medium" selected>文章長：中</option>
+    <option value="long">文章長：長</option>
+    <option value="xl">文章長：極長</option>
   `;
 
   categoryEl.innerHTML =
@@ -950,6 +950,7 @@ onAuthStateChanged(auth, async (user) => {
   await init();
   await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
 });
+
 
 
 
