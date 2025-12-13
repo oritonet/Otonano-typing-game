@@ -27,14 +27,9 @@ export class RankingService {
     if (theme) filters.push(where("theme", "==", theme));
     if (category) filters.push(where("category", "==", category));
     if (dateKey) filters.push(where("dateKey", "==", dateKey));
-
-    if (difficulty) {
-      filters.push(where("difficulty", "==", difficulty));
-    }
-    
-    if (lengthGroup) {
-      filters.push(where("lengthGroup", "==", lengthGroup));
-    }
+    // ★必ず指定される前提
+    if (difficulty) filters.push(where("difficulty", "==", difficulty));
+    if (lengthGroup) filters.push(where("lengthGroup", "==", lengthGroup));
 
     const q = query(colRef, ...filters, limit(maxFetch));
     const snap = await getDocs(q);
@@ -68,18 +63,25 @@ export class RankingService {
     return this._sortAndTop10(rows);
   }
 
-  async loadByTheme({ theme, difficulty, lengthGroup  }) {
+  async loadByTheme({ theme, difficulty, lengthGroup }) {
     if (!theme || theme === "all") return this.loadOverall({ difficulty, lengthGroup });
     const rows = await this._fetchScores({ theme, difficulty, lengthGroup, maxFetch: 800 });
     return this._sortAndTop10(rows);
   }
 
-  // 今日のテーマランキング：theme + dateKey 完全一致
-  async loadDailyTheme({ theme, dateKey, difficulty = "all", lengthGroup = "all" }) {
+  // 今日のテーマランキング：theme + dateKey + 難易度 + 文章長
+  async loadDailyTheme({ theme, dateKey, difficulty, lengthGroup }) {
     if (!theme || !dateKey) return [];
-    const rows = await this._fetchScores({ theme, dateKey, difficulty, lengthGroup, maxFetch: 800 });
+    const rows = await this._fetchScores({
+      theme,
+      dateKey,
+      difficulty,
+      lengthGroup,
+      maxFetch: 800
+    });
     return this._sortAndTop10(rows);
   }
+
 
   renderList(ul, rows) {
     ul.innerHTML = "";
@@ -100,5 +102,6 @@ export class RankingService {
     }
   }
 }
+
 
 
