@@ -715,8 +715,7 @@ async function loadMyAnalytics(uid, userName) {
     // ★難易度選択で絞った系列をグラフ化（難易度別保存に対応）
     const selectedDiff = difficultyEl.value; // all/easy/normal/hard
     let view = mine;
-    if (selectedDiff !== "all") view = mine.filter(r => r.difficulty === selectedDiff);
-
+    const view = mine.filter(r => r.difficulty === selectedDiff);
     const series = buildDailyBestSeries(view);
     drawScoreChart(series);
 
@@ -937,5 +936,6 @@ onAuthStateChanged(auth, async (user) => {
   await init();
   await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
 });
+
 
 
