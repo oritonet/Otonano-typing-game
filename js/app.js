@@ -359,6 +359,9 @@ async function startWithCountdown() {
   // カウント中に連打させない
   startBtn.disabled = true;
   skipBtn.disabled = true;
+  
+  // 開始前ガイドの中央揃えを解除
+  inputEl.classList.remove("input-guide");
 
   // 入力欄内に 3,2,1,0
   engine.showCountdownInTextarea(3);
@@ -414,6 +417,9 @@ function setNewText() {
 
   inputEl.value = "スペース or スタートボタンで入力開始";
   inputEl.disabled = true;
+
+    // 開始前ガイド用スタイル
+  inputEl.classList.add("input-guide");
   
   // ★ 次の問題ではスタートボタンを再表示
   startBtn.style.display = "block";
@@ -898,6 +904,7 @@ onAuthStateChanged(auth, async (user) => {
   await init();
   await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
 });
+
 
 
 
