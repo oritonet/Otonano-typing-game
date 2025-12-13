@@ -39,6 +39,8 @@ const auth = getAuth(app);
    DOM
 ========================= */
 const authBadge = document.getElementById("authBadge");
+const metaInfoEl = document.getElementById("metaInfo");
+
 
 const userSelect = document.getElementById("userSelect");
 const addUserBtn = document.getElementById("addUserBtn");
@@ -451,6 +453,10 @@ async function startWithCountdown() {
 ========================= */
 function setNewText() {
   const pool = filterPool();
+  // カテゴリー / テーマ表示を更新
+  const cat = item.category ?? "-";
+  const theme = item.theme ?? "-";
+  metaInfoEl.textContent = `${cat} / ${theme}`;
   if (pool.length === 0) {
     currentItem = null;
     engine.setTarget("該当する文章がありません。条件を変更してください。", null);
@@ -943,6 +949,7 @@ onAuthStateChanged(auth, async (user) => {
   await init();
   await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
 });
+
 
 
 
