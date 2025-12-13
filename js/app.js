@@ -156,9 +156,9 @@ function difficultyByText(text) {
 }
 
 function diffLabel(v) {
-  if (v === "easy") return "難度：易";
-  if (v === "normal") return "難度：普";
-  if (v === "hard") return "難度：難";
+  if (v === "easy") return "易";
+  if (v === "normal") return "普";
+  if (v === "hard") return "難";
   return "-";
 }
 
@@ -957,6 +957,7 @@ onAuthStateChanged(auth, async (user) => {
   await init();
   await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
 });
+
 
 
 
