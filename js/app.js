@@ -278,18 +278,17 @@ function buildIndices(raw) {
 ========================= */
 function hydrateSelects() {
   difficultyEl.innerHTML = `
-    <option value="all">難易度：すべて</option>
-    <option value="easy">難易度：かんたん</option>
-    <option value="normal">難易度：ふつう</option>
-    <option value="hard">難易度：むずかしい</option>
+    <option value="easy">難易度：簡単</option>
+    <option value="normal" selected>難易度：普通</option>
+    <option value="hard">難易度：難しい</option>
   `;
-
+  
   lengthGroupEl.innerHTML = `
-    <option value="all">文章長：すべて</option>
     <option value="short">文章長：短</option>
-    <option value="medium">文章長：中</option>
+    <option value="medium" selected>文章長：中</option>
     <option value="long">文章長：長</option>
   `;
+
 
   categoryEl.innerHTML =
     `<option value="all">カテゴリ：すべて</option>` +
@@ -938,4 +937,5 @@ onAuthStateChanged(auth, async (user) => {
   await init();
   await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
 });
+
 
