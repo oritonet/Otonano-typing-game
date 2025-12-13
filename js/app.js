@@ -142,7 +142,7 @@ function kanjiRatio(text) {
 }
 
 /* =========================
-   難易度：4段階
+   難易度：3段階
 ========================= */
 function difficultyByText(text) {
   const score =
@@ -150,11 +150,18 @@ function difficultyByText(text) {
     punctScore(text) * 6 +
     digitCount(text) * 10;
 
-  if (score < 25) return "easy";      // 易
-  if (score < 45) return "normal";    // 普
-  if (score < 70) return "hard";      // 難
-  return "extreme";                   // 極
+  if (score < 35) return "easy";     // 易
+  if (score < 65) return "normal";   // 普
+  return "hard";                     // 難
 }
+
+function diffLabel(v) {
+  if (v === "easy") return "難度：易";
+  if (v === "normal") return "難度：普";
+  if (v === "hard") return "難度：難";
+  return "-";
+}
+
 
 /* =========================
    文章長：5段階
@@ -167,20 +174,12 @@ function lengthGroupOf(len) {
   return "xl";                       // 極長
 }
 
-function diffLabel(v) {
-  if (v === "easy") return "易";
-  if (v === "normal") return "普";
-  if (v === "hard") return "難";
-  if (v === "extreme") return "極";
-  return "-";
-}
-
 function lengthLabel(v) {
-  if (v === "xs") return "極短";
-  if (v === "short") return "短";
-  if (v === "medium") return "中";
-  if (v === "long") return "長";
-  if (v === "xl") return "極長";
+  if (v === "xs") return "長さ：極短";
+  if (v === "short") return "長さ：短";
+  if (v === "medium") return "長さ：中";
+  if (v === "long") return "長さ：長";
+  if (v === "xl") return "長さ：極長";
   return "-";
 }
 
@@ -298,7 +297,6 @@ function hydrateSelects() {
     <option value="easy">難度：易</option>
     <option value="normal" selected>難度：普</option>
     <option value="hard">難度：難</option>
-    <option value="extreme">難度：極</option>
   `;
 
   lengthGroupEl.innerHTML = `
@@ -509,13 +507,13 @@ function updateLabels() {
   const lenTxt = lengthLabel(lengthGroup);
 
   if (scope === "overall") {
-    rankLabel.textContent = `全体TOP10（難易度：${diffTxt} / 文章長：${lenTxt}）`;
+    rankLabel.textContent = `全体TOP10（難度：${diffTxt} / 長さ：${lenTxt}）`;
   }
   if (scope === "category") {
-    rankLabel.textContent = `カテゴリ「${category === "all" ? "すべて" : category}」TOP10（難易度：${diffTxt} / 文章長：${lenTxt}）`;
+    rankLabel.textContent = `カテゴリ「${category === "all" ? "すべて" : category}」TOP10（難度：${diffTxt} / 長さ：${lenTxt}）`;
   }
   if (scope === "theme") {
-    rankLabel.textContent = `テーマ「${theme === "all" ? "すべて" : theme}」TOP10（難易度：${diffTxt} / 文章長：${lenTxt}）`;
+    rankLabel.textContent = `テーマ「${theme === "all" ? "すべて" : theme}」TOP10（難度：${diffTxt} / 長さ：${lenTxt}）`;
   }
 }
 
@@ -560,26 +558,32 @@ function avg(arr) {
   return Math.round(arr.reduce((s, x) => s + x, 0) / arr.length);
 }
 
+/* ==== Analytics: 難易度別ベスト ==== */
 function renderBestByDifficulty(histories) {
   bestByDifficultyUL.innerHTML = "";
 
-  const diffs = ["easy", "normal", "hard", "extreme"]; // ★極を追加
+  const diffs = ["easy", "normal", "hard"];
   const best = {};
-  for (const d of diffs) best[d] = { bestCpm: null };
+  diffs.forEach(d => best[d] = null);
 
   for (const h of histories) {
     const d = h.difficulty;
-    if (!best[d]) continue;
-    if (best[d].bestCpm === null || h.cpm > best[d].bestCpm) best[d].bestCpm = h.cpm;
+    if (!(d in best)) continue;
+    if (best[d] === null || h.cpm > best[d]) {
+      best[d] = h.cpm;
+    }
   }
 
-  for (const d of diffs) {
+  diffs.forEach(d => {
     const li = document.createElement("li");
-    if (best[d].bestCpm === null) li.textContent = `${diffLabel(d)}：まだ履歴がありません`;
-    else li.textContent = `${diffLabel(d)}：TOP スコア ${best[d].bestCpm}`;
+    li.textContent =
+      best[d] === null
+        ? `${diffLabel(d)}：まだ履歴がありません`
+        : `${diffLabel(d)}：TOP スコア ${best[d]}`;
     bestByDifficultyUL.appendChild(li);
-  }
+  });
 }
+
 
 function renderRecent(histories) {
   myRecentUL.innerHTML = "";
@@ -953,6 +957,7 @@ onAuthStateChanged(auth, async (user) => {
   await init();
   await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
 });
+
 
 
 
