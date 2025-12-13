@@ -175,11 +175,11 @@ function lengthGroupOf(len) {
 }
 
 function lengthLabel(v) {
-  if (v === "xs") return "長さ：極短";
-  if (v === "short") return "長さ：短";
-  if (v === "medium") return "長さ：中";
-  if (v === "long") return "長さ：長";
-  if (v === "xl") return "長さ：極長";
+  if (v === "xs") return "極短";
+  if (v === "short") return "短";
+  if (v === "medium") return "中";
+  if (v === "long") return "長";
+  if (v === "xl") return "極長";
   return "-";
 }
 
@@ -957,6 +957,7 @@ onAuthStateChanged(auth, async (user) => {
   await init();
   await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
 });
+
 
 
 
