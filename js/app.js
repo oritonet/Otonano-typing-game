@@ -453,12 +453,10 @@ async function startWithCountdown() {
 ========================= */
 function setNewText() {
   const pool = filterPool();
-  // カテゴリー / テーマ表示を更新
-  const cat = item.category ?? "-";
-  const theme = item.theme ?? "-";
-  metaInfoEl.textContent = `${cat} / ${theme}`;
+
   if (pool.length === 0) {
     currentItem = null;
+    metaInfoEl.textContent = "- / -";
     engine.setTarget("該当する文章がありません。条件を変更してください。", null);
     textEl.textContent = "該当する文章がありません。条件を変更してください。";
     inputEl.value = "";
@@ -470,19 +468,22 @@ function setNewText() {
   const pick = pickNextItem(pool);
   currentItem = pick;
 
-  pushHistory(pick.text);
+  // ★ここでメタ情報を表示
+  const cat = pick.category ?? "-";
+  const theme = pick.theme ?? "-";
+  metaInfoEl.textContent = `${cat} / ${theme}`;
 
+  pushHistory(pick.text);
   engine.setTarget(pick.text, pick);
 
   inputEl.value = "スペース or スタートボタンで入力開始";
   inputEl.disabled = true;
   inputEl.classList.add("input-guide");
-
-  // 次の問題ではスタートボタンを再表示
   startBtn.style.display = "block";
 
   updateLabels();
 }
+
 
 /* =========================
    Ranking + Analytics
@@ -949,6 +950,7 @@ onAuthStateChanged(auth, async (user) => {
   await init();
   await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
 });
+
 
 
 
