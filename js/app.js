@@ -141,7 +141,7 @@ function difficultyByText(text) {
     pScore * 6 +      // 記号の重み
     d * 10;           // 数字の重み（英数切替）
 
-  if (score < 25) return "easy";
+  if (score < 35) return "easy";
   if (score < 55) return "normal";
   return "hard";
 }
@@ -936,6 +936,7 @@ onAuthStateChanged(auth, async (user) => {
   await init();
   await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
 });
+
 
 
 
