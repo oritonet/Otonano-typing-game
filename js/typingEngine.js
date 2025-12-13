@@ -47,8 +47,13 @@ export class TypingEngine {
   // カウントダウン表示は「入力欄内」に出す
   showCountdownInTextarea(n) {
     this.inputEl.disabled = true;
-    this.inputEl.value = `${n}\n\n（カウントダウン中）`;
+  
+    // カウントダウン用スタイルを付与
+    this.inputEl.classList.add("countdown");
+  
+    this.inputEl.value = String(n);
   }
+
 
   enableReadyState() {
     this.inputEl.disabled = false;
@@ -214,3 +219,4 @@ export class TypingEngine {
     this.textEl.innerHTML = html;
   }
 }
+
