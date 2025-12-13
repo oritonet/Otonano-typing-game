@@ -95,8 +95,9 @@ export class RankingService {
       const name = r.userName ?? "no-name";
       const score = r.cpm ?? "-";
       const rank = r.rank ?? "-";
-      li.textContent = `${i + 1}. ${name}｜Score ${score}｜${rank}`;
+      li.textContent = `${i + 1}. ${name}｜${rank}｜Score ${score}`;
       ul.appendChild(li);
     });
   }
 }
+
