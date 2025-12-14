@@ -223,11 +223,10 @@
       </noscript>
     </section>
 
-    <!-- ★ 成績・分析を 1つの枠に統合 -->
     <section class="card" style="margin-top:16px;">
       <h2 style="margin-top:0;">成績・分析</h2>
 
-      <!-- ★難度タブはここ1か所だけ -->
+      <!-- ★難度タブ（成績・分析用）※タイピング練習の難度とは連動しない -->
       <div class="diffTabs" id="diffTabsUnified">
         <button type="button" class="diffTab" data-diff="easy">易</button>
         <button type="button" class="diffTab active" data-diff="normal">普</button>
@@ -236,23 +235,20 @@
 
       <div class="split">
         <div class="card" style="border-color:#eee;">
-          <h3 style="margin-top:0;">今日のテーマランキング（固定表示）</h3>
+          <h3 id="dailyRankingTitle" style="margin-top:0;">今日のテーマランキング（固定表示）</h3>
           <div class="muted" id="dailyRankLabel" style="margin-bottom: 8px;"></div>
           <ul id="dailyRanking"></ul>
         </div>
 
         <div class="card" style="border-color:#eee;">
           <h3 style="margin-top:0;">ランキング</h3>
-          <div class="row" style="margin-top: 0;">
-            <select id="rankScope" aria-label="ランキング範囲"></select>
-            <div id="rankLabel" class="muted"></div>
-          </div>
+          <div id="rankLabel" class="muted" style="margin-top: 0;"></div>
           <ul id="ranking" style="margin-top: 10px;"></ul>
         </div>
       </div>
 
       <div class="card" style="border-color:#eee; margin-top:12px;">
-        <h3 style="margin-top:0;">入力分析（選択ユーザー）</h3>
+        <h3 id="analyticsTitle" style="margin-top:0;">入力分析（選択ユーザー）</h3>
 
         <div class="muted" id="analyticsLabel" style="margin: 0 0 10px;"></div>
 
@@ -317,4 +313,3 @@
   <script type="module" src="./js/app.js"></script>
 </body>
 </html>
-
