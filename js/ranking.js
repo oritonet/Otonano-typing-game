@@ -103,7 +103,7 @@ export class RankingService {
       return;
     }
 
-    rows.forEach((r) => {
+    rows.forEach((r, i) => {
       const li = document.createElement("li");
       const userName = r.userName ?? "no-name";
       const rank = r.rank ?? "-";
@@ -111,8 +111,9 @@ export class RankingService {
       const lg = lengthLabel(r.lengthGroup);
       const theme = r.theme ?? "-";
 
-      // ★統一フォーマット
-      li.textContent = `${userName}｜${rank}｜${score}｜${lg}｜${theme}`;
+      // ★順位番号を先頭に追加
+      const order = i + 1;
+      li.textContent = `${order}位：${userName}｜${rank}｜${score}｜${lg}｜${theme}`;
       ul.appendChild(li);
     });
   }
