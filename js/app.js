@@ -68,7 +68,6 @@ const rankingUL = document.getElementById("ranking");
 
 const analyticsTitle = document.getElementById("analyticsTitle");
 const bestByDifficultyUL = document.getElementById("bestByDifficulty");
-const compareTodayEl = document.getElementById("compareToday");
 const scoreChart = document.getElementById("scoreChart");
 const myRecentUL = document.getElementById("myRecent");
 const analyticsLabel = document.getElementById("analyticsLabel");
@@ -505,6 +504,10 @@ function setNewText() {
    Ranking + Analytics
 ========================= */
 function updateLabels() {
+  // ★「今日 vs 過去7日平均（スコア）」ブロックは不要 → DOMから削除
+  const compareNode = document.getElementById("compareToday");
+  if (compareNode) compareNode.remove();
+
   const { lengthGroup } = getActiveFilters();
   const lenTxt = lengthLabel(lengthGroup);
   const diffTxt = diffLabel(activeDiffTab);
@@ -522,8 +525,8 @@ function updateLabels() {
     dailyRankLabel.style.display = "none";
   }
 
-  // ★ランキング範囲の選択は廃止 → 常に「全体ランキング」
-  rankLabel.textContent = `全体（難度：${diffTxt} / 長さ：${lenTxt}）`;
+  // ★ランキング見出しは不要 → DOMから削除
+  if (rankLabel) rankLabel.remove();
 
   // ★入力分析タイトルに、括弧内で選択ユーザー名を表示
   const userName = userMgr.getCurrentUserName() || "ゲスト";
@@ -706,36 +709,6 @@ function drawScoreChart(points) {
   }
 }
 
-function summarizeTodayScore(histories) {
-  const tKey = todayKey();
-  const todays = histories.filter(h => h.dateKey === tKey);
-  if (!todays.length) return null;
-  return { avg: avg(todays.map(h => h.cpm)), best: Math.max(...todays.map(h => h.cpm)) };
-}
-
-function summarize7daysScore(histories) {
-  const now = Date.now();
-  const cutoff = now - 7 * 24 * 60 * 60 * 1000;
-  const last7 = histories.filter(h => h.createdAtMs && h.createdAtMs >= cutoff);
-  if (!last7.length) return null;
-  return { avg: avg(last7.map(h => h.cpm)), best: Math.max(...last7.map(h => h.cpm)) };
-}
-
-function formatCompareScore(todayObj, avg7Obj) {
-  if (!todayObj || !avg7Obj) {
-    compareTodayEl.textContent = "データが不足しています（履歴が増えると表示されます）。";
-    return;
-  }
-  const sign = (n) => (n > 0 ? `+${n}` : `${n}`);
-  const avgDelta = todayObj.avg - avg7Obj.avg;
-  const bestDelta = todayObj.best - avg7Obj.best;
-
-  compareTodayEl.innerHTML =
-    `今日：平均 ${todayObj.avg} / ベスト ${todayObj.best}<br>` +
-    `過去7日平均：平均 ${avg7Obj.avg} / ベスト ${avg7Obj.best}<br>` +
-    `差分：平均 ${sign(avgDelta)} / ベスト ${sign(bestDelta)}`;
-}
-
 async function loadMyAnalytics(uid, userName) {
   try {
     const colRef = collection(db, "scores");
@@ -771,16 +744,11 @@ async function loadMyAnalytics(uid, userName) {
     const series = buildDailyBestSeries(view);
     drawScoreChart(series);
 
-    const t = summarizeTodayScore(view);
-    const a7 = summarize7daysScore(view);
-    formatCompareScore(t, a7);
-
     updateLabels();
   } catch (e) {
     console.error("analytics load error", e);
     bestByDifficultyUL.innerHTML = "<li>分析の読み込みに失敗しました</li>";
     myRecentUL.innerHTML = "<li>分析の読み込みに失敗しました</li>";
-    compareTodayEl.textContent = "分析の読み込みに失敗しました。";
     drawScoreChart([]);
   }
 }
@@ -970,7 +938,6 @@ function attachUnifiedDiffTabs() {
     });
   });
 }
-
 
 /* =========================
    Init
