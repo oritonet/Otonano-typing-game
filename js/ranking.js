@@ -7,10 +7,6 @@ import {
   limit
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-import {
-  getAuth
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
 /* =========================
    Utils
 ========================= */
@@ -23,42 +19,51 @@ function lengthLabel(v) {
   return "-";
 }
 
+function safeNum(v, fallback = 0) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+
 /* =========================
    Ranking Service
 ========================= */
 export class RankingService {
   constructor({ db }) {
     this.db = db;
-    this.auth = getAuth();
   }
 
   /* -------------------------
      Firestore fetch
+     - 原則: ランキングは「長さではフィルタしない」
+     - 今日の課題ランキングは isDailyTask + dailyTaskKey + dateKey で絞る
   ------------------------- */
   async _fetchScores({
-    theme = null,
+    difficulty = null,
     category = null,
+    theme = null,
     dateKey = null,
-    difficulty,
-    lengthGroup,
+    isDailyTask = null,
+    dailyTaskKey = null,
     maxFetch = 800
   }) {
     const colRef = collection(this.db, "scores");
     const filters = [];
 
-    if (theme) filters.push(where("theme", "==", theme));
-    if (category) filters.push(where("category", "==", category));
-    if (dateKey) filters.push(where("dateKey", "==", dateKey));
     if (difficulty) filters.push(where("difficulty", "==", difficulty));
-    if (lengthGroup) filters.push(where("lengthGroup", "==", lengthGroup));
+    if (category) filters.push(where("category", "==", category));
+    if (theme) filters.push(where("theme", "==", theme));
+    if (dateKey) filters.push(where("dateKey", "==", dateKey));
+
+    if (isDailyTask !== null && isDailyTask !== undefined) {
+      filters.push(where("isDailyTask", "==", !!isDailyTask));
+    }
+    if (dailyTaskKey) filters.push(where("dailyTaskKey", "==", dailyTaskKey));
 
     const q = query(colRef, ...filters, limit(maxFetch));
     const snap = await getDocs(q);
 
     const rows = [];
-    snap.forEach(docu => {
-      rows.push({ id: docu.id, ...docu.data() });
-    });
+    snap.forEach(docu => rows.push({ id: docu.id, ...docu.data() }));
     return rows;
   }
 
@@ -69,8 +74,8 @@ export class RankingService {
     return rows
       .slice()
       .sort((a, b) => {
-        const ac = Number(a.cpm ?? -999999);
-        const bc = Number(b.cpm ?? -999999);
+        const ac = safeNum(a.cpm, -999999);
+        const bc = safeNum(b.cpm, -999999);
         if (bc !== ac) return bc - ac;
 
         const at = a.createdAt?.toMillis?.() ?? 0;
@@ -83,42 +88,30 @@ export class RankingService {
   /* -------------------------
      Public loaders
   ------------------------- */
-  async loadOverall({ difficulty, lengthGroup }) {
-    const rows = await this._fetchScores({ difficulty, lengthGroup });
+  async loadOverall({ difficulty }) {
+    const rows = await this._fetchScores({ difficulty });
     return this._sortAndTop10(rows);
   }
 
-  async loadByCategory({ category, difficulty, lengthGroup }) {
-    if (!category || category === "all") {
-      return this.loadOverall({ difficulty, lengthGroup });
-    }
-    const rows = await this._fetchScores({
-      category,
-      difficulty,
-      lengthGroup
-    });
+  async loadByCategory({ category, difficulty }) {
+    if (!category || category === "all") return this.loadOverall({ difficulty });
+    const rows = await this._fetchScores({ category, difficulty });
     return this._sortAndTop10(rows);
   }
 
-  async loadByTheme({ theme, difficulty, lengthGroup }) {
-    if (!theme || theme === "all") {
-      return this.loadOverall({ difficulty, lengthGroup });
-    }
-    const rows = await this._fetchScores({
-      theme,
-      difficulty,
-      lengthGroup
-    });
+  async loadByTheme({ theme, difficulty }) {
+    if (!theme || theme === "all") return this.loadOverall({ difficulty });
+    const rows = await this._fetchScores({ theme, difficulty });
     return this._sortAndTop10(rows);
   }
 
-  async loadDailyTheme({ theme, dateKey, difficulty, lengthGroup }) {
-    if (!theme || !dateKey) return [];
+  async loadDailyTask({ dailyTaskKey, dateKey, difficulty }) {
+    if (!dailyTaskKey || !dateKey) return [];
     const rows = await this._fetchScores({
-      theme,
+      isDailyTask: true,
+      dailyTaskKey,
       dateKey,
-      difficulty,
-      lengthGroup
+      difficulty
     });
     return this._sortAndTop10(rows);
   }
@@ -126,7 +119,7 @@ export class RankingService {
   /* -------------------------
      Render
   ------------------------- */
-  renderList(ul, rows) {
+  renderList(ul, rows, { highlightUserName = null } = {}) {
     ul.innerHTML = "";
 
     if (!rows.length) {
@@ -136,18 +129,15 @@ export class RankingService {
       return;
     }
 
-    const myUid = this.auth.currentUser?.uid ?? null;
-
     rows.forEach((r, i) => {
       const li = document.createElement("li");
 
       const userName = r.userName ?? "-";
       const rank = r.rank ?? "-";
-      const score = Number(r.cpm ?? 0);
+      const score = safeNum(r.cpm, 0);
       const lg = lengthLabel(r.lengthGroup);
       const theme = r.theme ?? "-";
 
-      // ★意味付き・統一フォーマット
       li.textContent =
         `${i + 1}位：${userName}` +
         `｜ランク：${rank}` +
@@ -155,9 +145,9 @@ export class RankingService {
         `｜長さ：${lg}` +
         `｜テーマ：${theme}`;
 
-      // ★自分の行なら太字
-      if (myUid && r.uid === myUid) {
-        li.classList.add("ranking-me");
+      if (highlightUserName && userName === highlightUserName) {
+        li.style.fontWeight = "900";
+        li.style.color = "#c00";
       }
 
       ul.appendChild(li);
