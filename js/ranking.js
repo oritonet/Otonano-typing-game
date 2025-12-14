@@ -35,7 +35,6 @@ export class RankingService {
     if (theme) filters.push(where("theme", "==", theme));
     if (category) filters.push(where("category", "==", category));
     if (dateKey) filters.push(where("dateKey", "==", dateKey));
-
     if (difficulty) filters.push(where("difficulty", "==", difficulty));
     if (lengthGroup) filters.push(where("lengthGroup", "==", lengthGroup));
 
@@ -54,7 +53,6 @@ export class RankingService {
         const ac = Number(a.cpm ?? -999999);
         const bc = Number(b.cpm ?? -999999);
         if (bc !== ac) return bc - ac;
-
         const at = a.createdAt?.toMillis?.() ?? 0;
         const bt = b.createdAt?.toMillis?.() ?? 0;
         return bt - at;
@@ -64,22 +62,6 @@ export class RankingService {
 
   async loadOverall({ difficulty, lengthGroup }) {
     const rows = await this._fetchScores({ difficulty, lengthGroup });
-    return this._sortAndTop10(rows);
-  }
-
-  async loadByCategory({ category, difficulty, lengthGroup }) {
-    if (!category || category === "all") {
-      return this.loadOverall({ difficulty, lengthGroup });
-    }
-    const rows = await this._fetchScores({ category, difficulty, lengthGroup });
-    return this._sortAndTop10(rows);
-  }
-
-  async loadByTheme({ theme, difficulty, lengthGroup }) {
-    if (!theme || theme === "all") {
-      return this.loadOverall({ difficulty, lengthGroup });
-    }
-    const rows = await this._fetchScores({ theme, difficulty, lengthGroup });
     return this._sortAndTop10(rows);
   }
 
@@ -105,15 +87,12 @@ export class RankingService {
 
     rows.forEach((r, i) => {
       const li = document.createElement("li");
-      const userName = r.userName ?? "no-name";
-      const rank = r.rank ?? "-";
-      const score = Number(r.cpm ?? 0);
-      const lg = lengthLabel(r.lengthGroup);
-      const theme = r.theme ?? "-";
-
-      // ★順位番号を先頭に追加
-      const order = i + 1;
-      li.textContent = `${order}位：${userName}｜${rank}｜${score}｜${lg}｜${theme}`;
+      li.textContent =
+        `${i + 1}位：${r.userName ?? "-"}` +
+        `｜ランク：${r.rank ?? "-"}` +
+        `｜スコア：${Number(r.cpm ?? 0)}` +
+        `｜長さ：${lengthLabel(r.lengthGroup)}` +
+        `｜テーマ：${r.theme ?? "-"}`;
       ul.appendChild(li);
     });
   }
