@@ -602,8 +602,10 @@ async function loadDailyRanking() {
       theme: dailyTheme,
       dateKey: todayKey(),
       difficulty: activeDiffTab,
-      lengthGroup
+      lengthGroup,
+      groupId: currentGroupId ? currentGroupId : null
     });
+
     rankingSvc.renderList(dailyRankingUL, rows);
   } catch (e) {
     console.error("daily ranking load error", e);
@@ -619,9 +621,33 @@ async function loadRanking() {
     const th = daily ? dailyTheme : theme;
 
     let rows = [];
-    if (scope === "overall") rows = await rankingSvc.loadOverall({ difficulty: activeDiffTab, lengthGroup });
-    if (scope === "category") rows = await rankingSvc.loadByCategory({ category, difficulty: activeDiffTab, lengthGroup });
-    if (scope === "theme") rows = await rankingSvc.loadByTheme({ theme: th, difficulty: activeDiffTab, lengthGroup });
+    
+    if (scope === "overall") {
+      rows = await rankingSvc.loadOverall({
+        difficulty: activeDiffTab,
+        lengthGroup,
+        groupId: currentGroupId ? currentGroupId : null
+      });
+    }
+    
+    if (scope === "category") {
+      rows = await rankingSvc.loadByCategory({
+        category,
+        difficulty: activeDiffTab,
+        lengthGroup,
+        groupId: currentGroupId ? currentGroupId : null
+      });
+    }
+    
+    if (scope === "theme") {
+      rows = await rankingSvc.loadByTheme({
+        theme: th,
+        difficulty: activeDiffTab,
+        lengthGroup,
+        groupId: currentGroupId ? currentGroupId : null
+      });
+    }
+
 
     rankingSvc.renderList(rankingUL, rows);
   } catch (e) {
@@ -962,6 +988,9 @@ async function onGroupChanged() {
     pendingBox.style.display = "none";
     pendingList.innerHTML = "";
   }
+  // ★グループ切替に応じてランキングを再読込
+  await loadDailyRanking();
+  await loadRanking();
 }
 
 async function loadPendingRequests() {
@@ -1325,3 +1354,4 @@ onAuthStateChanged(auth, async (user) => {
     await refreshMyGroups();
   }
 });
+
