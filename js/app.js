@@ -1022,7 +1022,7 @@ async function loadPendingRequests() {
     approveBtn.textContent = "承認";
     approveBtn.addEventListener("click", async () => {
       try {
-        await groupSvc.approveMember(r.id);
+        await groupSvc.approveMember(r);
         await loadPendingRequests();
         await refreshMyGroups(); // 承認後の状態反映
       } catch (e) {
@@ -1354,4 +1354,5 @@ onAuthStateChanged(auth, async (user) => {
     await refreshMyGroups();
   }
 });
+
 
