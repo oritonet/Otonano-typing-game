@@ -1,7 +1,6 @@
 // js/userManager.js
 import {
   doc,
-  getDoc,
   runTransaction,
   deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -13,7 +12,7 @@ export class UserManager {
     renameBtn,
     deleteBtn,
     db,
-    storageKeyPrefix = "typing_users_v2"
+    storageKeyPrefix = "typing_users_v3"
   }) {
     this.db = db;
     this.selectEl = selectEl;
@@ -47,32 +46,62 @@ export class UserManager {
   }
 
   /* =========================
+     正規化
+  ========================= */
+  _normalize(name) {
+    return name
+      .trim()
+      .normalize("NFKC")
+      .toLowerCase();
+  }
+
+  _validate(name) {
+    const raw = name.trim();
+    if (!raw) return "ユーザー名を入力してください。";
+    if (raw.length > 10) return "ユーザー名は10文字以内にしてください。";
+    return null;
+  }
+
+  /* =========================
      Firestore helpers
   ========================= */
-  async _reserveName(name) {
-    const ref = doc(this.db, "userNames", name);
+  async _reserve(rawName) {
+    const key = this._normalize(rawName);
+    const ref = doc(this.db, "userNames", key);
+
     await runTransaction(this.db, async tx => {
       const snap = await tx.get(ref);
       if (snap.exists()) throw new Error("DUPLICATE");
-      tx.set(ref, { createdAt: Date.now() });
+      tx.set(ref, {
+        displayName: rawName,
+        createdAt: Date.now()
+      });
     });
+
+    return key;
   }
 
-  async _releaseName(name) {
-    const ref = doc(this.db, "userNames", name);
-    await deleteDoc(ref);
-  }
+  async _renameOnServer(oldRaw, newRaw) {
+    const oldKey = this._normalize(oldRaw);
+    const newKey = this._normalize(newRaw);
 
-  async _renameOnServer(oldName, newName) {
-    const oldRef = doc(this.db, "userNames", oldName);
-    const newRef = doc(this.db, "userNames", newName);
+    const oldRef = doc(this.db, "userNames", oldKey);
+    const newRef = doc(this.db, "userNames", newKey);
 
     await runTransaction(this.db, async tx => {
       const snap = await tx.get(newRef);
       if (snap.exists()) throw new Error("DUPLICATE");
       tx.delete(oldRef);
-      tx.set(newRef, { createdAt: Date.now() });
+      tx.set(newRef, {
+        displayName: newRaw,
+        createdAt: Date.now()
+      });
     });
+  }
+
+  async _release(rawName) {
+    const key = this._normalize(rawName);
+    await deleteDoc(doc(this.db, "userNames", key));
   }
 
   /* =========================
@@ -82,9 +111,7 @@ export class UserManager {
     try {
       const raw = localStorage.getItem(this.storageUsersKey);
       const arr = raw ? JSON.parse(raw) : [];
-      return Array.isArray(arr)
-        ? arr.filter(v => typeof v === "string" && v.trim())
-        : [];
+      return Array.isArray(arr) ? arr : [];
     } catch {
       return [];
     }
@@ -109,100 +136,78 @@ export class UserManager {
     return this.current;
   }
 
-  setCurrentUserName(name) {
-    if (!this.users.includes(name)) return;
-    this.current = name;
-    localStorage.setItem(this.storageLastKey, this.current);
-    this._render();
-    this.onChange?.(this.current);
-  }
-
-  /* =========================
-     Validation
-  ========================= */
-  _validateName(name) {
-    const n = name.trim();
-    if (!n) return "ユーザー名を入力してください。";
-    if (n.length > 10) return "ユーザー名は10文字以内にしてください。";
-    return null;
-  }
-
   /* =========================
      Actions
   ========================= */
   async addUser() {
-    if (this.users.length >= 10) {
-      alert("この端末では最大10名まで追加できます。");
-      return;
-    }
-
-    const name = prompt("追加するユーザー名を入力してください");
+    const name = prompt("ユーザー名を入力してください");
     if (!name) return;
 
-    const err = this._validateName(name);
+    const err = this._validate(name);
     if (err) {
       alert(err);
       return;
     }
 
-    const n = name.trim();
-
     try {
-      await this._reserveName(n);
+      await this._reserve(name);
     } catch {
       alert("このユーザー名は既に使われています。");
       return;
     }
 
-    this.users.push(n);
+    this.users.push(name.trim());
     this._saveUsers();
-    this.setCurrentUserName(n);
+    this.current = name.trim();
+    this._render();
+    this.onChange?.(this.current);
   }
 
   async renameUser() {
     const cur = this.current;
     if (!cur) return;
 
-    const name = prompt(`ユーザー名を変更します（現在：${cur}）`, cur);
+    const name = prompt("新しいユーザー名を入力してください", cur);
     if (!name) return;
 
-    const err = this._validateName(name);
+    const err = this._validate(name);
     if (err) {
       alert(err);
       return;
     }
 
-    const n = name.trim();
-    if (n === cur) return;
+    if (name.trim() === cur) return;
 
     try {
-      await this._renameOnServer(cur, n);
+      await this._renameOnServer(cur, name);
     } catch {
       alert("このユーザー名は既に使われています。");
       return;
     }
 
-    this.users = this.users.map(u => (u === cur ? n : u));
+    this.users = this.users.map(u => (u === cur ? name.trim() : u));
     this._saveUsers();
-    this.setCurrentUserName(n);
+    this.current = name.trim();
+    this._render();
+    this.onChange?.(this.current);
   }
 
   async deleteUser() {
-    const cur = this.current;
-    if (!cur) return;
-
     if (this.users.length <= 1) {
-      alert("最後の1名は削除できません。");
+      alert("最後のユーザーは削除できません。");
       return;
     }
 
+    const cur = this.current;
     const ok = confirm(`ユーザー「${cur}」を削除しますか？`);
     if (!ok) return;
 
-    await this._releaseName(cur);
+    await this._release(cur);
 
     this.users = this.users.filter(u => u !== cur);
+    this.current = this.users[0];
     this._saveUsers();
-    this.setCurrentUserName(this.users[0]);
+    this._render();
+    this.onChange?.(this.current);
   }
 }
