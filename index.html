@@ -176,9 +176,14 @@
     
     .best-score-table th,
     .best-score-table td {
-      border: 2px solid #000;
-      padding: 8px 12px;
+      white-space: nowrap;          /* 折り返し禁止 */
+      text-align: center;
+      font-weight: bold;
+    
+      /* 自動サイズ調整 */
+      font-size: clamp(12px, 3.5vw, 18px);
     }
+
     
     .best-score-table th {
       width: 40%;
@@ -194,10 +199,6 @@
     #bestScore {
       font-size: 26px;
       color: #c00;
-    }
-    #bestTheme {
-      white-space: nowrap;      /* 折り返し禁止 */
-      font-size: clamp(14px, 4vw, 18px);
     }
 
   </style>
@@ -357,6 +358,7 @@
   <script type="module" src="./js/app.js"></script>
 </body>
 </html>
+
 
 
 
