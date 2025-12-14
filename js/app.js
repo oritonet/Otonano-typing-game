@@ -173,7 +173,8 @@ const userMgr = new UserManager({
   selectEl: userSelect,
   addBtn: addUserBtn,
   renameBtn: renameUserBtn,
-  deleteBtn: deleteUserBtn
+  deleteBtn: deleteUserBtn,
+  db
 });
 const rankingSvc = new RankingService({ db });
 
@@ -185,33 +186,20 @@ let categories = [];
 let themeByCategory = new Map();
 let allThemes = [];
 
-function getBasePath() {
-  const p = location.pathname;
-  if (p.endsWith("/")) return p.slice(0, -1);
-  return p.replace(/\/index\.html$/, "");
-}
-
+/* -------------------------
+   Data loading
+------------------------- */
 async function loadTrivia() {
-  const tryUrls = [
-    "./data/trivia.json",
-    `${getBasePath()}/data/trivia.json`
-  ];
-  let lastErr = null;
-  for (const url of tryUrls) {
-    try {
-      const res = await fetch(url, { cache: "no-store" });
-      if (!res.ok) throw new Error(`HTTP ${res.status} (${url})`);
-      const json = await res.json();
-      if (!Array.isArray(json)) throw new Error(`JSON is not array (${url})`);
-      return json;
-    } catch (e) {
-      lastErr = e;
-    }
-  }
-  throw lastErr ?? new Error("fetch failed");
+  const res = await fetch("./data/trivia.json", { cache: "no-store" });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const json = await res.json();
+  if (!Array.isArray(json)) throw new Error("invalid trivia.json");
+  return json;
 }
 
-// 強・中・弱・基本の4段階
+/* -------------------------
+   Difficulty / Length heuristics
+------------------------- */
 function punctScore(text) {
   const strong = (text.match(/[（）「」『』［］【】＜＞”’]/g) || []).length;
   const middle = (text.match(/[￥＄：；]/g) || []).length;
@@ -264,6 +252,9 @@ function refreshDailyTasks() {
   dailyTaskByDiff.set("hard", computeDailyTaskForDiff("hard"));
 }
 
+/* =========================
+   Build indices
+========================= */
 function buildIndices(raw) {
   items = raw
     .filter(x => x && typeof x.text === "string")
@@ -300,7 +291,7 @@ function buildIndices(raw) {
 }
 
 /* =========================
-   UI
+   UI hydrate
 ========================= */
 function hydrateSelects() {
   difficultyEl.innerHTML = `
@@ -343,6 +334,9 @@ function applyThemeOptionsByCategory() {
   themeEl.value = themes.includes(current) ? current : "all";
 }
 
+/* =========================
+   Mode UI (今日の課題)
+========================= */
 function applyDailyTaskModeUI() {
   const on = !!dailyTaskEl?.checked;
 
@@ -372,7 +366,7 @@ function applyDailyTaskModeUI() {
 }
 
 /* =========================
-   出題フィルタ
+   Practice filters
 ========================= */
 function getPracticeFilters() {
   const dailyTask = !!dailyTaskEl?.checked;
@@ -438,9 +432,9 @@ engine.attach();
 /* =========================
    Paste/Drop 禁止
 ========================= */
-//inputEl.addEventListener("paste", (e) => e.preventDefault());
-//inputEl.addEventListener("drop", (e) => e.preventDefault());
-//inputEl.addEventListener("dragover", (e) => e.preventDefault());
+inputEl.addEventListener("paste", (e) => e.preventDefault());
+inputEl.addEventListener("drop", (e) => e.preventDefault());
+inputEl.addEventListener("dragover", (e) => e.preventDefault());
 
 /* =========================
    Countdown + Start
@@ -901,5 +895,3 @@ onAuthStateChanged(auth, async (user) => {
   await init();
   await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
 });
-
-
