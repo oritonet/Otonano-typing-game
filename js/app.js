@@ -225,21 +225,73 @@ function hideModal() {
 /* =========================================================
    Trivia load
 ========================================================= */
-async function loadTrivia() {
-  const res = await fetch("./trivia.json", { cache: "no-cache" });
-  if (!res.ok) throw new Error("trivia.json load failed");
-  const json = await res.json();
-  if (!Array.isArray(json)) throw new Error("trivia.json must be an array");
+ async function loadTrivia() {
+   const res = await fetch("./trivia.json", { cache: "no-cache" });
+   if (!res.ok) throw new Error("trivia.json load failed");
+   const json = await res.json();
+   if (!Array.isArray(json)) throw new Error("trivia.json must be an array");
 
-  State.allItems = json.map((x) => ({
-    ...x,
-    text: (x?.text ?? "").toString(),
-    difficulty: (x?.difficulty ?? "normal").toString(),
-    lengthGroup: (x?.lengthGroup ?? "medium").toString(),
-    category: (x?.category ?? "all").toString(),
-    theme: (x?.theme ?? "all").toString()
-  }));
-}
+   State.allItems = json.map((x) => ({
+     ...x,
+     text: (x?.text ?? "").toString(),
+     difficulty: (x?.difficulty ?? "normal").toString(),
+     lengthGroup: (x?.lengthGroup ?? "medium").toString(),
+     category: (x?.category ?? "all").toString(),
+     theme: (x?.theme ?? "all").toString()
+   }));
+ }
++
++/* =========================================================
++   Practice filter options init（select 初期化）
++========================================================= */
++function initFilterOptions() {
++  if (!State.allItems || State.allItems.length === 0) return;
++
++  // 難度
++  if (difficultyEl) {
++    difficultyEl.innerHTML = `
++      <option value="easy">易</option>
++      <option value="normal" selected>普</option>
++      <option value="hard">難</option>
++    `;
++  }
++
++  // 長さ
++  if (lengthGroupEl) {
++    lengthGroupEl.innerHTML = `
++      <option value="xs">極短</option>
++      <option value="short">短</option>
++      <option value="medium" selected>中</option>
++      <option value="long">長</option>
++      <option value="xl">極長</option>
++    `;
++  }
++
++  // カテゴリ
++  if (categoryEl) {
++    const set = new Set(State.allItems.map(x => x.category).filter(Boolean));
++    categoryEl.innerHTML = `<option value="all">すべて</option>`;
++    for (const v of Array.from(set).sort()) {
++      const opt = document.createElement("option");
++      opt.value = v;
++      opt.textContent = v;
++      categoryEl.appendChild(opt);
++    }
++  }
++
++  // テーマ
++  if (themeEl) {
++    const set = new Set(State.allItems.map(x => x.theme).filter(Boolean));
++    themeEl.innerHTML = `<option value="all">すべて</option>`;
++    for (const v of Array.from(set).sort()) {
++      const opt = document.createElement("option");
++      opt.value = v;
++      opt.textContent = v;
++      themeEl.appendChild(opt);
++    }
++  }
++}
+
 
 function getPracticeDifficulty() {
   const d = (difficultyEl?.value ?? "normal").toString();
@@ -1095,12 +1147,14 @@ engine.attach();
 /* =========================================================
    App init
 ========================================================= */
-async function initApp() {
-  await loadTrivia();
+ async function initApp() {
+   await loadTrivia();
++  initFilterOptions(); // ← ★これを追加
+ 
+   // 初期：今日の課題は OFF、通常出題
+   disableDailyTask();
+   buildPool();
 
-  // 初期：今日の課題は OFF、通常出題
-  disableDailyTask();
-  buildPool();
   setCurrentItem(pickRandomDifferentText(), { daily: false });
   updateMetaInfo();
   syncDailyInfoLabel();
@@ -1145,3 +1199,4 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
