@@ -1,3 +1,4 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -5,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <title>漢字変換対応の日本語タイピング練習｜雑学・豆知識で実務入力を鍛える（ランキング・分析対応）</title>
-  <meta name="description" content="日本語IME入力で出題文と完全一致するまでの速さをスコア化。難易度（漢字率/記号/数字）と文章長（短/中/長）を選んで練習。日替わりテーマ・ランキング・個人分析（スコア推移）対応。" />
+  <meta name="description" content="日本語IME入力で出題文と完全一致するまでの速さをスコア化。難易度（漢字率/記号/数字）と文章長（短/中/長）を選んで練習。日替わり課題・ランキング・個人分析（スコア推移）対応。" />
   <link rel="canonical" href="https://espresso-taro.github.io/Otonano-typing-game/" />
 
   <meta property="og:type" content="website" />
@@ -160,62 +161,6 @@
       color: #fff;
       border-color: #222;
     }
-
-    .best-score-title {
-      font-size: 22px;
-      font-weight: bold;
-      margin-bottom: 5px;
-      text-align: center;
-    }
-    
-    .best-score-table {
-      width: 100%;
-      border-collapse: collapse;
-      table-layout: fixed;        /* ★必須 */
-    }
-    
-    .best-score-table th {
-      width: 30%;
-      border: 2px solid #000;
-      padding: 10px 8px;
-      text-align: center;
-      background: #f3f3f3;
-      font-size: 16px;
-      font-weight: bold;
-      white-space: nowrap;
-    }
-    
-    .best-score-table td {
-      border: 2px solid #000;
-      padding: 10px 8px;
-      text-align: center;
-      font-size: 16px;
-      font-weight: bold;
-      white-space: nowrap;
-    }
-
-
-    #bestRank {
-      font-size: 22px;
-    }
-    #bestScore {
-      font-size: 22px;
-      color: #c00;
-    }
-    
-    /* テーマ行だけ特別扱い */
-    #bestTheme {
-      max-width: 100%;
-      font-size: clamp(11px, 2.2vw, 18px); /* ★より強く縮む */
-      overflow: hidden;                    /* ★はみ出し防止 */
-    }
-
-    .ranking-me {
-      font-weight: bold;
-      color: #c00;      /* 赤字 */
-    }
-
-
   </style>
 </head>
 
@@ -249,9 +194,9 @@
         <select id="category" aria-label="カテゴリ"></select>
         <select id="theme" aria-label="テーマ"></select>
 
-        <label class="toggle" title="今日のテーマに固定します（毎日変わります）">
-          <span>今日のテーマ</span>
-          <input type="checkbox" id="dailyTheme" />
+        <label class="toggle" title="今日の課題に固定します（難度別に1日1文）">
+          <span>今日の課題</span>
+          <input type="checkbox" id="dailyTask" />
         </label>
       </div>
 
@@ -282,7 +227,6 @@
     <section class="card" style="margin-top:16px;">
       <h2 style="margin-top:0;">成績・分析</h2>
 
-      <!-- ★難度タブ（成績・分析用）※タイピング練習の難度とは連動しない -->
       <div class="diffTabs" id="diffTabsUnified">
         <button type="button" class="diffTab" data-diff="easy">易</button>
         <button type="button" class="diffTab active" data-diff="normal">普</button>
@@ -291,34 +235,27 @@
 
       <div class="split">
         <div class="card" style="border-color:#eee;">
-          <h3 id="dailyRankingTitle" style="margin-top:0;">今日のテーマランキング（）</h3>
+          <h3 style="margin-top:0;">今日の課題ランキング</h3>
           <div class="muted" id="dailyRankLabel" style="margin-bottom: 8px;"></div>
           <ul id="dailyRanking"></ul>
         </div>
 
         <div class="card" style="border-color:#eee;">
-          <h3 style="margin-top:0;">ランキング</h3>
-          <div id="rankLabel" class="muted" style="margin-top: 0;"></div>
+          <h3 style="margin-top:0;">上位10</h3>
+          <div id="overallLabel" class="muted" style="margin-bottom: 8px;"></div>
           <ul id="ranking" style="margin-top: 10px;"></ul>
         </div>
       </div>
 
       <div class="card" style="border-color:#eee; margin-top:12px;">
-        <h3 id="analyticsTitle" style="margin-top:0;">入力分析（）</h3>
+        <h3 id="analyticsTitle" style="margin-top:0;">入力分析（-）</h3>
 
         <div class="muted" id="analyticsLabel" style="margin: 0 0 10px;"></div>
 
         <div class="split">
           <div>
-            <h3 class="best-score-title">ベストスコア</h3>
-            
-            <table class="best-score-table" id="bestScoreTable">
-              <tr><th>ランク</th><td id="bestRank">-</td></tr>
-              <tr><th>スコア</th><td id="bestScore">-</td></tr>
-              <tr><th>長さ</th><td id="bestLength">-</td></tr>
-              <tr><th>テーマ</th><td id="bestTheme">-</td></tr>
-            </table>
-
+            <h3>ベストスコア</h3>
+            <ul id="bestByDifficulty"></ul>
           </div>
 
           <div>
@@ -373,22 +310,3 @@
   <script type="module" src="./js/app.js"></script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
