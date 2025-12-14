@@ -1236,10 +1236,6 @@ startBtn.addEventListener("click", async () => {
 
 if (dailyThemeEl) {
   dailyThemeEl.addEventListener("change", () => {
-    // ★ 今日の課題を ON にしたら skip / 除外状態をリセット
-    if (dailyThemeEl.checked) {
-      resetSkipState();   // ← ここが重要
-    }
     applyThemeOptionsByCategory();
     setNewText();
     updateLabels();
@@ -1249,6 +1245,7 @@ if (dailyThemeEl) {
     if (user) loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
   });
 }
+
 
 // 出題難度の変更 → 統合タブにも反映
 difficultyEl.addEventListener("change", () => {
@@ -1406,6 +1403,7 @@ onAuthStateChanged(auth, async (user) => {
     await refreshMyGroups();
   }
 });
+
 
 
 
