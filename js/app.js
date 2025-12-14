@@ -227,10 +227,10 @@ function diffLabel(v) {
    文章長：5段階
 ========================= */
 function lengthGroupOf(len) {
-  if (len <= 20) return "xs";        // 極短
-  if (len <= 40) return "short";     // 短
-  if (len <= 80) return "medium";    // 中
-  if (len <= 140) return "long";     // 長
+  if (len <= 50) return "xs";        // 極短
+  if (len <= 100) return "short";     // 短
+  if (len <= 150) return "medium";    // 中
+  if (len <= 200) return "long";     // 長
   return "xl";                       // 極長
 }
 
@@ -1402,6 +1402,7 @@ onAuthStateChanged(auth, async (user) => {
     await refreshMyGroups();
   }
 });
+
 
 
 
