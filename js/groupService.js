@@ -180,7 +180,7 @@ export class GroupService {
       const req = reqSnap.data();
 
       // member 追加
-      const memberRef = doc(collection(this.db, "groupMembers"));
+      const memberRef = doc(this.db, "groupMembers", `${uid}_${groupId}`);
       tx.set(memberRef, {
         groupId: req.groupId,
         uid: req.uid,
@@ -246,3 +246,4 @@ export class GroupService {
     await deleteDoc(doc(this.db, "groups", groupId));
   }
 }
+
