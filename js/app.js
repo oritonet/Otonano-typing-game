@@ -909,6 +909,12 @@ document.addEventListener("keydown", (e) => {
   startWithCountdown();
 });
 
+// ペースト禁止（チート防止）
+inputEl.addEventListener("paste", (e) => {
+  e.preventDefault();
+});
+
+
 /* =========================
    ★成績・分析タブイベント
    タブ変更 → 出題難度・出題文は変えない（完全に非連動）
@@ -985,6 +991,7 @@ onAuthStateChanged(auth, async (user) => {
   await init();
   await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
 });
+
 
 
 
