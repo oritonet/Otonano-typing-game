@@ -293,17 +293,13 @@ function updateThemeOptionsByCategory() {
 
   const selectedCategory = categoryEl.value;
 
-  // 対象データ抽出
-  const filtered = selectedCategory === "all"
-    ? State.allItems
-    : State.allItems.filter(x => x.category === selectedCategory);
+  const filtered =
+    selectedCategory === "all"
+      ? State.allItems
+      : State.allItems.filter(x => x.category === selectedCategory);
 
-  // theme 抽出
-  const themeSet = new Set(
-    filtered.map(x => x.theme).filter(Boolean)
-  );
+  const themeSet = new Set(filtered.map(x => x.theme).filter(Boolean));
 
-  // 再描画
   themeEl.innerHTML = `<option value="all">すべて</option>`;
   for (const v of Array.from(themeSet).sort()) {
     const opt = document.createElement("option");
@@ -311,10 +307,10 @@ function updateThemeOptionsByCategory() {
     opt.textContent = v;
     themeEl.appendChild(opt);
   }
+
+  // ★カテゴリ変更時は必ず theme をリセット
   themeEl.value = "all";
 }
-
-
 
 
 function getPracticeDifficulty() {
@@ -378,6 +374,10 @@ function enableDailyTask() {
   setCurrentItem(item, { daily: true });
   syncDailyInfoLabel();
   updateMetaInfo();
+    // 今日の課題中はカテゴリ・テーマをロック
+  if (categoryEl) categoryEl.disabled = true;
+  if (themeEl) themeEl.disabled = true;
+
 }
 
 function disableDailyTask() {
@@ -390,6 +390,10 @@ function disableDailyTask() {
   State.daily.meta = null;
 
   syncDailyInfoLabel();
+    // 通常モードに戻す：カテゴリ・テーマを解放
+  if (categoryEl) categoryEl.disabled = false;
+  if (themeEl) themeEl.disabled = false;
+
 }
 
 function pickDailyItemForCurrent() {
@@ -1223,6 +1227,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
