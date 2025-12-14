@@ -1235,15 +1235,25 @@ startBtn.addEventListener("click", async () => {
 
 if (dailyThemeEl) {
   dailyThemeEl.addEventListener("change", () => {
+    // ★ 今日の課題 ON 時は、難度に応じて長さUIも同期する
+    if (dailyThemeEl.checked && lengthGroupEl) {
+      const forced = getDailyLengthByDifficulty(difficultyEl.value);
+      if (forced) {
+        lengthGroupEl.value = forced; // ← 表示を強制同期
+      }
+    }
+
     applyThemeOptionsByCategory();
     setNewText();
     updateLabels();
     loadDailyRanking();
     loadRanking();
+
     const user = auth.currentUser;
     if (user) loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
   });
 }
+
 
 
 // 出題難度の変更 → 統合タブにも反映
@@ -1402,6 +1412,7 @@ onAuthStateChanged(auth, async (user) => {
     await refreshMyGroups();
   }
 });
+
 
 
 
