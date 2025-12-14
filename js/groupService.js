@@ -5,11 +5,23 @@ import {
   getDoc,
   query,
   where,
-  updateDoc,
   deleteDoc,
   doc,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+/*
+  コレクション設計（確定）:
+
+  groups
+    { name, ownerUid, ownerName, createdAt }
+
+  groupMembers         // 承認済みメンバーのみ
+    { groupId, uid, userName, role, createdAt }
+
+  groupJoinRequests    // 承認待ちのみ
+    { groupId, uid, userName, createdAt }
+*/
 
 export class GroupService {
   constructor(db) {
@@ -18,9 +30,10 @@ export class GroupService {
 
   /* =========================================================
      グループ作成（誰でも可）
-     - 作成者は owner / approved で自動参加
+     - 作成者は owner として即参加
   ========================================================= */
   async createGroup(groupName, ownerUid, ownerName) {
+    // グループ本体
     const groupRef = await addDoc(collection(this.db, "groups"), {
       name: groupName,
       ownerUid,
@@ -28,13 +41,13 @@ export class GroupService {
       createdAt: serverTimestamp()
     });
 
+    // owner を groupMembers に登録
     await addDoc(collection(this.db, "groupMembers"), {
       groupId: groupRef.id,
       uid: ownerUid,
       userName: ownerName,
       role: "owner",
-      status: "approved",
-      joinedAt: serverTimestamp()
+      createdAt: serverTimestamp()
     });
 
     return groupRef.id;
@@ -42,20 +55,26 @@ export class GroupService {
 
   /* =========================================================
      グループ削除（ownerのみ）
-     - groups / groupMembers をまとめて削除
+     - groups / groupMembers / groupJoinRequests を削除
   ========================================================= */
   async deleteGroup(groupId) {
+    // members
     const membersSnap = await getDocs(
-      query(
-        collection(this.db, "groupMembers"),
-        where("groupId", "==", groupId)
-      )
+      query(collection(this.db, "groupMembers"), where("groupId", "==", groupId))
     );
-
     for (const d of membersSnap.docs) {
       await deleteDoc(d.ref);
     }
 
+    // pending requests
+    const reqSnap = await getDocs(
+      query(collection(this.db, "groupJoinRequests"), where("groupId", "==", groupId))
+    );
+    for (const d of reqSnap.docs) {
+      await deleteDoc(d.ref);
+    }
+
+    // group itself
     await deleteDoc(doc(this.db, "groups", groupId));
   }
 
@@ -80,52 +99,45 @@ export class GroupService {
 
   /* =========================================================
      参加申請（承認制）
-     - status: pending
+     - groupJoinRequests に追加
   ========================================================= */
   async requestJoin(groupId, uid, userName) {
-    // 二重申請防止
-    const exists = await getDocs(
+    // すでに member なら何もしない
+    const memberSnap = await getDocs(
       query(
         collection(this.db, "groupMembers"),
         where("groupId", "==", groupId),
         where("uid", "==", uid)
       )
     );
-    if (!exists.empty) return;
+    if (!memberSnap.empty) return;
 
-    await addDoc(collection(this.db, "groupMembers"), {
+    // 二重申請防止
+    const reqSnap = await getDocs(
+      query(
+        collection(this.db, "groupJoinRequests"),
+        where("groupId", "==", groupId),
+        where("uid", "==", uid)
+      )
+    );
+    if (!reqSnap.empty) return;
+
+    await addDoc(collection(this.db, "groupJoinRequests"), {
       groupId,
       uid,
       userName,
-      role: "member",
-      status: "pending",
-      joinedAt: serverTimestamp()
+      createdAt: serverTimestamp()
     });
   }
 
   /* =========================================================
-     招待制（owner → 直接 approved）
-  ========================================================= */
-  async inviteUser(groupId, uid, userName) {
-    await addDoc(collection(this.db, "groupMembers"), {
-      groupId,
-      uid,
-      userName,
-      role: "member",
-      status: "approved",
-      joinedAt: serverTimestamp()
-    });
-  }
-
-  /* =========================================================
-     承認待ち一覧（owner専用UI用）
+     承認待ち一覧（owner専用）
   ========================================================= */
   async getPendingRequests(groupId) {
     const snap = await getDocs(
       query(
-        collection(this.db, "groupMembers"),
-        where("groupId", "==", groupId),
-        where("status", "==", "pending")
+        collection(this.db, "groupJoinRequests"),
+        where("groupId", "==", groupId)
       )
     );
 
@@ -136,24 +148,35 @@ export class GroupService {
   }
 
   /* =========================================================
-     承認 / 却下（ownerのみ）
+     承認（ownerのみ）
+     - groupMembers に追加
+     - groupJoinRequests を削除
   ========================================================= */
-  async approveMember(memberDocId) {
-    await updateDoc(
-      doc(this.db, "groupMembers", memberDocId),
-      { status: "approved" }
-    );
-  }
+  async approveMember(request) {
+    // request = { id, groupId, uid, userName }
 
-  async rejectMember(memberDocId) {
-    await deleteDoc(
-      doc(this.db, "groupMembers", memberDocId)
-    );
+    await addDoc(collection(this.db, "groupMembers"), {
+      groupId: request.groupId,
+      uid: request.uid,
+      userName: request.userName,
+      role: "member",
+      createdAt: serverTimestamp()
+    });
+
+    await deleteDoc(doc(this.db, "groupJoinRequests", request.id));
   }
 
   /* =========================================================
-     退出（member / owner 両対応）
-     - owner が退出する場合は deleteGroup を使う
+     却下（ownerのみ）
+     - groupJoinRequests を削除
+  ========================================================= */
+  async rejectMember(requestId) {
+    await deleteDoc(doc(this.db, "groupJoinRequests", requestId));
+  }
+
+  /* =========================================================
+     退出（memberのみ）
+     - owner は deleteGroup を使う
   ========================================================= */
   async leaveGroup(groupId, uid) {
     const snap = await getDocs(
@@ -170,15 +193,14 @@ export class GroupService {
   }
 
   /* =========================================================
-     自分が参加しているグループ一覧（approved のみ）
-     - UI の「現在参加中グループ切替」に使用
+     自分が参加しているグループ一覧
+     - groupMembers のみ参照
   ========================================================= */
   async getMyGroups(uid) {
     const memberSnap = await getDocs(
       query(
         collection(this.db, "groupMembers"),
-        where("uid", "==", uid),
-        where("status", "==", "approved")
+        where("uid", "==", uid)
       )
     );
 
@@ -200,7 +222,7 @@ export class GroupService {
   }
 
   /* =========================================================
-     自分が owner かどうか判定
+     owner 判定（補助）
   ========================================================= */
   async isOwner(groupId, uid) {
     const snap = await getDocs(
