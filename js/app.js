@@ -438,9 +438,9 @@ engine.attach();
 /* =========================
    Paste/Drop 禁止
 ========================= */
-inputEl.addEventListener("paste", (e) => e.preventDefault());
-inputEl.addEventListener("drop", (e) => e.preventDefault());
-inputEl.addEventListener("dragover", (e) => e.preventDefault());
+/inputEl.addEventListener("paste", (e) => e.preventDefault());
+/inputEl.addEventListener("drop", (e) => e.preventDefault());
+/inputEl.addEventListener("dragover", (e) => e.preventDefault());
 
 /* =========================
    Countdown + Start
@@ -901,3 +901,4 @@ onAuthStateChanged(auth, async (user) => {
   await init();
   await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
 });
+
