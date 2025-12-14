@@ -12,7 +12,7 @@ export class UserManager {
     renameBtn,
     deleteBtn,
     db,
-    storageKeyPrefix = "typing_users_v3"
+    storageKeyPrefix = "typing_users_v4"
   }) {
     this.db = db;
     this.selectEl = selectEl;
@@ -24,19 +24,37 @@ export class UserManager {
     this.storageLastKey = `${storageKeyPrefix}__last`;
 
     this.users = this._loadUsers();
+    this.current = null;
+
+    this._bindEvents();
+
+    // 初期ユーザー生成は async
+    this._init();
+  }
+
+  /* =========================
+     初期化
+  ========================= */
+  async _init() {
     if (this.users.length === 0) {
-      this.users = ["ゲスト"];
+      const guest = await this._createInitialGuest();
+      this.users = [guest];
+      this.current = guest;
       this._saveUsers();
+      localStorage.setItem(this.storageLastKey, guest);
+    } else {
+      const last = localStorage.getItem(this.storageLastKey);
+      this.current = (last && this.users.includes(last)) ? last : this.users[0];
     }
 
-    const last = localStorage.getItem(this.storageLastKey);
-    this.current = (last && this.users.includes(last)) ? last : this.users[0];
     this._render();
+    this.onChange?.(this.current);
+  }
 
+  _bindEvents() {
     this.selectEl.addEventListener("change", () => {
       this.current = this.selectEl.value;
       localStorage.setItem(this.storageLastKey, this.current);
-      this._render();
       this.onChange?.(this.current);
     });
 
@@ -46,7 +64,7 @@ export class UserManager {
   }
 
   /* =========================
-     正規化
+     正規化・検証
   ========================= */
   _normalize(name) {
     return name
@@ -57,13 +75,37 @@ export class UserManager {
 
   _validate(name) {
     const raw = name.trim();
-    if (!raw) return "ユーザー名を入力してください。";
+    if (!raw) return "ユーザー名を10字以内で入力してください。";
     if (raw.length > 10) return "ユーザー名は10文字以内にしてください。";
     return null;
   }
 
   /* =========================
-     Firestore helpers
+     ゲスト生成
+  ========================= */
+  _generateGuestName() {
+    const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+    let s = "";
+    for (let i = 0; i < 7; i++) {
+      s += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return `guest-${s}`;
+  }
+
+  async _createInitialGuest() {
+    for (;;) {
+      const name = this._generateGuestName();
+      try {
+        await this._reserve(name);
+        return name;
+      } catch {
+        // 衝突したら再生成（理論上ほぼ起きない）
+      }
+    }
+  }
+
+  /* =========================
+     Firestore 一意予約
   ========================= */
   async _reserve(rawName) {
     const key = this._normalize(rawName);
@@ -71,14 +113,14 @@ export class UserManager {
 
     await runTransaction(this.db, async tx => {
       const snap = await tx.get(ref);
-      if (snap.exists()) throw new Error("DUPLICATE");
+      if (snap.exists()) {
+        throw new Error("DUPLICATE");
+      }
       tx.set(ref, {
         displayName: rawName,
         createdAt: Date.now()
       });
     });
-
-    return key;
   }
 
   async _renameOnServer(oldRaw, newRaw) {
@@ -90,7 +132,9 @@ export class UserManager {
 
     await runTransaction(this.db, async tx => {
       const snap = await tx.get(newRef);
-      if (snap.exists()) throw new Error("DUPLICATE");
+      if (snap.exists()) {
+        throw new Error("DUPLICATE");
+      }
       tx.delete(oldRef);
       tx.set(newRef, {
         displayName: newRaw,
@@ -105,7 +149,7 @@ export class UserManager {
   }
 
   /* =========================
-     Local storage
+     LocalStorage
   ========================= */
   _loadUsers() {
     try {
@@ -140,7 +184,7 @@ export class UserManager {
      Actions
   ========================= */
   async addUser() {
-    const name = prompt("ユーザー名を入力してください");
+    const name = prompt("ユーザー名を10字以内で入力してください");
     if (!name) return;
 
     const err = this._validate(name);
@@ -156,9 +200,11 @@ export class UserManager {
       return;
     }
 
-    this.users.push(name.trim());
+    const n = name.trim();
+    this.users.push(n);
     this._saveUsers();
-    this.current = name.trim();
+    this.current = n;
+    localStorage.setItem(this.storageLastKey, n);
     this._render();
     this.onChange?.(this.current);
   }
@@ -167,7 +213,7 @@ export class UserManager {
     const cur = this.current;
     if (!cur) return;
 
-    const name = prompt("新しいユーザー名を入力してください", cur);
+    const name = prompt("新しいユーザー名を10字以内で入力してください", cur);
     if (!name) return;
 
     const err = this._validate(name);
@@ -185,9 +231,11 @@ export class UserManager {
       return;
     }
 
-    this.users = this.users.map(u => (u === cur ? name.trim() : u));
+    const n = name.trim();
+    this.users = this.users.map(u => (u === cur ? n : u));
     this._saveUsers();
-    this.current = name.trim();
+    this.current = n;
+    localStorage.setItem(this.storageLastKey, n);
     this._render();
     this.onChange?.(this.current);
   }
@@ -207,6 +255,7 @@ export class UserManager {
     this.users = this.users.filter(u => u !== cur);
     this.current = this.users[0];
     this._saveUsers();
+    localStorage.setItem(this.storageLastKey, this.current);
     this._render();
     this.onChange?.(this.current);
   }
