@@ -269,16 +269,20 @@ function initFilterOptions() {
 
   // カテゴリ
   if (categoryEl) {
-    categoryEl.addEventListener("change", () => {
-      updateThemeOptionsByCategory();
-      buildPool();
-      setNewText();
-    });
+    const set = new Set(State.allItems.map(x => x.category).filter(Boolean));
+    categoryEl.innerHTML = `<option value="all">すべて</option>`;
+    for (const v of Array.from(set).sort()) {
+      const opt = document.createElement("option");
+      opt.value = v;
+      opt.textContent = v;
+      categoryEl.appendChild(opt);
+    }
   }
 
-  // テーマ（初期はカテゴリ all）
+  // テーマ（初期：カテゴリ all）
   updateThemeOptionsByCategory();
 }
+
 
 /* =========================================================
    Category → Theme 連動
@@ -1219,6 +1223,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
