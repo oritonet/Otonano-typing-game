@@ -1213,9 +1213,23 @@ function bindGroupEventsOnce() {
    Events（既存）
 ========================= */
 skipBtn.addEventListener("click", () => {
-  hideModal();
+  // ★今日の課題が ON なら自動で OFF にする
+  if (dailyThemeEl && dailyThemeEl.checked) {
+    dailyThemeEl.checked = false;
+
+    // 今日の課題用テーマも解除
+    dailyTheme = null;
+
+    // lengthGroup セレクトを復帰
+    if (lengthGroupEl) {
+      lengthGroupEl.disabled = false;
+    }
+  }
+
+  // 通常モードで別の文章を出す
   setNewText();
 });
+
 
 startBtn.addEventListener("click", async () => {
   hideModal();
@@ -1390,6 +1404,7 @@ onAuthStateChanged(auth, async (user) => {
     await refreshMyGroups();
   }
 });
+
 
 
 
