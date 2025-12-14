@@ -144,6 +144,22 @@
     }
     .kpi .v { font-size: 1.35rem; font-weight: 900; }
     .modalActions { display:flex; gap: 10px; justify-content: flex-end; margin-top: 12px; flex-wrap: wrap; }
+
+    /* ===== 難度タブ ===== */
+    .diffTabs { display:flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 8px; }
+    .diffTab {
+      padding: 6px 12px;
+      border-radius: 10px;
+      border: 1px solid #999;
+      background: #fff;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    .diffTab.active {
+      background: #222;
+      color: #fff;
+      border-color: #222;
+    }
   </style>
 </head>
 
@@ -204,12 +220,28 @@
       <div class="split" style="margin-top: 18px;">
         <div class="card" style="border-color:#eee;">
           <h3 style="margin-top:0;">今日のテーマランキング（固定表示）</h3>
+
+          <!-- ★難度タブ：今日のテーマランキング -->
+          <div class="diffTabs">
+            <button type="button" class="diffTab" data-diff="easy">易</button>
+            <button type="button" class="diffTab active" data-diff="normal">普</button>
+            <button type="button" class="diffTab" data-diff="hard">難</button>
+          </div>
+
           <div class="muted" id="dailyRankLabel" style="margin-bottom: 8px;"></div>
           <ul id="dailyRanking"></ul>
         </div>
 
         <div class="card" style="border-color:#eee;">
           <h3 style="margin-top:0;">ランキング</h3>
+
+          <!-- ★難度タブ：ランキング -->
+          <div class="diffTabs">
+            <button type="button" class="diffTab" data-diff="easy">易</button>
+            <button type="button" class="diffTab active" data-diff="normal">普</button>
+            <button type="button" class="diffTab" data-diff="hard">難</button>
+          </div>
+
           <div class="row" style="margin-top: 0;">
             <select id="rankScope" aria-label="ランキング範囲"></select>
             <div id="rankLabel" class="muted"></div>
@@ -225,6 +257,15 @@
 
     <section class="card" style="margin-top:16px;">
       <h2 style="margin-top:0;">入力分析（選択ユーザー）</h2>
+
+      <!-- ★難度タブ：入力分析 -->
+      <div class="diffTabs">
+        <button type="button" class="diffTab" data-diff="easy">易</button>
+        <button type="button" class="diffTab active" data-diff="normal">普</button>
+        <button type="button" class="diffTab" data-diff="hard">難</button>
+      </div>
+
+      <div class="muted" id="analyticsLabel" style="margin: 0 0 10px;"></div>
 
       <div class="split">
         <div>
@@ -286,6 +327,3 @@
   <script type="module" src="./js/app.js"></script>
 </body>
 </html>
-
-
-
