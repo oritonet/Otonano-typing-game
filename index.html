@@ -160,6 +160,42 @@
       color: #fff;
       border-color: #222;
     }
+
+    .best-score-title {
+      font-size: 22px;
+      font-weight: bold;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    
+    .best-score-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 18px;
+    }
+    
+    .best-score-table th,
+    .best-score-table td {
+      border: 2px solid #000;
+      padding: 8px 12px;
+    }
+    
+    .best-score-table th {
+      width: 40%;
+      background: #f3f3f3;
+      text-align: center;
+    }
+    
+    .best-score-table td {
+      text-align: center;
+      font-weight: bold;
+    }
+    
+    #bestScore {
+      font-size: 26px;
+      color: #c00;
+    }
+
   </style>
 </head>
 
@@ -254,8 +290,14 @@
 
         <div class="split">
           <div>
-            <h3>ベストスコア</h3>
-            <ul id="bestByDifficulty"></ul>
+            <h3 class="best-score-title">ベストスコア</h3>
+            
+            <table class="best-score-table" id="bestScoreTable">
+              <tr><th>ランク</th><td id="bestRank">-</td></tr>
+              <tr><th>スコア</th><td id="bestScore">-</td></tr>
+              <tr><th>長さ</th><td id="bestLength">-</td></tr>
+              <tr><th>テーマ</th><td id="bestTheme">-</td></tr>
+            </table>
 
           </div>
 
@@ -311,4 +353,5 @@
   <script type="module" src="./js/app.js"></script>
 </body>
 </html>
+
 
