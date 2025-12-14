@@ -7,6 +7,7 @@ import {
   getDocs,
   query,
   where,
+  limit,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import {
@@ -18,7 +19,8 @@ import {
 import { UserManager } from "./userManager.js";
 import { TypingEngine } from "./typingEngine.js";
 import { RankingService } from "./ranking.js";
-import { GroupService } from "./groupService.js";
+// groupService.js は現状 index.html にUIが無いので「落ちないために import はしても、使うのはUIがある場合のみ」
+// import { GroupService } from "./groupService.js";
 
 /* =========================
    Firebase init
@@ -31,7 +33,6 @@ const firebaseConfig = {
   messagingSenderId: "475283850178",
   appId: "1:475283850178:web:193d28f17be20a232f4c5b",
   measurementId: "G-JE1X0NCNHB"
-  
 };
 
 const app = initializeApp(firebaseConfig);
@@ -44,140 +45,93 @@ const auth = getAuth(app);
 const authBadge = document.getElementById("authBadge");
 const metaInfoEl = document.getElementById("metaInfo");
 
+// user manager
 const userSelect = document.getElementById("userSelect");
 const addUserBtn = document.getElementById("addUserBtn");
 const renameUserBtn = document.getElementById("renameUserBtn");
 const deleteUserBtn = document.getElementById("deleteUserBtn");
 
+// filters
 const difficultyEl = document.getElementById("difficulty");
 const lengthGroupEl = document.getElementById("lengthGroup");
 const categoryEl = document.getElementById("category");
 const themeEl = document.getElementById("theme");
+const dailyTaskEl = document.getElementById("dailyTask");
+const dailyInfoEl = document.getElementById("dailyInfo");
 
-const dailyThemeEl = document.getElementById("dailyTask"); // index.html 側の id に合わせる（重要）
-const inputEl = document.getElementById("typingInput");
-const textEl = document.getElementById("typingText");
+// typing area
 const skipBtn = document.getElementById("skipBtn");
 const startBtn = document.getElementById("startBtn");
+const inputEl = document.getElementById("input");
+const textEl = document.getElementById("text");
+const resultEl = document.getElementById("result");
 
-const modalEl = document.getElementById("modal");
-const modalTitleEl = document.getElementById("modalTitle");
-const modalMsgEl = document.getElementById("modalMsg");
-const modalOkBtn = document.getElementById("modalOkBtn");
-
-const analyticsBox = document.getElementById("analyticsBox");
-const analyticsLabel = document.getElementById("analyticsLabel");
-const analyticsUL = document.getElementById("analytics");
-
+// ranking
+const dailyRankLabel = document.getElementById("dailyRankLabel");
 const dailyRankingUL = document.getElementById("dailyRanking");
 
-// 元の app.js は rankScopeEl / rankLabel を参照しているため残す（HTML 側に無い場合も落ちないよう後でガード）
-const rankScopeEl = document.getElementById("rankScope");
-const rankLabel = document.getElementById("rankLabel");
+const overallLabel = document.getElementById("overallLabel");
 const rankingUL = document.getElementById("ranking");
 
-// グループランキング用（index.html に groupRankingBox / groupRankLabel / groupRanking がある前提）
-const groupRankingBox = document.getElementById("groupRankingBox");
-const groupRankLabel = document.getElementById("groupRankLabel");
-const groupRankingUL = document.getElementById("groupRanking");
-
+// analytics
+const analyticsTitle = document.getElementById("analyticsTitle");
+const analyticsLabel = document.getElementById("analyticsLabel");
 const bestByDifficultyUL = document.getElementById("bestByDifficulty");
-const compareTodayEl = document.getElementById("compareToday");
 const scoreChart = document.getElementById("scoreChart");
-const scoreChartModeEl = document.getElementById("scoreChartMode");
-const scoreChartScopeEl = document.getElementById("scoreChartScope");
+const myRecentUL = document.getElementById("myRecent");
 
-const unifiedDiffTabs = document.getElementById("unifiedDiffTabs");
+// compareToday は index.html に無い場合がある
+const compareTodayEl = document.getElementById("compareToday");
 
-/* =========================
-   Group UI (存在する場合のみ)
-========================= */
-const groupUI = document.getElementById("groupUI");
-const groupCreateName = document.getElementById("groupCreateName");
-const groupCreateBtn = document.getElementById("groupCreateBtn");
-const groupSearchKey = document.getElementById("groupSearchKey");
-const groupSearchBtn = document.getElementById("groupSearchBtn");
-const groupSearchResult = document.getElementById("groupSearchResult");
-const joinBtn = document.getElementById("joinBtn");
-const currentGroupSelect = document.getElementById("currentGroupSelect");
-const leaveGroupBtn = document.getElementById("leaveGroupBtn");
-const deleteGroupBtn = document.getElementById("deleteGroupBtn");
-const pendingBox = document.getElementById("pendingBox");
-const pendingList = document.getElementById("pendingList");
+// modal
+const modalBackdrop = document.getElementById("resultModalBackdrop");
+const closeModalBtn = document.getElementById("closeModalBtn");
+const nextBtn = document.getElementById("nextBtn");
+
+const mRank = document.getElementById("mRank");
+const mCPM = document.getElementById("mCPM");
+const mTimeSec = document.getElementById("mTimeSec");
+const mLen = document.getElementById("mLen");
+const mMeta = document.getElementById("mMeta");
+
+// unified diff tabs (成績・分析用)
+const diffTabsUnified = document.getElementById("diffTabsUnified");
 
 /* =========================
    Services
 ========================= */
-const userMgr = new UserManager(db);
-const engine = new TypingEngine({
-  textEl,
-  inputEl,
-  resultEl: modalMsgEl, // 結果表示先（既存UIを再利用）
-  onFinish: async ({ metrics }) => {
-    const cpm = metrics.cpm;
-
-    try {
-      await submitScore(cpm);
-    } catch (e) {
-      console.error("submitScore failed", e);
-      showModal("エラー", "スコアの保存に失敗しました。");
-      return;
-    }
-
-    showModal("結果", `CPM: ${cpm}`);
-
-    await loadDailyRanking();
-    await loadRanking();
-    await loadGroupRanking();
-
-    const user = auth.currentUser;
-    if (user) {
-      await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
-    }
-  }
+const userMgr = new UserManager({
+  selectEl: userSelect,
+  addBtn: addUserBtn,
+  renameBtn: renameUserBtn,
+  deleteBtn: deleteUserBtn,
+  db
 });
 
-const rankingSvc = new RankingService(db);
-const groupSvc = new GroupService(db);
+const rankingSvc = new RankingService({ db });
 
 /* =========================
    State
 ========================= */
-let triviaRaw = null;
 let allTrivia = [];
 let pool = [];
 let currentItem = null;
 
-let activeDiffTab = "easy"; // "easy" | "normal" | "hard"
-let dailyTheme = null;      // 今日の課題テーマ（既存コードとの整合のため残す）
-
-// 参加中グループ
-const GROUP_STORAGE_KEY = "currentGroupId";
-let currentGroupId = "";
-let currentGroupRole = null;
-
-// グループUIイベント重複防止
-let groupEventsBound = false;
+let activeDiffTab = "normal"; // easy/normal/hard  (成績・分析の表示側の難度タブ)
+let currentDaily = {
+  enabled: false,
+  dateKey: "",
+  dailyTaskKey: "",
+  difficulty: "normal",
+  lengthGroup: "medium",
+  // 今日の課題に固定される「本文」
+  text: "",
+  meta: {}
+};
 
 /* =========================
    Utils
 ========================= */
-function hasGroupUI() {
-  return !!groupUI && !!currentGroupSelect && !!groupSvc;
-}
-
-function showModal(title, msg) {
-  if (!modalEl) return;
-  modalTitleEl.textContent = title || "";
-  modalMsgEl.textContent = msg || "";
-  modalEl.style.display = "block";
-}
-
-function hideModal() {
-  if (!modalEl) return;
-  modalEl.style.display = "none";
-}
-
 function todayKey() {
   const d = new Date();
   const y = d.getFullYear();
@@ -186,427 +140,476 @@ function todayKey() {
   return `${y}-${m}-${day}`;
 }
 
-function diffLabel(diff) {
-  if (diff === "easy") return "易";
-  if (diff === "normal") return "普";
-  if (diff === "hard") return "難";
-  return diff;
-}
-
-/* =========================
-   Daily Task 固定ルール
-========================= */
-function getDailyLengthByDifficulty(diff) {
-  if (diff === "easy") return "xs";        // 易 → 極短
-  if (diff === "normal") return "medium";  // 普 → 中
-  if (diff === "hard") return "xl";        // 難 → 極長
-  return null;
-}
-
-function pickDailyItem(poolArr, difficulty, dateKey) {
-  if (!poolArr || poolArr.length === 0) return null;
-  const seed = `${dateKey}-${difficulty}`;
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+function hashString(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
   }
-  const idx = hash % poolArr.length;
-  return poolArr[idx];
+  return (h >>> 0);
+}
+
+function rankByScore(score) {
+  if (score >= 800) return "SSS";
+  if (score >= 700) return "SS";
+  if (score >= 600) return "S";
+  if (score >= 500) return "A";
+  if (score >= 400) return "B";
+  if (score >= 300) return "C";
+  return "D";
+}
+
+function diffLabel(v) {
+  if (v === "easy") return "易";
+  if (v === "normal") return "普";
+  if (v === "hard") return "難";
+  return "-";
+}
+
+function lengthLabel(v) {
+  if (v === "xs") return "極短";
+  if (v === "short") return "短";
+  if (v === "medium") return "中";
+  if (v === "long") return "長";
+  if (v === "xl") return "極長";
+  return "-";
+}
+
+function mapDifficultyToFixedLength(diff) {
+  // 要件：易=極短 / 普=中 / 難=極長 に固定
+  if (diff === "easy") return "xs";
+  if (diff === "hard") return "xl";
+  return "medium";
+}
+
+function safeText(v) {
+  return (typeof v === "string") ? v : "";
+}
+
+function showModal() {
+  if (!modalBackdrop) return;
+  modalBackdrop.style.display = "flex";
+}
+
+function hideModal() {
+  if (!modalBackdrop) return;
+  modalBackdrop.style.display = "none";
 }
 
 /* =========================
-   Trivia load/build
+   TypingEngine setup
+========================= */
+function onTypingFinish(metrics) {
+  // metrics: typingEngine.js の computeMetrics() が返す想定の値
+  // 例：{ cpm, timeSec, typed, total, accuracy, ... }
+  try {
+    const cpm = Math.round(Number(metrics?.cpm ?? 0));
+    const timeSec = Math.round(Number(metrics?.timeSec ?? 0) * 10) / 10;
+
+    const lengthGroup = getEffectiveLengthGroup();
+    const difficulty = getEffectiveDifficulty();
+    const category = safeText(categoryEl?.value ?? "");
+    const theme = safeText(themeEl?.value ?? "");
+
+    const isDailyTask = !!currentDaily.enabled;
+    const dailyTaskKey = isDailyTask ? currentDaily.dailyTaskKey : null;
+    const dateKey = todayKey();
+
+    const user = auth.currentUser;
+    const userName = userMgr.getCurrentUserName() || "Guest";
+
+    const rank = rankByScore(cpm);
+
+    // modal 表示
+    if (mRank) mRank.textContent = rank;
+    if (mCPM) mCPM.textContent = String(cpm);
+    if (mTimeSec) mTimeSec.textContent = String(timeSec);
+    if (mLen) mLen.textContent = lengthLabel(lengthGroup);
+
+    const metaParts = [];
+    metaParts.push(`難度:${diffLabel(difficulty)}`);
+    metaParts.push(`長さ:${lengthLabel(lengthGroup)}`);
+    if (isDailyTask) metaParts.push(`今日の課題`);
+    if (theme) metaParts.push(`テーマ:${theme}`);
+    if (mMeta) mMeta.textContent = metaParts.join(" / ");
+
+    showModal();
+
+    // スコア保存
+    if (user) {
+      submitScore({
+        uid: user.uid,
+        userName,
+        cpm,
+        rank,
+        timeSec,
+        difficulty,
+        lengthGroup,
+        category,
+        theme,
+        dateKey,
+        isDailyTask,
+        dailyTaskKey
+      }).catch(e => console.error("submitScore error:", e));
+    }
+
+    // ランキング/分析更新
+    refreshAllAfterPlay().catch(e => console.error(e));
+
+  } catch (e) {
+    console.error("onTypingFinish error:", e);
+  }
+}
+
+const engine = new TypingEngine({
+  textEl,
+  inputEl,
+  resultEl,
+  onFinish: onTypingFinish
+});
+engine.attach();
+
+/* =========================
+   Filters (practice side)
+========================= */
+function getEffectiveDifficulty() {
+  const d = safeText(difficultyEl?.value ?? "normal");
+  return (d === "easy" || d === "hard" || d === "normal") ? d : "normal";
+}
+
+function getEffectiveLengthGroup() {
+  // 今日の課題がONなら固定値
+  if (currentDaily.enabled) return currentDaily.lengthGroup;
+  return safeText(lengthGroupEl?.value ?? "medium") || "medium";
+}
+
+/* =========================
+   Trivia load / pick
 ========================= */
 async function loadTrivia() {
   const res = await fetch("./trivia.json", { cache: "no-cache" });
   if (!res.ok) throw new Error("trivia.json load failed");
-  return await res.json();
+  const json = await res.json();
+  if (!Array.isArray(json)) throw new Error("trivia.json must be an array");
+
+  // 期待：{ text, difficulty, lengthGroup, category, theme, ... } の配列
+  allTrivia = json.map(x => ({
+    ...x,
+    text: safeText(x.text),
+    difficulty: safeText(x.difficulty || "normal"),
+    lengthGroup: safeText(x.lengthGroup || "medium"),
+    category: safeText(x.category || "all"),
+    theme: safeText(x.theme || "all")
+  }));
 }
 
-function buildIndices(raw) {
-  triviaRaw = raw;
-  allTrivia = Array.isArray(raw) ? raw : (raw?.items || []);
-  pool = allTrivia.slice();
-}
+function buildPool() {
+  const diff = getEffectiveDifficulty();
+  const len = getEffectiveLengthGroup();
 
-function hydrateSelects() {
-  // 既存コード準拠（ここでは triviaRaw の実データ構造に依存）
-  // 必要な option 生成が既にある前提で、あなたの元コードに合わせる
-}
-
-function applyThemeOptionsByCategory() {
-  const daily = !!(dailyThemeEl && dailyThemeEl.checked);
-
-  // ★今日の課題中は文章長を固定（操作不可）
-  if (lengthGroupEl) {
-    lengthGroupEl.disabled = daily;
-  }
-
-  // 今日の課題ON時は lengthGroup の表示も同期する
-  if (daily && lengthGroupEl) {
-    const forced = getDailyLengthByDifficulty(difficultyEl.value);
-    if (forced) lengthGroupEl.value = forced;
-  }
-}
-
-/* =========================
-   Filters / Picking
-========================= */
-function getActiveFilters() {
-  const daily = !!(dailyThemeEl && dailyThemeEl.checked && !!dailyTheme);
-  const difficulty = difficultyEl.value;
-
-  // ★今日の課題中は lengthGroup を難度で強制
-  const lengthGroup = daily
-    ? getDailyLengthByDifficulty(difficulty)
-    : lengthGroupEl.value;
-
-  const category = daily ? "all" : categoryEl.value;
-  const theme = daily ? dailyTheme : themeEl.value;
-
-  return { daily, difficulty, lengthGroup, category, theme };
-}
-
-function filterPool() {
-  const { difficulty, lengthGroup, category, theme, daily } = getActiveFilters();
-
-  let arr = allTrivia.slice();
-
-  // 難度
-  if (difficulty) {
-    arr = arr.filter(t => (t.difficulty || "easy") === difficulty);
-  }
-
-  // 長さ
-  if (lengthGroup) {
-    arr = arr.filter(t => (t.lengthGroup || "") === lengthGroup);
-  }
-
-  // カテゴリ（dailyでは all）
-  if (category && category !== "all") {
-    arr = arr.filter(t => (t.category || "") === category);
-  }
-
-  // テーマ（dailyでは dailyTheme）
-  if (theme && theme !== "all" && theme !== "random") {
-    arr = arr.filter(t => (t.theme || "") === theme);
-  }
-
-  pool = arr;
-}
-
-function pickNextItem(poolArr) {
-  if (!poolArr || poolArr.length === 0) return null;
-  const idx = Math.floor(Math.random() * poolArr.length);
-  return poolArr[idx];
-}
-
-function setNewText() {
-  filterPool();
-
-  if (!pool || pool.length === 0) {
-    textEl.textContent = "該当する文章がありません。条件を変えてください。";
-    currentItem = null;
+  // 今日の課題ONなら「今日の課題テキストのみ」に固定
+  if (currentDaily.enabled && currentDaily.text) {
+    pool = [{
+      text: currentDaily.text,
+      difficulty: currentDaily.difficulty,
+      lengthGroup: currentDaily.lengthGroup,
+      category: currentDaily.meta?.category ?? "all",
+      theme: currentDaily.meta?.theme ?? "all",
+      _isDaily: true
+    }];
     return;
   }
 
-  const { daily, difficulty } = getActiveFilters();
+  const category = safeText(categoryEl?.value ?? "all");
+  const theme = safeText(themeEl?.value ?? "all");
 
-  // ★今日の課題は「日付×難度」で1文固定
-  const pick = daily
-    ? pickDailyItem(pool, difficulty, todayKey())
-    : pickNextItem(pool);
-
-  if (!pick) {
-    textEl.textContent = "文章の取得に失敗しました。";
-    currentItem = null;
-    return;
-  }
-
-  currentItem = pick;
-  textEl.textContent = pick.text || pick.sentence || "";
-  engine.setTarget(textEl.textContent, {
-    difficulty: difficultyEl.value,
-    daily: dailyThemeEl?.checked ?? false
+  pool = allTrivia.filter(t => {
+    if (!t.text) return false;
+    if (t.difficulty && t.difficulty !== diff) return false;
+    if (t.lengthGroup && t.lengthGroup !== len) return false;
+    if (category && category !== "all" && t.category !== category) return false;
+    if (theme && theme !== "all" && t.theme !== theme) return false;
+    return true;
   });
 
-
-  inputEl.value = "";
-  inputEl.disabled = false;
-  inputEl.focus();
-}
-
-/* =========================
-   Labels / UI
-========================= */
-function updateLabels() {
-  const { difficulty, lengthGroup, category, theme } = getActiveFilters();
-  const diffTxt = diffLabel(difficulty);
-  const lenTxt = lengthGroup || "-";
-  const catTxt = category || "-";
-  const thTxt = theme || "-";
-
-  if (metaInfoEl) {
-    metaInfoEl.textContent = `難度：${diffTxt} / 長さ：${lenTxt} / カテゴリ：${catTxt} / テーマ：${thTxt}`;
+  // 0件なら難度だけ一致に緩和
+  if (pool.length === 0) {
+    pool = allTrivia.filter(t => t.text && t.difficulty === diff);
   }
 }
 
-/* =========================
-   Ranking loaders
-========================= */
-async function loadDailyRanking() {
-  try {
-    const { lengthGroup, difficulty } = getActiveFilters();
-
-    const rows = await rankingSvc.loadDailyTheme({
-      theme: dailyTheme,
-      dateKey: todayKey(),
-      difficulty,
-      lengthGroup,
-      groupId: currentGroupId ? currentGroupId : null
-    });
-
-    rankingSvc.renderList(dailyRankingUL, rows);
-  } catch (e) {
-    console.error("daily ranking load error", e);
-    if (dailyRankingUL) dailyRankingUL.innerHTML = "<li>ランキングの読み込みに失敗しました</li>";
+function pickRandomFromPool(seedStr = "") {
+  if (!pool.length) return null;
+  if (!seedStr) {
+    const idx = Math.floor(Math.random() * pool.length);
+    return pool[idx];
   }
+  // seed で安定選択（今日の課題）
+  const h = hashString(seedStr);
+  const idx = h % pool.length;
+  return pool[idx];
 }
 
-async function loadRanking() {
-  try {
-    const scope = rankScopeEl ? rankScopeEl.value : "overall";
+function setTextItem(item) {
+  currentItem = item;
+  if (textEl) textEl.textContent = item?.text ?? "";
 
-    let rows = [];
-    if (scope === "overall") {
-      // ★全国ランキング：難度のみ（長さ/テーマはフィルタしない）
-      rows = await rankingSvc.loadOverall({
-        difficulty: activeDiffTab
-      });
-    } else if (scope === "category") {
-      // 互換：UIが残っている場合のため（ただし長さ/テーマはフィルタしない仕様に寄せるなら difficulty のみ推奨）
-      const category = categoryEl ? categoryEl.value : "all";
-      rows = await rankingSvc.loadByCategory({
-        category,
-        difficulty: activeDiffTab
-      });
-    } else if (scope === "theme") {
-      const th = themeEl ? themeEl.value : "all";
-      rows = await rankingSvc.loadByTheme({
-        theme: th,
-        difficulty: activeDiffTab
-      });
-    } else {
-      rows = await rankingSvc.loadOverall({
-        difficulty: activeDiffTab
-      });
-    }
-
-    rankingSvc.renderList(rankingUL, rows);
-  } catch (e) {
-    console.error("ranking load error", e);
-    if (rankingUL) rankingUL.innerHTML = "<li>ランキングの読み込みに失敗しました</li>";
+  // typingEngine にターゲット設定
+  engine.setTarget(item?.text ?? "");
+  engine.enableReadyState();
+  if (inputEl) {
+    inputEl.value = "";
+    inputEl.disabled = true; // Start押すまで無効
+    inputEl.focus();
   }
+
+  updateMetaInfo();
 }
 
-async function loadGroupRanking() {
-  // UI が無い場合（index.html 未更新など）は何もしない
-  if (!groupRankingBox || !groupRankingUL) return;
+function updateMetaInfo() {
+  if (!metaInfoEl) return;
 
-  // グループ未参加なら非表示
-  if (!currentGroupId) {
-    groupRankingBox.style.display = "none";
-    groupRankingUL.innerHTML = "";
-    if (groupRankLabel) groupRankLabel.textContent = "";
+  const diff = currentDaily.enabled ? currentDaily.difficulty : getEffectiveDifficulty();
+  const len = getEffectiveLengthGroup();
+  const category = safeText(categoryEl?.value ?? "all");
+  const theme = safeText(themeEl?.value ?? "all");
+
+  const parts = [];
+  parts.push(`難度：${diffLabel(diff)}`);
+  parts.push(`長さ：${lengthLabel(len)}`);
+  if (currentDaily.enabled) parts.push("今日の課題：ON");
+  if (category && category !== "all") parts.push(`カテゴリ：${category}`);
+  if (theme && theme !== "all") parts.push(`テーマ：${theme}`);
+
+  metaInfoEl.textContent = parts.join(" / ");
+}
+
+function refreshText({ forceNew = false } = {}) {
+  buildPool();
+
+  if (currentDaily.enabled) {
+    // 今日の課題は seed で毎回同じ（ただし forceNew は別seedにする）
+    const seedBase = `${currentDaily.dateKey}|${currentDaily.difficulty}|${currentDaily.lengthGroup}`;
+    const seed = forceNew ? `${seedBase}|alt|${Date.now()}` : seedBase;
+    const item = pickRandomFromPool(seed);
+    setTextItem(item);
     return;
   }
 
-  groupRankingBox.style.display = "block";
-
-  try {
-    // ★グループランキング：難度のみ（長さ/テーマはフィルタしない）＋ groupId
-    const rows = await rankingSvc.loadOverall({
-      difficulty: activeDiffTab,
-      groupId: currentGroupId
-    });
-
-    if (groupRankLabel) {
-      const sel = (hasGroupUI() && currentGroupSelect && currentGroupSelect.selectedOptions && currentGroupSelect.selectedOptions[0])
-        ? currentGroupSelect.selectedOptions[0]
-        : null;
-      const gName = sel?.textContent || currentGroupId;
-      groupRankLabel.textContent = `グループ：${gName} / 難度：${diffLabel(activeDiffTab)}`;
-    }
-
-    rankingSvc.renderList(groupRankingUL, rows);
-  } catch (e) {
-    console.error("group ranking load error", e);
-    groupRankingUL.innerHTML = "<li>ランキングの読み込みに失敗しました</li>";
+  // 通常：forceNew なら現 item と被りにくいように複数回トライ
+  if (!forceNew) {
+    const item = pickRandomFromPool("");
+    setTextItem(item);
+    return;
   }
+
+  let item = null;
+  for (let i = 0; i < 6; i++) {
+    const cand = pickRandomFromPool("");
+    if (!cand) break;
+    if (!currentItem || cand.text !== currentItem.text) {
+      item = cand;
+      break;
+    }
+  }
+  if (!item) item = pickRandomFromPool("");
+  setTextItem(item);
 }
 
 /* =========================
-   Analytics（選択ユーザー）
+   Daily Task logic
 ========================= */
-async function loadMyAnalytics(uid, userName) {
-  if (!analyticsBox || !analyticsUL) return;
+function applyDailyDifficultyFix() {
+  // 今日の課題ON時：難度に応じて長さ固定し、表示も同期
+  currentDaily.difficulty = getEffectiveDifficulty();
+  currentDaily.lengthGroup = mapDifficultyToFixedLength(currentDaily.difficulty);
 
-  try {
-    const histories = await userMgr.getHistories(uid);
-    analyticsUL.innerHTML = "";
-    if (!histories || histories.length === 0) {
-      const li = document.createElement("li");
-      li.textContent = "履歴がありません";
-      analyticsUL.appendChild(li);
-      return;
-    }
+  // lengthGroup のUI表示も強制同期（要件の「表示が元のまま」を潰す）
+  if (lengthGroupEl) {
+    lengthGroupEl.value = currentDaily.lengthGroup;
+  }
 
-    const best = Math.max(...histories.map(h => Number(h.cpm ?? 0)));
-    const li = document.createElement("li");
-    li.textContent = `ベスト: ${best} CPM`;
-    analyticsUL.appendChild(li);
-
-    if (analyticsLabel) {
-      const { difficulty, lengthGroup, theme } = getActiveFilters();
-      const diffTxt = diffLabel(difficulty);
-      const lenTxt = lengthGroup || "-";
-      const thTxt = theme || "-";
-      analyticsLabel.textContent = `難度：${diffTxt} / 長さ：${lenTxt} / テーマ：${thTxt}`;
-    }
-  } catch (e) {
-    console.error("analytics load error", e);
+  // 今日の課題情報表示
+  if (dailyInfoEl) {
+    const theme = safeText(themeEl?.value ?? "-");
+    dailyInfoEl.textContent =
+      `今日：${currentDaily.dateKey} / 難度：${diffLabel(currentDaily.difficulty)} / 長さ：${lengthLabel(currentDaily.lengthGroup)} / テーマ：${theme || "-"}`;
   }
 }
 
+function enableDailyTask() {
+  currentDaily.enabled = true;
+  currentDaily.dateKey = todayKey();
+
+  // 今日の課題キー：日付+難度で固定（難度ごとに別課題）
+  currentDaily.difficulty = getEffectiveDifficulty();
+  currentDaily.lengthGroup = mapDifficultyToFixedLength(currentDaily.difficulty);
+  currentDaily.dailyTaskKey = `${currentDaily.dateKey}|${currentDaily.difficulty}|${currentDaily.lengthGroup}`;
+
+  applyDailyDifficultyFix();
+
+  // 今日の課題文を選定（seed固定）
+  buildPool();
+  const item = pickRandomFromPool(`${currentDaily.dailyTaskKey}`);
+  currentDaily.text = item?.text ?? "";
+
+  // 固定文を表示
+  refreshText({ forceNew: false });
+}
+
+function disableDailyTask() {
+  currentDaily.enabled = false;
+  currentDaily.text = "";
+  currentDaily.dailyTaskKey = "";
+  if (dailyInfoEl) dailyInfoEl.textContent = "";
+}
+
 /* =========================
-   Score submit
+   Firestore: submit score
 ========================= */
-async function submitScore(cpm) {
-  const user = auth.currentUser;
-  if (!user) return;
-
-  const name = userMgr.getCurrentUserName() || "(no name)";
-  const { daily, difficulty, lengthGroup, category, theme } = getActiveFilters();
-
-  const docData = {
-    uid: user.uid,
-    userName: name,
-    cpm: Number(cpm),
-    createdAt: serverTimestamp(),
-
-    // ranking filters
-    daily: !!daily,
-    dateKey: todayKey(),
+async function submitScore({
+  uid,
+  userName,
+  cpm,
+  rank,
+  timeSec,
+  difficulty,
+  lengthGroup,
+  category,
+  theme,
+  dateKey,
+  isDailyTask,
+  dailyTaskKey
+}) {
+  await addDoc(collection(db, "scores"), {
+    uid,
+    userName,
+    cpm,
+    rank,
+    timeSec,
     difficulty,
     lengthGroup,
     category,
     theme,
-
-    // group
-    groupId: currentGroupId ? currentGroupId : null
-  };
-
-  await addDoc(collection(db, "scores"), docData);
-}
-
-/* =========================
-   Typing events
-========================= */
-function bindTyping() {
-  inputEl.addEventListener("input", async () => {
-    const v = inputEl.value || "";
-    const result = engine.attach();
-    if (result.done) {
-      inputEl.disabled = true;
-      const cpm = result.cpm;
-
-      try {
-        await submitScore(cpm);
-      } catch (e) {
-        console.error("submitScore failed", e);
-        showModal("エラー", "スコアの保存に失敗しました。");
-        return;
-      }
-
-      showModal("結果", `CPM: ${cpm}`);
-
-      // ランキング更新
-      await loadDailyRanking();
-      await loadRanking();
-      await loadGroupRanking();
-
-      const user = auth.currentUser;
-      if (user) {
-        await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
-      }
-    }
-  });
-
-  skipBtn.addEventListener("click", () => {
-    hideModal();
-
-    // ★今日の課題が ON なら自動で OFF にする
-    if (dailyThemeEl && dailyThemeEl.checked) {
-      dailyThemeEl.checked = false;
-
-      // 今日の課題用 UI 状態を通常に戻す
-      applyThemeOptionsByCategory();
-    }
-
-    // 通常モードで別の文章を出す
-    setNewText();
-    updateLabels();
-
-    // ランキング更新
-    loadDailyRanking();
-    loadRanking();
-    loadGroupRanking();
-  });
-
-  startBtn?.addEventListener("click", () => {
-    hideModal();
-    setNewText();
-    updateLabels();
-  });
-
-  modalOkBtn?.addEventListener("click", () => {
-    hideModal();
-    inputEl.focus();
+    dateKey,
+    isDailyTask: !!isDailyTask,
+    dailyTaskKey: dailyTaskKey || null,
+    createdAt: serverTimestamp()
   });
 }
 
 /* =========================
-   Difficulty unified tabs
+   Rankings
 ========================= */
-function setActiveDiffTab(diff, opts = {}) {
-  activeDiffTab = diff;
-  if (opts.syncDifficultySelect !== false && difficultyEl) {
-    difficultyEl.value = diff;
+function renderSimpleRanking(ul, rows) {
+  if (!ul) return;
+  ul.innerHTML = "";
+  if (!rows || rows.length === 0) {
+    const li = document.createElement("li");
+    li.textContent = "まだスコアがありません。";
+    ul.appendChild(li);
+    return;
+  }
+  rankingSvc.renderList(ul, rows, { highlightUserName: userMgr.getCurrentUserName() || null });
+}
+
+async function loadDailyRanking() {
+  if (!dailyRankingUL) return;
+
+  try {
+    // 今日の課題ランキングは「チェックON/OFFに関係なく常に表示」
+    // → 今日の課題キーは「今日の難度タブ(activeDiffTab)」ではなく、
+    //   UIの難度タブ(activeDiffTab)に合わせて表示する（あなたの画面仕様に合わせる）
+    const dateKey = todayKey();
+    const diff = activeDiffTab;
+    const len = mapDifficultyToFixedLength(diff);
+    const dailyTaskKey = `${dateKey}|${diff}|${len}`;
+
+    if (dailyRankLabel) {
+      dailyRankLabel.textContent = `今日の課題ランキング（${dateKey} / 難度：${diffLabel(diff)} / 長さ：${lengthLabel(len)}）`;
+    }
+
+    const rows = await rankingSvc.loadDailyTask({
+      dailyTaskKey,
+      dateKey,
+      difficulty: diff
+    });
+
+    renderSimpleRanking(dailyRankingUL, rows);
+
+  } catch (e) {
+    console.error("loadDailyRanking error:", e);
+    dailyRankingUL.innerHTML = "<li>ランキングの読み込みに失敗しました</li>";
   }
 }
 
-function attachUnifiedDiffTabs() {
-  if (!unifiedDiffTabs) return;
-  const btns = unifiedDiffTabs.querySelectorAll("[data-diff]");
-  btns.forEach(btn => {
+async function loadOverallRanking() {
+  if (!rankingUL) return;
+
+  try {
+    // 全国ランキング：長さ/テーマ/カテゴリでフィルタしない（難度のみ）
+    const rows = await rankingSvc.loadOverall({ difficulty: activeDiffTab });
+
+    if (overallLabel) {
+      overallLabel.textContent = `全国ランキング（難度：${diffLabel(activeDiffTab)}）`;
+    }
+
+    renderSimpleRanking(rankingUL, rows);
+
+  } catch (e) {
+    console.error("loadOverallRanking error:", e);
+    rankingUL.innerHTML = "<li>ランキングの読み込みに失敗しました</li>";
+  }
+}
+
+/* =========================
+   Analytics (最低限：落ちない + 表示)
+========================= */
+async function loadMyAnalytics(uid, userName) {
+  // userManager.js が histories を持っている想定がないため、ここは「存在するUIだけ更新」に留める
+  // 追加で分析を作る場合は users/{uid}/profiles/... を使って拡張
+  if (analyticsTitle) analyticsTitle.textContent = "成績・分析";
+  if (analyticsLabel) analyticsLabel.textContent = `表示難度：${diffLabel(activeDiffTab)}`;
+
+  // bestByDifficulty は空でもOK
+  if (bestByDifficultyUL) {
+    bestByDifficultyUL.innerHTML = "";
+    const li = document.createElement("li");
+    li.textContent = "（分析は今後拡張）";
+    bestByDifficultyUL.appendChild(li);
+  }
+}
+
+/* =========================
+   After play refresh
+========================= */
+async function refreshAllAfterPlay() {
+  await loadDailyRanking();
+  await loadOverallRanking();
+
+  const user = auth.currentUser;
+  if (user) {
+    await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
+  }
+}
+
+/* =========================
+   UI Events
+========================= */
+function bindUnifiedDiffTabs() {
+  if (!diffTabsUnified) return;
+  diffTabsUnified.querySelectorAll(".diffTab").forEach(btn => {
     btn.addEventListener("click", () => {
       const diff = btn.dataset.diff;
       if (!diff) return;
-      setActiveDiffTab(diff, { syncDifficultySelect: true });
+      activeDiffTab = diff;
+      diffTabsUnified.querySelectorAll(".diffTab").forEach(b => {
+        b.classList.toggle("active", b.dataset.diff === activeDiffTab);
+      });
 
-      // 今日の課題中は長さUIも追従
-      if (dailyThemeEl && dailyThemeEl.checked && lengthGroupEl) {
-        const forced = getDailyLengthByDifficulty(difficultyEl.value);
-        if (forced) lengthGroupEl.value = forced;
-      }
-
-      applyThemeOptionsByCategory();
-      setNewText();
-      updateLabels();
-
+      // ランキングは難度タブで切り替える
       loadDailyRanking();
-      loadRanking();
-      loadGroupRanking();
+      loadOverallRanking();
 
       const user = auth.currentUser;
       if (user) loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
@@ -614,414 +617,102 @@ function attachUnifiedDiffTabs() {
   });
 }
 
-/* =========================
-   Group feature
-========================= */
-function hasGroupUIElements() {
-  return hasGroupUI()
-    && groupCreateName && groupCreateBtn
-    && groupSearchKey && groupSearchBtn
-    && groupSearchResult && joinBtn
-    && leaveGroupBtn && deleteGroupBtn
-    && pendingBox && pendingList;
-}
+function bindPracticeFilters() {
+  if (difficultyEl) {
+    difficultyEl.addEventListener("change", () => {
+      if (currentDaily.enabled) {
+        // 今日の課題中：難度変更→長さ固定→今日の課題キーも変わるので再選定
+        enableDailyTask();
+        updateMetaInfo();
+      } else {
+        refreshText({ forceNew: false });
+      }
+    });
+  }
 
-function bindGroupEventsOnce() {
-  if (!hasGroupUIElements()) return;
-  if (groupEventsBound) return;
-  groupEventsBound = true;
-
-  groupCreateBtn.addEventListener("click", async () => {
-    const user = auth.currentUser;
-    if (!user) return;
-
-    const name = (groupCreateName.value || "").trim();
-    if (!name) {
-      showModal("注意", "グループ名を入力してください。");
-      return;
-    }
-
-    try {
-      const gid = await groupSvc.createGroup(name, user.uid, userMgr.getCurrentUserName());
-      showModal("作成", "グループを作成しました。");
-
-      groupCreateName.value = "";
-      await refreshMyGroups();
-      currentGroupSelect.value = gid;
-      await onGroupChanged();
-    } catch (e) {
-      console.error("createGroup failed", e);
-      showModal("エラー", "グループ作成に失敗しました。");
-    }
-  });
-
-  groupSearchBtn.addEventListener("click", async () => {
-    const key = (groupSearchKey.value || "").trim();
-    if (!key) {
-      groupSearchResult.textContent = "検索キーワードを入力してください。";
-      groupSearchResult.dataset.groupId = "";
-      return;
-    }
-
-    try {
-      const list = await groupSvc.searchGroups(key);
-      if (!list || list.length === 0) {
-        groupSearchResult.textContent = "見つかりませんでした。";
-        groupSearchResult.dataset.groupId = "";
+  if (lengthGroupEl) {
+    lengthGroupEl.addEventListener("change", () => {
+      if (currentDaily.enabled) {
+        // 今日の課題では長さ固定なので UI の変更は無効化（表示を戻す）
+        applyDailyDifficultyFix();
         return;
       }
-
-      // 先頭のみ表示（簡易）
-      const g = list[0];
-      groupSearchResult.textContent = `${g.name}（owner: ${g.ownerName || g.ownerUid}）`;
-      groupSearchResult.dataset.groupId = g.id;
-    } catch (e) {
-      console.error("searchGroups failed", e);
-      groupSearchResult.textContent = "検索に失敗しました。";
-      groupSearchResult.dataset.groupId = "";
-    }
-  });
-
-  joinBtn.addEventListener("click", async () => {
-    const user = auth.currentUser;
-    if (!user) return;
-
-    const gid = groupSearchResult?.dataset?.groupId || "";
-    if (!gid) {
-      showModal("注意", "加入したいグループを検索して選択してください。");
-      return;
-    }
-
-    try {
-      await groupSvc.requestJoin(gid, user.uid, userMgr.getCurrentUserName());
-      showModal("申請", "参加申請しました。承認されるまでお待ちください。");
-    } catch (e) {
-      console.error("requestJoin failed", e);
-      showModal("エラー", "参加申請に失敗しました。");
-    }
-  });
-
-  currentGroupSelect.addEventListener("change", onGroupChanged);
-
-  leaveGroupBtn.addEventListener("click", async () => {
-    const user = auth.currentUser;
-    if (!user) return;
-    if (!currentGroupId) return;
-
-    try {
-      await groupSvc.leaveGroup(currentGroupId, user.uid);
-      showModal("退出", "グループから退出しました。");
-      await refreshMyGroups();
-    } catch (e) {
-      console.error("leaveGroup failed", e);
-      showModal("エラー", "退出に失敗しました。");
-    }
-  });
-
-  deleteGroupBtn.addEventListener("click", async () => {
-    const user = auth.currentUser;
-    if (!user) return;
-    if (!currentGroupId) return;
-
-    if (currentGroupRole !== "owner") {
-      showModal("注意", "グループ削除はオーナーのみ可能です。");
-      return;
-    }
-
-    try {
-      await groupSvc.deleteGroup(currentGroupId);
-      showModal("削除", "グループを削除しました。");
-      await refreshMyGroups();
-    } catch (e) {
-      console.error("deleteGroup failed", e);
-      showModal("エラー", "グループ削除に失敗しました。");
-    }
-  });
-}
-
-async function refreshMyGroups() {
-  if (!hasGroupUI()) return;
-
-  const user = auth.currentUser;
-  if (!user) return;
-
-  let groups = [];
-  try {
-    groups = await groupSvc.getMyGroups(user.uid);
-  } catch (e) {
-    console.error("getMyGroups failed", e);
-    groups = [];
+      refreshText({ forceNew: false });
+    });
   }
 
-  currentGroupSelect.innerHTML = "";
-
-  // (未選択)
-  {
-    const opt = document.createElement("option");
-    opt.value = "";
-    opt.textContent = "（グループ未選択）";
-    currentGroupSelect.appendChild(opt);
+  if (categoryEl) {
+    categoryEl.addEventListener("change", () => {
+      if (!currentDaily.enabled) refreshText({ forceNew: false });
+      updateMetaInfo();
+    });
   }
 
-  for (const g of groups) {
-    const opt = document.createElement("option");
-    opt.value = g.groupId;
-    opt.textContent = g.name ?? "(no name)";
-    opt.dataset.role = g.role ?? "member";
-    currentGroupSelect.appendChild(opt);
-  }
-
-  const saved = localStorage.getItem(GROUP_STORAGE_KEY) || "";
-  const exists = Array.from(currentGroupSelect.options).some(o => o.value === saved);
-  currentGroupSelect.value = exists ? saved : "";
-
-  await onGroupChanged();
-}
-
-async function onGroupChanged() {
-  if (!hasGroupUI()) return;
-
-  const sel = currentGroupSelect.selectedOptions[0];
-  currentGroupId = sel?.value ?? "";
-  currentGroupRole = sel?.dataset?.role ?? null;
-
-  localStorage.setItem(GROUP_STORAGE_KEY, currentGroupId);
-
-  // ボタン活性
-  leaveGroupBtn.disabled = !currentGroupId;
-
-  // owner のときだけ削除可能
-  deleteGroupBtn.disabled = !(currentGroupId && currentGroupRole === "owner");
-
-  // owner のときだけ承認待ち一覧を表示
-  if (currentGroupId && currentGroupRole === "owner") {
-    pendingBox.style.display = "block";
-    await loadPendingRequests();
-  } else {
-    pendingBox.style.display = "none";
-    pendingList.innerHTML = "";
-  }
-
-  // ★グループ切替に応じてランキングを再読込
-  await loadDailyRanking();
-  await loadRanking();
-  await loadGroupRanking();
-}
-
-async function loadPendingRequests() {
-  if (!hasGroupUI()) return;
-  if (!currentGroupId) return;
-
-  try {
-    const list = await groupSvc.getPendingRequests(currentGroupId);
-    pendingList.innerHTML = "";
-
-    if (!list || list.length === 0) {
-      const li = document.createElement("li");
-      li.textContent = "承認待ちはありません。";
-      pendingList.appendChild(li);
-      return;
-    }
-
-    for (const r of list) {
-      const li = document.createElement("li");
-      li.style.display = "flex";
-      li.style.gap = "8px";
-      li.style.alignItems = "center";
-
-      const span = document.createElement("span");
-      span.textContent = `${r.userName || r.uid}`;
-
-      const ok = document.createElement("button");
-      ok.textContent = "承認";
-
-      const ng = document.createElement("button");
-      ng.textContent = "却下";
-
-      ok.addEventListener("click", async () => {
-        try {
-          await groupSvc.approveMember(r);
-          await loadPendingRequests();
-          await refreshMyGroups();
-        } catch (e) {
-          console.error("approve failed", e);
-          showModal("エラー", "承認に失敗しました。");
-        }
-      });
-
-      ng.addEventListener("click", async () => {
-        try {
-          await groupSvc.rejectMember(r.id);
-          await loadPendingRequests();
-        } catch (e) {
-          console.error("reject failed", e);
-          showModal("エラー", "却下に失敗しました。");
-        }
-      });
-
-      li.appendChild(span);
-      li.appendChild(ok);
-      li.appendChild(ng);
-      pendingList.appendChild(li);
-    }
-  } catch (e) {
-    console.error("getPendingRequests failed", e);
-    pendingList.innerHTML = "<li>承認待ち一覧の取得に失敗しました</li>";
-  }
-}
-
-/* =========================
-   User UI
-========================= */
-function bindUserUI() {
-  addUserBtn.addEventListener("click", async () => {
-    const name = prompt("ユーザー名を入力してください（全体で一意）");
-    if (!name) return;
-    try {
-      await userMgr.addUser(name);
-      await rebuildUserSelect();
-    } catch (e) {
-      console.error("addUser failed", e);
-      showModal("エラー", "ユーザー作成に失敗しました。");
-    }
-  });
-
-  renameUserBtn.addEventListener("click", async () => {
-    const oldName = userMgr.getCurrentUserName();
-    if (!oldName) return;
-    const newName = prompt("新しいユーザー名", oldName);
-    if (!newName || newName === oldName) return;
-
-    try {
-      await userMgr.renameUser(oldName, newName);
-      await rebuildUserSelect();
-    } catch (e) {
-      console.error("renameUser failed", e);
-      showModal("エラー", "改名に失敗しました。");
-    }
-  });
-
-  deleteUserBtn.addEventListener("click", async () => {
-    const name = userMgr.getCurrentUserName();
-    if (!name) return;
-    if (!confirm(`ユーザー「${name}」を削除しますか？`)) return;
-
-    try {
-      await userMgr.deleteUser(name);
-      await rebuildUserSelect();
-    } catch (e) {
-      console.error("deleteUser failed", e);
-      showModal("エラー", "削除に失敗しました。");
-    }
-  });
-
-  userSelect.addEventListener("change", async () => {
-    const name = userSelect.value;
-    userMgr.setCurrentUserName(name);
-
-    const user = auth.currentUser;
-    if (user) await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
-  });
-}
-
-async function rebuildUserSelect() {
-  const list = await userMgr.listUsers();
-  userSelect.innerHTML = "";
-  for (const u of list) {
-    const opt = document.createElement("option");
-    opt.value = u;
-    opt.textContent = u;
-    userSelect.appendChild(opt);
-  }
-
-  const cur = userMgr.getCurrentUserName();
-  if (cur && list.includes(cur)) {
-    userSelect.value = cur;
-  } else {
-    userSelect.value = list[0] || "";
-    userMgr.setCurrentUserName(userSelect.value);
-  }
-}
-
-/* =========================
-   Events
-========================= */
-function bindOptionEvents() {
-  difficultyEl.addEventListener("change", () => {
-    setActiveDiffTab(difficultyEl.value, { syncDifficultySelect: false });
-
-    // ★ 今日の課題中は長さUIも追従させる
-    if (dailyThemeEl && dailyThemeEl.checked && lengthGroupEl) {
-      const forced = getDailyLengthByDifficulty(difficultyEl.value);
-      if (forced) {
-        lengthGroupEl.value = forced;
-      }
-    }
-
-    applyThemeOptionsByCategory();
-    setNewText();
-    updateLabels();
-    loadDailyRanking();
-    loadRanking();
-    loadGroupRanking();
-
-    const user = auth.currentUser;
-    if (user) loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
-  });
-
-  lengthGroupEl.addEventListener("change", () => {
-    setNewText();
-    updateLabels();
-    loadDailyRanking();
-    loadRanking();
-    loadGroupRanking();
-
-    const user = auth.currentUser;
-    if (user) loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
-  });
-
-  categoryEl.addEventListener("change", () => {
-    applyThemeOptionsByCategory();
-    setNewText();
-    updateLabels();
-    loadDailyRanking();
-    loadRanking();
-    loadGroupRanking();
-
-    const user = auth.currentUser;
-    if (user) loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
-  });
-
-  themeEl.addEventListener("change", () => {
-    setNewText();
-    updateLabels();
-    loadDailyRanking();
-    loadRanking();
-    loadGroupRanking();
-
-    const user = auth.currentUser;
-    if (user) loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
-  });
-
-  if (dailyThemeEl) {
-    dailyThemeEl.addEventListener("change", () => {
-      // 今日の課題 ON 時は長さUIを同期
-      if (dailyThemeEl.checked && lengthGroupEl) {
-        const forced = getDailyLengthByDifficulty(difficultyEl.value);
-        if (forced) lengthGroupEl.value = forced;
-      }
-
-      applyThemeOptionsByCategory();
-      setNewText();
-      updateLabels();
-
-      // 今日ランキングはチェックに関わらず表示する仕様
+  if (themeEl) {
+    themeEl.addEventListener("change", () => {
+      if (!currentDaily.enabled) refreshText({ forceNew: false });
+      updateMetaInfo();
       loadDailyRanking();
-      loadRanking();
-      loadGroupRanking();
+      loadOverallRanking();
+    });
+  }
 
-      const user = auth.currentUser;
-      if (user) loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
+  if (dailyTaskEl) {
+    dailyTaskEl.addEventListener("change", () => {
+      if (dailyTaskEl.checked) {
+        enableDailyTask();
+      } else {
+        disableDailyTask();
+        refreshText({ forceNew: false });
+      }
+      updateMetaInfo();
+      loadDailyRanking();
+      loadOverallRanking();
+    });
+  }
+}
+
+function bindTypingButtons() {
+  if (startBtn) {
+    startBtn.addEventListener("click", async () => {
+      // Start で入力を有効化 + カウントダウン
+      if (inputEl) {
+        inputEl.disabled = false;
+        inputEl.value = "";
+        inputEl.focus();
+      }
+      await engine.showCountdownInTextarea(3);
+      engine.startNow();
+    });
+  }
+
+  if (skipBtn) {
+    skipBtn.addEventListener("click", () => {
+      // 「別の文章にする」
+      // 要件：今日の課題を一度チェックしていても、別の文章にするを押したら
+      //      チェックが自動で外れて別文にする（固定解除）
+      if (dailyTaskEl && dailyTaskEl.checked) {
+        dailyTaskEl.checked = false;
+        disableDailyTask();
+      }
+      refreshText({ forceNew: true });
+      updateMetaInfo();
+    });
+  }
+}
+
+function bindModal() {
+  if (closeModalBtn) closeModalBtn.addEventListener("click", hideModal);
+  if (nextBtn) {
+    nextBtn.addEventListener("click", () => {
+      hideModal();
+      // 次の文章（通常は別文、今日の課題中なら固定のまま）
+      refreshText({ forceNew: !currentDaily.enabled });
+    });
+  }
+  if (modalBackdrop) {
+    modalBackdrop.addEventListener("click", (e) => {
+      if (e.target === modalBackdrop) hideModal();
     });
   }
 }
@@ -1029,67 +720,42 @@ function bindOptionEvents() {
 /* =========================
    Init
 ========================= */
-async function init() {
-  updateLabels();
-
-  textEl.textContent = "初期化中...";
-  inputEl.value = "";
-  inputEl.disabled = true;
-
-  let raw = null;
-  try {
-    raw = await loadTrivia();
-  } catch (e) {
-    console.error("trivia load failed", e);
-    textEl.textContent = "見本文の初期化に失敗しました。Consoleを確認してください。";
-    inputEl.disabled = true;
-    return;
+async function initApp() {
+  // タブ初期状態
+  if (diffTabsUnified) {
+    diffTabsUnified.querySelectorAll(".diffTab").forEach(b => {
+      b.classList.toggle("active", b.dataset.diff === activeDiffTab);
+    });
   }
 
-  buildIndices(raw);
-  hydrateSelects();
+  // trivia load
+  await loadTrivia();
 
-  // 初期難度は出題セレクトに合わせて、統合タブも同期
-  setActiveDiffTab(difficultyEl.value, { syncDifficultySelect: false });
+  // 初期出題
+  refreshText({ forceNew: false });
 
-  applyThemeOptionsByCategory();
-  setNewText();
+  // events
+  bindUnifiedDiffTabs();
+  bindPracticeFilters();
+  bindTypingButtons();
+  bindModal();
 
-  // 統合タブだけ有効化
-  attachUnifiedDiffTabs();
-
+  // ランキング初回ロード
   await loadDailyRanking();
-  await loadRanking();
-  await loadGroupRanking();
+  await loadOverallRanking();
 }
 
-/* =========================
-   Start
-========================= */
-bindTyping();
-bindUserUI();
-bindOptionEvents();
-
-// 認証
-signInAnonymously(auth).catch((e) => {
-  console.error("anonymous auth failed", e);
-  authBadge.textContent = "認証：失敗（Consoleを確認）";
-});
+signInAnonymously(auth).catch(e => console.error("signInAnonymously error:", e));
 
 onAuthStateChanged(auth, async (user) => {
+  if (authBadge) authBadge.textContent = user ? "認証済" : "未認証";
   if (!user) return;
-  authBadge.textContent = `認証：OK（匿名）`;
 
-  // グループUIがある場合だけイベントを貼る
-  bindGroupEventsOnce();
-
-  await init();
-  await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
-
-  // グループUIがある場合だけ参加中グループをロード
-  if (hasGroupUI()) {
-    await refreshMyGroups();
+  // 初回起動
+  try {
+    await initApp();
+    await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
+  } catch (e) {
+    console.error("initApp error:", e);
   }
 });
-
-
