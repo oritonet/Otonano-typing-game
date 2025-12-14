@@ -7,6 +7,7 @@ import {
   getDocs,
   query,
   where,
+  limit,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import {
@@ -50,7 +51,7 @@ const difficultyEl = document.getElementById("difficulty");
 const lengthGroupEl = document.getElementById("lengthGroup");
 const categoryEl = document.getElementById("category");
 const themeEl = document.getElementById("theme");
-const dailyThemeEl = document.getElementById("dailyTheme");
+const dailyTaskEl = document.getElementById("dailyTask");
 const dailyInfoEl = document.getElementById("dailyInfo");
 
 const skipBtn = document.getElementById("skipBtn");
@@ -59,18 +60,17 @@ const inputEl = document.getElementById("input");
 const textEl = document.getElementById("text");
 const resultEl = document.getElementById("result");
 
-const dailyRankingTitle = document.getElementById("dailyRankingTitle");
 const dailyRankLabel = document.getElementById("dailyRankLabel");
 const dailyRankingUL = document.getElementById("dailyRanking");
 
-const rankLabel = document.getElementById("rankLabel");
+const overallLabel = document.getElementById("overallLabel");
 const rankingUL = document.getElementById("ranking");
 
 const analyticsTitle = document.getElementById("analyticsTitle");
+const analyticsLabel = document.getElementById("analyticsLabel");
 const bestByDifficultyUL = document.getElementById("bestByDifficulty");
 const scoreChart = document.getElementById("scoreChart");
 const myRecentUL = document.getElementById("myRecent");
-const analyticsLabel = document.getElementById("analyticsLabel");
 
 const modalBackdrop = document.getElementById("resultModalBackdrop");
 const closeModalBtn = document.getElementById("closeModalBtn");
@@ -83,16 +83,13 @@ const mLen = document.getElementById("mLen");
 const mMeta = document.getElementById("mMeta");
 
 /* =========================
-   表示用：難度（成績・分析タブ）
-   ※タイピング練習の難易度（difficultyEl）とは連動しない
+   成績・分析：難度タブ（練習とは非連動）
 ========================= */
 let activeDiffTab = "normal"; // easy/normal/hard
 
 function setActiveDiffTab(diff) {
   if (!diff) return;
   activeDiffTab = diff;
-
-  // 成績・分析タブの見た目更新
   document.querySelectorAll("#diffTabsUnified .diffTab").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.diff === activeDiffTab);
   });
@@ -101,16 +98,6 @@ function setActiveDiffTab(diff) {
 /* =========================
    Utils
 ========================= */
-function rankByScore(score) {
-  if (score >= 800) return "SSS";
-  if (score >= 700) return "SS";
-  if (score >= 600) return "S";
-  if (score >= 500) return "A";
-  if (score >= 400) return "B";
-  if (score >= 300) return "C";
-  return "D";
-}
-
 function todayKey() {
   const d = new Date();
   const y = d.getFullYear();
@@ -128,47 +115,14 @@ function hashString(str) {
   return (h >>> 0);
 }
 
-// 記号スコア（IME入力の負荷を反映）
-// 強・中・弱・基本の4段階
-function punctScore(text) {
-  // 強い記号：ペア管理・判断負荷が高い
-  const strong = (text.match(/[（）「」『』［］【】＜＞”’]/g) || []).length;
-
-  // 中程度：Shift必須・意味は明確
-  const middle = (text.match(/[￥＄：；]/g) || []).length;
-
-  // 軽め：頻出だがミス源
-  const weak = (text.match(/[ー・＃％＆＋－＝／]/g) || []).length;
-
-  // 基本的な句読点
-  const basic = (text.match(/[、。,.!！?？]/g) || []).length;
-
-  // 重み付け（中で合算 → 難易度側でまとめて評価）
-  return strong * 3 + middle * 2 + weak * 1 + basic * 1;
-}
-
-function digitCount(text) {
-  return (text.match(/[0-9]/g) || []).length;
-}
-
-function kanjiRatio(text) {
-  const total = text.length || 1;
-  const kanji = (text.match(/[一-龥]/g) || []).length;
-  return kanji / total;
-}
-
-/* =========================
-   難易度：3段階（出題用）
-========================= */
-function difficultyByText(text) {
-  const score =
-    kanjiRatio(text) * 100 +
-    punctScore(text) * 6 +
-    digitCount(text) * 10;
-
-  if (score < 35) return "easy";     // 易
-  if (score < 65) return "normal";   // 普
-  return "hard";                     // 難
+function rankByScore(score) {
+  if (score >= 800) return "SSS";
+  if (score >= 700) return "SS";
+  if (score >= 600) return "S";
+  if (score >= 500) return "A";
+  if (score >= 400) return "B";
+  if (score >= 300) return "C";
+  return "D";
 }
 
 function diffLabel(v) {
@@ -178,17 +132,6 @@ function diffLabel(v) {
   return "-";
 }
 
-/* =========================
-   文章長：5段階
-========================= */
-function lengthGroupOf(len) {
-  if (len <= 20) return "xs";        // 極短
-  if (len <= 40) return "short";     // 短
-  if (len <= 80) return "medium";    // 中
-  if (len <= 140) return "long";     // 長
-  return "xl";                       // 極長
-}
-
 function lengthLabel(v) {
   if (v === "xs") return "極短";
   if (v === "short") return "短";
@@ -196,6 +139,13 @@ function lengthLabel(v) {
   if (v === "long") return "長";
   if (v === "xl") return "極長";
   return "-";
+}
+
+function fixedLengthByDifficulty(diff) {
+  if (diff === "easy") return "xs";
+  if (diff === "normal") return "medium";
+  if (diff === "hard") return "xl";
+  return "medium";
 }
 
 function showModal() {
@@ -225,17 +175,15 @@ const userMgr = new UserManager({
   renameBtn: renameUserBtn,
   deleteBtn: deleteUserBtn
 });
-
 const rankingSvc = new RankingService({ db });
 
 /* =========================
-   Trivia data
+   Trivia
 ========================= */
-let items = []; // enriched
+let items = [];
 let categories = [];
 let themeByCategory = new Map();
 let allThemes = [];
-let dailyTheme = null;
 
 function getBasePath() {
   const p = location.pathname;
@@ -248,7 +196,6 @@ async function loadTrivia() {
     "./data/trivia.json",
     `${getBasePath()}/data/trivia.json`
   ];
-
   let lastErr = null;
   for (const url of tryUrls) {
     try {
@@ -264,15 +211,66 @@ async function loadTrivia() {
   throw lastErr ?? new Error("fetch failed");
 }
 
+// 強・中・弱・基本の4段階
+function punctScore(text) {
+  const strong = (text.match(/[（）「」『』［］【】＜＞”’]/g) || []).length;
+  const middle = (text.match(/[￥＄：；]/g) || []).length;
+  const weak = (text.match(/[ー・＃％＆＋－＝／]/g) || []).length;
+  const basic = (text.match(/[、。,.!！?？]/g) || []).length;
+  return strong * 3 + middle * 2 + weak * 1 + basic * 1;
+}
+function digitCount(text) {
+  return (text.match(/[0-9]/g) || []).length;
+}
+function kanjiRatio(text) {
+  const total = text.length || 1;
+  const kanji = (text.match(/[一-龥]/g) || []).length;
+  return kanji / total;
+}
+function difficultyByText(text) {
+  const score =
+    kanjiRatio(text) * 100 +
+    punctScore(text) * 6 +
+    digitCount(text) * 10;
+  if (score < 35) return "easy";
+  if (score < 65) return "normal";
+  return "hard";
+}
+function lengthGroupOf(len) {
+  if (len <= 20) return "xs";
+  if (len <= 40) return "short";
+  if (len <= 80) return "medium";
+  if (len <= 140) return "long";
+  return "xl";
+}
+
+/* =========================
+   今日の課題（難度別に1日1文）
+========================= */
+const dailyTaskByDiff = new Map(); // diff -> item
+function dailyTaskKeyOf(diff) {
+  return `${todayKey()}::${diff}`;
+}
+function computeDailyTaskForDiff(diff) {
+  const lg = fixedLengthByDifficulty(diff);
+  const pool = items.filter(x => x.difficulty === diff && x.lengthGroup === lg);
+  if (!pool.length) return null;
+  const idx = hashString(`${todayKey()}::${diff}`) % pool.length;
+  return pool[idx];
+}
+function refreshDailyTasks() {
+  dailyTaskByDiff.set("easy", computeDailyTaskForDiff("easy"));
+  dailyTaskByDiff.set("normal", computeDailyTaskForDiff("normal"));
+  dailyTaskByDiff.set("hard", computeDailyTaskForDiff("hard"));
+}
+
 function buildIndices(raw) {
   items = raw
     .filter(x => x && typeof x.text === "string")
     .map(x => {
       const len = (typeof x.length === "number") ? x.length : x.text.length;
-
-      const difficulty = difficultyByText(x.text);  // easy/normal/hard
-      const lengthGroup = lengthGroupOf(len);       // xs/short/medium/long/xl
-
+      const difficulty = difficultyByText(x.text);
+      const lengthGroup = lengthGroupOf(len);
       return {
         genre: x.genre ?? "",
         category: x.category ?? "",
@@ -298,13 +296,11 @@ function buildIndices(raw) {
   allThemes = Array.from(new Set(items.map(x => x.theme).filter(Boolean)))
     .sort((a, b) => a.localeCompare(b, "ja"));
 
-  dailyTheme = (allThemes.length > 0)
-    ? allThemes[hashString(todayKey()) % allThemes.length]
-    : null;
+  refreshDailyTasks();
 }
 
 /* =========================
-   UI Hydrate
+   UI
 ========================= */
 function hydrateSelects() {
   difficultyEl.innerHTML = `
@@ -326,32 +322,16 @@ function hydrateSelects() {
     categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
 
   themeEl.innerHTML = `<option value="all">テーマ：すべて</option>`;
+  applyThemeOptionsByCategory();
 }
 
 function applyThemeOptionsByCategory() {
-  const daily = dailyThemeEl.checked && !!dailyTheme;
-  if (daily) {
-    themeEl.disabled = true;
-    categoryEl.disabled = true;
-    themeEl.innerHTML = `<option value="${escapeHtml(dailyTheme)}">${escapeHtml(dailyTheme)}</option>`;
-    themeEl.value = dailyTheme;
-    dailyInfoEl.style.display = "block";
-    dailyInfoEl.textContent = `今日（${todayKey()}）のテーマ：${dailyTheme}（固定中）`;
-    return;
-  }
-
-  themeEl.disabled = false;
-  categoryEl.disabled = false;
-  dailyInfoEl.style.display = "none";
-  dailyInfoEl.textContent = "";
-
   const cat = categoryEl.value;
   const current = themeEl.value;
 
   let themes = [];
-  if (cat === "all") {
-    themes = allThemes;
-  } else {
+  if (cat === "all") themes = allThemes;
+  else {
     const set = themeByCategory.get(cat);
     themes = set ? Array.from(set).sort((a, b) => a.localeCompare(b, "ja")) : [];
   }
@@ -363,28 +343,65 @@ function applyThemeOptionsByCategory() {
   themeEl.value = themes.includes(current) ? current : "all";
 }
 
-function getActiveFilters() {
-  const daily = dailyThemeEl.checked && !!dailyTheme;
-  const difficulty = difficultyEl.value;     // 出題用（成績・分析とは連動しない）
-  const lengthGroup = lengthGroupEl.value;
-  const category = daily ? "all" : categoryEl.value;
-  const theme = daily ? dailyTheme : themeEl.value;
-  return { daily, difficulty, lengthGroup, category, theme };
+function applyDailyTaskModeUI() {
+  const on = !!dailyTaskEl?.checked;
+
+  if (on) {
+    const diff = difficultyEl.value;
+    const lg = fixedLengthByDifficulty(diff);
+
+    lengthGroupEl.value = lg;
+    lengthGroupEl.disabled = true;
+    categoryEl.disabled = true;
+    themeEl.disabled = true;
+
+    const task = dailyTaskByDiff.get(diff);
+    const name = task ? (task.theme || task.category || "—") : "—";
+    dailyInfoEl.style.display = "block";
+    dailyInfoEl.textContent = `今日（${todayKey()}）の課題：${name}`;
+
+    skipBtn.disabled = true;
+  } else {
+    lengthGroupEl.disabled = false;
+    categoryEl.disabled = false;
+    themeEl.disabled = false;
+    dailyInfoEl.style.display = "none";
+    dailyInfoEl.textContent = "";
+    skipBtn.disabled = false;
+  }
+}
+
+/* =========================
+   出題フィルタ
+========================= */
+function getPracticeFilters() {
+  const dailyTask = !!dailyTaskEl?.checked;
+  const difficulty = difficultyEl.value;
+  const lengthGroup = dailyTask ? fixedLengthByDifficulty(difficulty) : lengthGroupEl.value;
+  const category = categoryEl.value;
+  const theme = themeEl.value;
+  return { dailyTask, difficulty, lengthGroup, category, theme };
 }
 
 function filterPool() {
-  const { daily, difficulty, lengthGroup, category, theme } = getActiveFilters();
+  const { dailyTask, difficulty, lengthGroup, category, theme } = getPracticeFilters();
+
+  if (dailyTask) {
+    const it = dailyTaskByDiff.get(difficulty);
+    return it ? [it] : [];
+  }
+
   return items.filter(x => {
     if (x.difficulty !== difficulty) return false;
     if (x.lengthGroup !== lengthGroup) return false;
-    if (!daily && category !== "all" && x.category !== category) return false;
+    if (category !== "all" && x.category !== category) return false;
     if (theme !== "all" && x.theme !== theme) return false;
     return true;
   });
 }
 
 /* =========================
-   Recent history (10問再出題回避)
+   Recent history（通常モードのみ）
 ========================= */
 const HISTORY_MAX = 10;
 const recentTexts = [];
@@ -397,9 +414,9 @@ function isRecentlyUsed(text) {
   return recentTexts.includes(text);
 }
 function pickNextItem(pool) {
-  if (pool.length === 0) return null;
+  if (!pool.length) return null;
   const notRecent = pool.filter(x => !isRecentlyUsed(x.text));
-  const candidates = (notRecent.length > 0) ? notRecent : pool;
+  const candidates = notRecent.length ? notRecent : pool;
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
@@ -416,8 +433,14 @@ const engine = new TypingEngine({
     await onFinished(metrics, meta);
   }
 });
-
 engine.attach();
+
+/* =========================
+   Paste/Drop 禁止
+========================= */
+inputEl.addEventListener("paste", (e) => e.preventDefault());
+inputEl.addEventListener("drop", (e) => e.preventDefault());
+inputEl.addEventListener("dragover", (e) => e.preventDefault());
 
 /* =========================
    Countdown + Start
@@ -427,21 +450,16 @@ let countdownTimer = null;
 async function startWithCountdown() {
   if (!currentItem) return;
 
-  // スタートボタンを隠す（入力欄クリックを邪魔しない）
   startBtn.style.display = "none";
-
-  // カウント中に連打させない
   startBtn.disabled = true;
   skipBtn.disabled = true;
 
-  // 開始前ガイドの中央揃えを解除
   inputEl.classList.remove("input-guide");
 
   engine.showCountdownInTextarea(3);
   let n = 3;
 
   if (countdownTimer) clearInterval(countdownTimer);
-
   countdownTimer = setInterval(() => {
     n--;
     if (n >= 0) engine.showCountdownInTextarea(n);
@@ -450,7 +468,6 @@ async function startWithCountdown() {
       clearInterval(countdownTimer);
       countdownTimer = null;
 
-      // カウントダウン用スタイル解除（上下中央寄せを元に戻す）
       inputEl.classList.remove("countdown");
       inputEl.style.paddingTop = "";
       inputEl.style.paddingBottom = "";
@@ -470,26 +487,26 @@ async function startWithCountdown() {
 function setNewText() {
   const pool = filterPool();
 
-  if (pool.length === 0) {
+  if (!pool.length) {
     currentItem = null;
     metaInfoEl.textContent = "- / -";
-    engine.setTarget("該当する文章がありません。条件を変更してください。", null);
-    textEl.textContent = "該当する文章がありません。条件を変更してください。";
+    const msg = "該当する文章がありません。条件を変更してください。";
+    engine.setTarget(msg, null);
+    textEl.textContent = msg;
     inputEl.value = "";
     inputEl.disabled = true;
     startBtn.style.display = "none";
     return;
   }
 
-  const pick = pickNextItem(pool);
+  const { dailyTask } = getPracticeFilters();
+  const pick = dailyTask ? pool[0] : pickNextItem(pool);
   currentItem = pick;
 
-  // メタ情報表示（出題）
-  const cat = pick.category ?? "-";
-  const theme = pick.theme ?? "-";
-  metaInfoEl.textContent = `${cat} / ${theme}`;
+  metaInfoEl.textContent = `${pick.category ?? "-"} / ${pick.theme ?? "-"}`;
 
-  pushHistory(pick.text);
+  if (!dailyTask) pushHistory(pick.text);
+
   engine.setTarget(pick.text, pick);
 
   inputEl.value = "スペース or スタートボタンで入力開始";
@@ -501,111 +518,141 @@ function setNewText() {
 }
 
 /* =========================
-   Ranking + Analytics
+   Save score + Modal
 ========================= */
-function updateLabels() {
-  // ★「今日 vs 過去7日平均（スコア）」ブロックは不要 → DOMから削除
-  const compareNode = document.getElementById("compareToday");
-  if (compareNode) compareNode.remove();
+async function onFinished(metrics, meta) {
+  try {
+    const user = auth.currentUser;
+    if (!user) return;
 
-  const { lengthGroup } = getActiveFilters();
-  const lenTxt = lengthLabel(lengthGroup);
-  const diffTxt = diffLabel(activeDiffTab);
+    const uid = user.uid;
+    const userName = userMgr.getCurrentUserName();
 
-  const dailyThemeTxt = dailyTheme ?? "—";
+    const cpm = Math.max(0, Math.round(Number(metrics?.cpm ?? 0)));
+    const timeSec = Math.max(0, Number(metrics?.timeSec ?? 0));
+    const len = Math.max(0, Number(meta?.length ?? currentItem?.length ?? 0));
 
-  // ★今日テーマランキングの見出しに、括弧内でテーマ名を表示
-  if (dailyRankingTitle) {
-    dailyRankingTitle.textContent = `今日のテーマランキング（${dailyThemeTxt}）`;
-  }
+    const rank = rankByScore(cpm);
 
-  // 🔴 赤枠は完全削除（表示しない）
-  if (dailyRankLabel) {
-    dailyRankLabel.textContent = "";
-    dailyRankLabel.style.display = "none";
-  }
+    const { dailyTask, difficulty, lengthGroup } = getPracticeFilters();
+    const dateKey = todayKey();
 
-  // ★ランキング見出しは不要 → DOMから削除
-  if (rankLabel) rankLabel.remove();
+    const category = currentItem?.category ?? "";
+    const theme = currentItem?.theme ?? "";
 
-  // ★入力分析タイトルに、括弧内で選択ユーザー名を表示
-  const userName = userMgr.getCurrentUserName() || "ゲスト";
-  if (analyticsTitle) {
-    analyticsTitle.textContent = `入力分析（${userName}）`;
-  }
+    const dailyTaskKey = dailyTask ? dailyTaskKeyOf(difficulty) : null;
+    const dailyTaskName = dailyTask ? (theme || category || "") : null;
 
-  // 🔴 赤枠は完全削除（表示しない）
-  if (analyticsLabel) {
-    analyticsLabel.textContent = "";
-    analyticsLabel.style.display = "none";
+    await addDoc(collection(db, "scores"), {
+      uid,
+      userName,
+      cpm,
+      rank,
+      timeSec,
+      length: len,
+      lengthGroup,
+      difficulty,
+      category,
+      theme,
+      dateKey,
+      isDailyTask: !!dailyTask,
+      dailyTaskKey,
+      dailyTaskName,
+      createdAt: serverTimestamp()
+    });
+
+    mRank.textContent = rank;
+    mCPM.textContent = String(cpm);
+    mTimeSec.textContent = timeSec.toFixed(2);
+    mLen.textContent = String(len);
+    mMeta.textContent = `${dateKey} / ${userName}`;
+
+    showModal();
+
+    await loadDailyRanking();
+    await loadRanking();
+    await loadMyAnalytics(uid, userName);
+  } catch (e) {
+    console.error("save score failed", e);
   }
 }
 
+/* =========================
+   Labels
+========================= */
+function updateLabels() {
+  const tabDiffTxt = diffLabel(activeDiffTab);
+  const tabTask = dailyTaskByDiff.get(activeDiffTab);
+  const tabName = tabTask ? (tabTask.theme || tabTask.category || "—") : "—";
+  dailyRankLabel.textContent = `今日（${todayKey()}）の課題：${tabName} / 難度：${tabDiffTxt}`;
+
+  overallLabel.textContent = `全体 上位10 / 難度：${tabDiffTxt}`;
+
+  if (analyticsTitle) analyticsTitle.textContent = `入力分析（${userMgr.getCurrentUserName()}）`;
+  if (analyticsLabel) analyticsLabel.textContent = `難度：${tabDiffTxt}`;
+}
+
+/* =========================
+   Rankings
+========================= */
 async function loadDailyRanking() {
   try {
-    const { lengthGroup } = getActiveFilters();
-    const rows = await rankingSvc.loadDailyTheme({
-      theme: dailyTheme,
+    const myName = userMgr.getCurrentUserName();
+
+    const diff = activeDiffTab;
+    const task = dailyTaskByDiff.get(diff);
+    if (!task) {
+      dailyRankingUL.innerHTML = "<li>今日の課題が見つかりません。</li>";
+      return;
+    }
+
+    const rows = await rankingSvc.loadDailyTask({
+      dailyTaskKey: dailyTaskKeyOf(diff),
       dateKey: todayKey(),
-      difficulty: activeDiffTab
+      difficulty: diff
     });
-    rankingSvc.renderList(dailyRankingUL, rows);
+
+    rankingSvc.renderList(dailyRankingUL, rows, { highlightUserName: myName });
   } catch (e) {
     console.error("daily ranking load error", e);
-    dailyRankingUL.innerHTML = "<li>ランキングの読み込みに失敗しました</li>";
+    dailyRankingUL.innerHTML = "<li>読み込みに失敗しました</li>";
   }
 }
 
 async function loadRanking() {
   try {
-    const { lengthGroup } = getActiveFilters();
-
-    // ★ランキング範囲の選択は廃止 → 常に全体
-    const rows = await rankingSvc.loadOverall({
-      difficulty: activeDiffTab
-    });
-
-    rankingSvc.renderList(rankingUL, rows);
+    const myName = userMgr.getCurrentUserName();
+    const rows = await rankingSvc.loadOverall({ difficulty: activeDiffTab });
+    rankingSvc.renderList(rankingUL, rows, { highlightUserName: myName });
   } catch (e) {
     console.error("ranking load error", e);
-    rankingUL.innerHTML = "<li>ランキングの読み込みに失敗しました</li>";
+    rankingUL.innerHTML = "<li>読み込みに失敗しました</li>";
   }
 }
 
 /* =========================
-   Analytics（選択ユーザー）
+   Analytics
 ========================= */
-function avg(arr) {
-  if (!arr.length) return null;
-  return Math.round(arr.reduce((s, x) => s + x, 0) / arr.length);
-}
+function renderBest(histories) {
+  bestByDifficultyUL.innerHTML = "";
 
-function renderBestForSelectedDifficulty(histories) {
   if (!histories.length) {
-    document.getElementById("bestRank").textContent = "-";
-    document.getElementById("bestScore").textContent = "-";
-    document.getElementById("bestLength").textContent = "-";
-    document.getElementById("bestTheme").textContent = "-";
+    const li = document.createElement("li");
+    li.textContent = "まだ履歴がありません";
+    bestByDifficultyUL.appendChild(li);
     return;
   }
 
-  let best = histories[0];
-  for (const h of histories) {
-    if (Number(h.cpm ?? 0) > Number(best.cpm ?? 0)) {
-      best = h;
-    }
-  }
-
-  document.getElementById("bestRank").textContent = best.rank ?? "-";
-  document.getElementById("bestScore").textContent = best.cpm ?? "-";
-  document.getElementById("bestLength").textContent = lengthLabel(best.lengthGroup);
-  document.getElementById("bestTheme").textContent = best.theme ?? "-";
+  const best = Math.max(...histories.map(h => Number(h.cpm ?? 0)));
+  const li = document.createElement("li");
+  li.textContent = `ベスト：${best}`;
+  bestByDifficultyUL.appendChild(li);
 }
-
 
 function renderRecent(histories) {
   myRecentUL.innerHTML = "";
   const slice = histories.slice(0, 12);
+
   if (!slice.length) {
     const li = document.createElement("li");
     li.textContent = "まだ履歴がありません。";
@@ -620,13 +667,7 @@ function renderRecent(histories) {
     const score = Number(h.cpm ?? 0);
     const lg = lengthLabel(h.lengthGroup);
     const theme = h.theme ?? "-";
-
-    // 🟢 ユーザー名は表示しない（意味付き表記に統一）
-    li.textContent =
-      `ランク：${rank}` +
-      `｜スコア：${score}` +
-      `｜長さ：${lg}` +
-      `｜テーマ：${theme}`;
+    li.textContent = `${userName}｜ランク：${rank}｜スコア：${score}｜長さ：${lg}｜テーマ：${theme}`;
     myRecentUL.appendChild(li);
   }
 }
@@ -682,242 +723,117 @@ function drawScoreChart(points) {
   ctx.lineTo(pad + w, pad + h);
   ctx.stroke();
 
-  ctx.strokeStyle = "#0b5ed7";
+  ctx.strokeStyle = "#222";
   ctx.lineWidth = 2;
   ctx.beginPath();
 
-  const n = points.length;
-  for (let i = 0; i < n; i++) {
-    const x = pad + (n === 1 ? 0 : (i / (n - 1)) * w);
-    const norm = (points[i].score - minV) / (maxV - minV || 1);
-    const y = pad + h - norm * h;
+  points.forEach((p, i) => {
+    const x = pad + (w * (points.length === 1 ? 0 : i / (points.length - 1)));
+    const y = pad + h - (h * ((p.score - minV) / (maxV - minV || 1)));
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
-  }
+  });
   ctx.stroke();
-
-  ctx.fillStyle = "#666";
-  ctx.font = "10px system-ui";
-  const step = Math.max(1, Math.floor(n / 6));
-  for (let i = 0; i < n; i += step) {
-    const x = pad + (n === 1 ? 0 : (i / (n - 1)) * w);
-    const label = points[i].dateKey.slice(5); // MM-DD
-    ctx.fillText(label, x - 12, pad + h + 14);
-  }
 }
 
 async function loadMyAnalytics(uid, userName) {
   try {
     const colRef = collection(db, "scores");
-    const q = query(colRef, where("uid", "==", uid));
+    const q = query(colRef, where("uid", "==", uid), limit(800));
     const snap = await getDocs(q);
 
     const rows = [];
-    snap.forEach(docu => {
-      const d = docu.data();
-      const ts = d.createdAt;
-      const ms = ts && typeof ts.toMillis === "function" ? ts.toMillis() : null;
-      rows.push({
-        userName: d.userName ?? "",
-        dateKey: d.dateKey ?? "",
-        difficulty: d.difficulty ?? "",
-        lengthGroup: d.lengthGroup ?? "",
-        theme: d.theme ?? "",
-        rank: d.rank ?? "-",
-        cpm: Number(d.cpm ?? 0),
-        createdAtMs: ms
+    snap.forEach(docu => rows.push({ id: docu.id, ...docu.data() }));
+
+    const filtered = rows
+      .filter(r => r.difficulty === activeDiffTab)
+      .sort((a, b) => {
+        const at = a.createdAt?.toMillis?.() ?? 0;
+        const bt = b.createdAt?.toMillis?.() ?? 0;
+        return bt - at;
       });
-    });
 
-    const mineAll = rows.filter(r => r.userName === userName);
+    renderBest(filtered);
+    renderRecent(filtered);
 
-    mineAll.sort((a, b) => (b.createdAtMs ?? 0) - (a.createdAtMs ?? 0));
+    drawScoreChart(buildDailyBestSeries(filtered));
 
-    const view = mineAll.filter(r => r.difficulty === activeDiffTab);
-
-    renderRecent(view);
-    renderBestForSelectedDifficulty(view);
-
-    const series = buildDailyBestSeries(view);
-    drawScoreChart(series);
-
-    updateLabels();
+    if (analyticsTitle) analyticsTitle.textContent = `入力分析（${userName}）`;
   } catch (e) {
-    console.error("analytics load error", e);
-    bestByDifficultyUL.innerHTML = "<li>分析の読み込みに失敗しました</li>";
-    myRecentUL.innerHTML = "<li>分析の読み込みに失敗しました</li>";
-    drawScoreChart([]);
+    console.error("loadMyAnalytics error", e);
   }
 }
 
 /* =========================
-   Save score (auto)
+   Events
 ========================= */
-async function saveScoreToScoresCollection({ uid, userName, metrics, item }) {
-  const score = metrics.cpm;
-  const rank = rankByScore(score);
+skipBtn.addEventListener("click", () => {
+  hideModal();
+  setNewText();
+});
 
-  await addDoc(collection(db, "scores"), {
-    uid,
-    userName,
-    cpm: score,
-    rank,
-    difficulty: item.difficulty,
-    lengthGroup: item.lengthGroup,
-    category: item.category,
-    theme: item.theme,
-    dateKey: todayKey(),
-    createdAt: serverTimestamp()
-  });
-}
+startBtn.addEventListener("click", async () => {
+  hideModal();
+  await startWithCountdown();
+});
 
-/* =========================
-   Finish handler
-========================= */
-async function onFinished(metrics, meta) {
-  const user = auth.currentUser;
-  if (!user) return;
-
-  const userName = userMgr.getCurrentUserName() || "ゲスト";
-
-  try {
-    await saveScoreToScoresCollection({
-      uid: user.uid,
-      userName,
-      metrics,
-      item: meta
-    });
-  } catch (e) {
-    console.error("save score failed", e);
-  }
-
-  const rank = rankByScore(metrics.cpm);
-  mRank.textContent = rank;
-  mCPM.textContent = String(metrics.cpm);
-  mTimeSec.textContent = String(metrics.seconds ?? "-");
-  mLen.textContent = String(metrics.length ?? "-");
-
-  const th = meta?.theme ?? "-";
-  const df = meta?.difficulty ?? "-";
-  const lg = meta?.lengthGroup ?? "-";
-  mMeta.textContent = `ユーザー：${userName} / 難度：${diffLabel(df)} / 文長：${lengthLabel(lg)} / テーマ：${th} / 日付：${todayKey()}`;
-
-  showModal();
-
+dailyTaskEl.addEventListener("change", () => {
+  applyDailyTaskModeUI();
+  setNewText();
   updateLabels();
-  await loadDailyRanking();
-  await loadRanking();
-  await loadMyAnalytics(user.uid, userName);
-}
+  loadDailyRanking();
+  loadRanking();
 
-/* =========================
-   Events（null安全版）
-========================= */
-if (skipBtn) {
-  skipBtn.addEventListener("click", () => {
-    hideModal();
-    setNewText();
-  });
-}
+  const user = auth.currentUser;
+  if (user) loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
+});
 
-if (startBtn) {
-  startBtn.addEventListener("click", async () => {
-    hideModal();
-    await startWithCountdown();
-  });
-}
+difficultyEl.addEventListener("change", () => {
+  applyDailyTaskModeUI();
+  setNewText();
+  updateLabels();
+});
 
-if (dailyThemeEl) {
-  dailyThemeEl.addEventListener("change", () => {
-    applyThemeOptionsByCategory();
-    setNewText();
-    updateLabels();
-    loadDailyRanking();
-    loadRanking();
-    const user = auth.currentUser;
-    if (user) loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
-  });
-}
+lengthGroupEl.addEventListener("change", () => {
+  setNewText();
+});
 
-// ★出題難度の変更：成績・分析タブには連動しない
-if (difficultyEl) {
-  difficultyEl.addEventListener("change", () => {
-    setNewText();
-  });
-}
+categoryEl.addEventListener("change", () => {
+  applyThemeOptionsByCategory();
+  setNewText();
+});
 
-// 出題側の長さ変更：ランキング・分析の長さにも反映
-if (lengthGroupEl) {
-  lengthGroupEl.addEventListener("change", () => {
-    setNewText();
-    updateLabels();
-    loadDailyRanking();
-    loadRanking();
-    const user = auth.currentUser;
-    if (user) loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
-  });
-}
+themeEl.addEventListener("change", () => {
+  setNewText();
+});
 
-if (categoryEl) {
-  categoryEl.addEventListener("change", () => {
-    applyThemeOptionsByCategory();
-    setNewText();
-    updateLabels();
-    loadDailyRanking();
-    loadRanking();
-    const user = auth.currentUser;
-    if (user) loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
-  });
-}
-
-if (themeEl) {
-  themeEl.addEventListener("change", () => {
-    setNewText();
-    updateLabels();
-    loadDailyRanking();
-    loadRanking();
-    const user = auth.currentUser;
-    if (user) loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
-  });
-}
-
-if (closeModalBtn) {
-  closeModalBtn.addEventListener("click", () => hideModal());
-}
-
-if (nextBtn) {
-  nextBtn.addEventListener("click", () => {
-    hideModal();
-    setNewText();
-  });
-}
+closeModalBtn.addEventListener("click", () => hideModal());
+nextBtn.addEventListener("click", () => {
+  hideModal();
+  setNewText();
+});
 
 userMgr.onChange = async () => {
   const user = auth.currentUser;
   if (user) await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
   updateLabels();
+  await loadDailyRanking();
+  await loadRanking();
 };
 
-// Spaceキーでスタート（document は null にならない）
+// Spaceキーでスタート
 document.addEventListener("keydown", (e) => {
   if (e.code !== "Space") return;
   if (!currentItem) return;
   if (engine.started || countdownTimer) return;
-  if (!inputEl || !inputEl.disabled) return;
+  if (!inputEl.disabled) return;
 
   e.preventDefault();
   startWithCountdown();
 });
 
-// ペースト禁止（チート防止）
-inputEl.addEventListener("paste", (e) => {
-  e.preventDefault();
-});
-
-
 /* =========================
-   ★成績・分析タブイベント
-   タブ変更 → 出題難度・出題文は変えない（完全に非連動）
+   成績・分析タブイベント（非連動）
 ========================= */
 function attachUnifiedDiffTabs() {
   const root = document.getElementById("diffTabsUnified");
@@ -925,19 +841,13 @@ function attachUnifiedDiffTabs() {
 
   root.querySelectorAll(".diffTab").forEach(btn => {
     btn.addEventListener("click", async () => {
-      const diff = btn.dataset.diff;
-
-      // 成績・分析側の難度だけ変更
-      setActiveDiffTab(diff);
-
+      setActiveDiffTab(btn.dataset.diff);
       updateLabels();
       await loadDailyRanking();
       await loadRanking();
 
       const user = auth.currentUser;
-      if (user) {
-        await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
-      }
+      if (user) await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
     });
   });
 }
@@ -946,8 +856,6 @@ function attachUnifiedDiffTabs() {
    Init
 ========================= */
 async function init() {
-  updateLabels();
-
   textEl.textContent = "初期化中...";
   inputEl.value = "";
   inputEl.disabled = true;
@@ -965,19 +873,21 @@ async function init() {
   buildIndices(raw);
   hydrateSelects();
 
-  // 成績・分析タブは初期値 normal（出題難度とは同期しない）
   setActiveDiffTab("normal");
 
-  applyThemeOptionsByCategory();
+  applyDailyTaskModeUI();
   setNewText();
 
   attachUnifiedDiffTabs();
 
+  updateLabels();
   await loadDailyRanking();
   await loadRanking();
 }
 
-// 匿名認証必須
+/* =========================
+   Auth
+========================= */
 authBadge.textContent = "認証：準備中…";
 signInAnonymously(auth).catch((e) => {
   console.error("anonymous auth failed", e);
@@ -991,7 +901,3 @@ onAuthStateChanged(auth, async (user) => {
   await init();
   await loadMyAnalytics(user.uid, userMgr.getCurrentUserName());
 });
-
-
-
-
