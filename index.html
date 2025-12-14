@@ -161,6 +161,25 @@
       color: #fff;
       border-color: #222;
     }
+
+    /* ===== グループUI（追加）===== */
+    .dividerLine {
+      width: 100%;
+      height: 1px;
+      background: #eee;
+      margin: 10px 0;
+    }
+    .hint {
+      font-size: 0.92rem;
+      color: #666;
+      margin: 6px 0 0;
+    }
+    .inlineBtns {
+      display: inline-flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
   </style>
 </head>
 
@@ -185,7 +204,58 @@
   </header>
 
   <main>
-    <section id="play" class="card" aria-label="タイピング練習">
+
+    <!-- =========================
+         グループ（追加）
+         - app.js で制御するためのDOMだけ用意
+         - owner のみ承認待ちを表示するため pendingBox は初期非表示
+    ========================= -->
+    <section class="card" style="margin-top:16px;" aria-label="グループ">
+      <h2 style="margin-top:0;">グループ</h2>
+
+      <!-- 参加中グループ切替 -->
+      <div class="row">
+        <label class="muted">参加中</label>
+        <select id="currentGroupSelect" aria-label="参加中グループ"></select>
+
+        <div class="inlineBtns">
+          <button id="leaveGroupBtn" type="button" disabled>退出</button>
+          <button id="deleteGroupBtn" type="button" disabled>グループ削除</button>
+        </div>
+      </div>
+      <p class="hint">
+        ※ 参加中グループを選ぶと、以降のスコアはそのグループにも記録されます（個人記録も残ります）。
+      </p>
+
+      <div class="dividerLine"></div>
+
+      <!-- グループ作成 -->
+      <div class="row">
+        <input id="groupCreateName" type="text" placeholder="新しいグループ名（例：営業チーム）" aria-label="グループ名入力" />
+        <button id="groupCreateBtn" type="button">グループ作成</button>
+      </div>
+
+      <div class="dividerLine"></div>
+
+      <!-- グループ検索 + 参加申請 -->
+      <div class="row">
+        <input id="groupSearchInput" type="text" placeholder="グループ名で検索" aria-label="グループ検索" />
+        <button id="groupSearchBtn" type="button">検索</button>
+      </div>
+
+      <ul id="groupSearchResult" style="margin-top:10px;"></ul>
+
+      <div class="dividerLine"></div>
+
+      <!-- 承認待ち（owner のみ表示） -->
+      <div id="pendingBox" style="display:none;">
+        <h3 style="margin-top:0;">参加申請（承認待ち）</h3>
+        <p class="hint">owner のみ表示されます。</p>
+        <ul id="pendingList"></ul>
+      </div>
+    </section>
+
+    <section id="play" class="card" aria-label="タイピング練習" style="margin-top:16px;">
       <h2>タイピング練習</h2>
 
       <div class="row" style="margin-bottom:10px;">
