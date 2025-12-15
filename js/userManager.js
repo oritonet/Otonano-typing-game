@@ -13,6 +13,9 @@ import {
 
 const MAX_USER_NAME_LENGTH = 10;
 const MAX_USERS_PER_DEVICE = 10;
+function countChars(str) {
+  return [...str].length; // ★ 絵文字も1文字としてカウント
+}
 
 export class UserManager {
   constructor({ selectEl, addBtn, renameBtn, deleteBtn, db }) {
@@ -177,7 +180,7 @@ export class UserManager {
     if (!name) throw new Error("ユーザー名が空です");
   
     // ★ 名前の長さ制限
-    if (name.length > MAX_USER_NAME_LENGTH) {
+    if (countChars(name) > MAX_USER_NAME_LENGTH) {
       throw new Error("ユーザー名は10文字以内で入力してください");
     }
 
@@ -214,10 +217,9 @@ export class UserManager {
     if (!name) throw new Error("ユーザー名が空です");
   
     // ★ 名前の長さ制限
-    if (name.length > MAX_USER_NAME_LENGTH) {
+    if (countChars(name) > MAX_USER_NAME_LENGTH) {
       throw new Error("ユーザー名は10文字以内で入力してください");
     }
-
 
     const oldRef = doc(this.db, "userNames", oldName);
     const newRef = doc(this.db, "userNames", newName);
@@ -328,5 +330,6 @@ export class UserManager {
     localStorage.removeItem(`currentGroupId_v1:${userName}`);
   }
 }
+
 
 
