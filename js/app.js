@@ -977,7 +977,8 @@ async function refreshMyGroups() {
   await onGroupChanged();
   
   if (State.currentGroupId && State.currentGroupRole === "owner") {
-  await loadPendingRequests();
+    await loadPendingRequests();
+  }
 }
 
 
@@ -1494,6 +1495,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
