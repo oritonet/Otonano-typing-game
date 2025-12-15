@@ -11,6 +11,9 @@ import {
   where
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+const MAX_USER_NAME_LENGTH = 10;
+const MAX_USERS_PER_DEVICE = 10;
+
 export class UserManager {
   constructor({ selectEl, addBtn, renameBtn, deleteBtn, db }) {
     if (!db) throw new Error("UserManager: Firestore db is required");
@@ -165,8 +168,18 @@ export class UserManager {
   }
 
   async addUser(nameRaw) {
+    // ★ 端末あたり最大ユーザー数
+    if (this.users.length >= MAX_USERS_PER_DEVICE) {
+      throw new Error("この端末では最大10名までしか登録できません");
+    }
+  
     const name = nameRaw.trim();
     if (!name) throw new Error("ユーザー名が空です");
+  
+    // ★ 名前の長さ制限
+    if (name.length > MAX_USER_NAME_LENGTH) {
+      throw new Error("ユーザー名は10文字以内で入力してください");
+    }
 
     const nameRef = doc(this.db, "userNames", name);
     if ((await getDoc(nameRef)).exists()) {
@@ -196,6 +209,15 @@ export class UserManager {
 
   async renameUser(oldName, newName) {
     if (!this.users.includes(oldName)) throw new Error("権限がありません");
+  
+    const name = newName.trim();
+    if (!name) throw new Error("ユーザー名が空です");
+  
+    // ★ 名前の長さ制限
+    if (name.length > MAX_USER_NAME_LENGTH) {
+      throw new Error("ユーザー名は10文字以内で入力してください");
+    }
+
 
     const oldRef = doc(this.db, "userNames", oldName);
     const newRef = doc(this.db, "userNames", newName);
@@ -306,3 +328,4 @@ export class UserManager {
     localStorage.removeItem(`currentGroupId_v1:${userName}`);
   }
 }
+
