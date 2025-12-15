@@ -938,16 +938,20 @@ function bindPracticeFilters() {
   });
 
   on(categoryEl, "change", () => {
+    // ★カテゴリ変更 → テーマを必ず再生成
+    updateThemeOptionsByCategory();
+  
     if (!State.daily.enabled) {
       buildPool();
       setCurrentItem(pickRandomDifferentText(), { daily: false });
     } else {
-      // daily の候補が変わる可能性があるので再選定
       enableDailyTask();
     }
+  
     updateMetaInfo();
     syncDailyInfoLabel();
   });
+
 
   on(themeEl, "change", () => {
     if (!State.daily.enabled) {
@@ -1227,6 +1231,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
