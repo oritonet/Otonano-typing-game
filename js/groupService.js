@@ -128,17 +128,22 @@ export class GroupService {
      参加申請
      - 同一(uid,userName,groupId)で重複しないよう、ID固定で setDoc
   ========================= */
-  async requestJoin({ groupId, uid, userName }) {
-    if (!groupId || !uid || !userName) throw new Error("requestJoin: params invalid");
-
-    const reqRef = doc(this.db, "groupJoinRequests", joinReqIdOf(uid, userName, groupId));
+  async requestJoin({ groupId, uid, userName, targetOwnerUserName }) {
+    const reqRef = doc(
+      this.db,
+      "groupJoinRequests",
+      `${uid}::${userName}::${groupId}`
+    );
+  
     await setDoc(reqRef, {
       groupId,
       uid,
       userName,
+      targetOwnerUserName,   // ★保存
       createdAt: serverTimestamp()
     });
   }
+
 
   /* =========================
      承認待ち一覧（owner用）
@@ -246,3 +251,4 @@ export class GroupService {
     }
   }
 }
+
