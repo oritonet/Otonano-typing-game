@@ -561,6 +561,8 @@ function stableIndex(seed, mod) {
    pool / pick / set item
 ========================================================= */
 function buildPool() {
+  State.hasNoItem = false;
+
   if (State.daily.enabled) {
     State.pool = [];
     return;
@@ -582,11 +584,12 @@ function buildPool() {
 
   State.pool = arr;
 
-  // ★ 0件の場合は「文章なし」状態にする
   if (arr.length === 0) {
+    State.hasNoItem = true;
     showNoItemMessage(diff, lg, category, theme);
   }
 }
+
 
 
 function pickRandomDifferentText() {
@@ -1363,6 +1366,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
