@@ -123,22 +123,24 @@ export class TypingEngine {
   ========================= */
   startNow() {
     if (!this.inputEl) return;
-
+  
     this.started = true;
     this.ended = false;
     this.startTimeMs = Date.now();
     this.keystrokes = 0;
-
+  
     this.isComposing = false;
     this.lastCommittedValue = "";
-
+  
+    // ガイド・カウントダウン系クラスを外す
     this.inputEl.classList.remove("countdown", "input-guide");
     this._restoreBasePadding();
-
-    this.inputEl.value = "";
+  
+    // ★ ここでは value を触らない
     this.inputEl.disabled = false;
     this.inputEl.focus();
   }
+
 
   /* =========================
      イベント登録
@@ -328,3 +330,4 @@ export class TypingEngine {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
+
