@@ -362,33 +362,35 @@ function enableDailyTask() {
   State.daily.lengthGroup = fixedLengthByDifficulty(State.daily.diff);
   State.daily.dailyTaskKey = dailyTaskKeyOf(State.daily.diff);
 
-  // UIの長さ表示も同期（表示が古い問題を潰す）
   if (lengthGroupEl) lengthGroupEl.value = State.daily.lengthGroup;
 
-  buildPool(); // daily 前提の pool を作る
-  // daily は「日付×難度」で1文固定：seed選択
+  buildPool();
   const item = pickDailyItemForCurrent();
 
   State.daily.text = item?.text ?? "";
   State.daily.meta = item ?? null;
 
   setCurrentItem(item, { daily: true });
-  // 今日の課題で選ばれたカテゴリ・テーマを UI に反映
+
+  // ★ここから追加（修正対象①）
   const meta = State.daily.meta;
   if (meta) {
-    // カテゴリ反映
     if (categoryEl && meta.category) {
       categoryEl.value = meta.category;
     }
 
-    // テーマ選択肢をカテゴリに合わせて再生成
     updateThemeOptionsByCategory();
 
-    // テーマ反映
     if (themeEl && meta.theme) {
       themeEl.value = meta.theme;
     }
   }
+  // ★ここまで追加
+
+  syncDailyInfoLabel();
+  updateMetaInfo();
+}
+
 
   syncDailyInfoLabel();
   updateMetaInfo();
@@ -1254,6 +1256,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
