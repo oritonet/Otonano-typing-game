@@ -121,9 +121,6 @@ const deleteGroupBtn = $("deleteGroupBtn");
 const pendingBox = $("pendingBox");
 const pendingList = $("pendingList");
 
-const currentUserName = userMgr.getCurrentUserName();
-
-
 /* =========================================================
    Services
 ========================================================= */
@@ -896,7 +893,9 @@ async function refreshMyGroups() {
 
   let groups = [];
   try {
-    groups = await groupSvc.getMyGroups(State.authUser.uid);
+    groups = await groupSvc.getMyGroups(
+     userMgr.getCurrentUserName()
+    );
   } catch (e) {
     console.error("getMyGroups failed:", e);
     groups = [];
@@ -1241,7 +1240,10 @@ function bindGroupUI() {
     if (!State.currentGroupId) return;
 
     try {
-      await groupSvc.leaveGroup(State.currentGroupId, State.authUser.uid);
+      await groupSvc.leaveGroup(
+       State.currentGroupId,
+       userMgr.getCurrentUserName()
+      );
       alert("グループから退出しました。");
       await refreshMyGroups();
     } catch (e) {
@@ -1400,6 +1402,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
