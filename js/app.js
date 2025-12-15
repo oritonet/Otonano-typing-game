@@ -124,13 +124,15 @@ const pendingList = $("pendingList");
 /* =========================================================
    Services
 ========================================================= */
-const userMgr = new UserManager({
-  selectEl: userSelect,
-  addBtn: addUserBtn,
-  renameBtn: renameUserBtn,
-  deleteBtn: deleteUserBtn,
-  db
+const userMgr = new UserManager(db, userSelect);
+await userMgr.init();
+userMgr.bindUI();
+
+userMgr.onUserChanged(async () => {
+  await refreshMyGroups();
+  await reloadAllRankings();
 });
+
 const rankingSvc = new RankingService({ db });
 const groupSvc = new GroupService(db);
 
@@ -1444,5 +1446,6 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
