@@ -667,8 +667,10 @@ function setCurrentItem(item, { daily = false } = {}) {
   }
 
   if (startBtn) {
-  startBtn.disabled = false;
+    startBtn.disabled = false;
+    startBtn.style.display = ""; // ★文章更新で必ず復活
   }
+
 
 }
 
@@ -1488,6 +1490,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
