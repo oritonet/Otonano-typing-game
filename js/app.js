@@ -389,17 +389,12 @@ function enableDailyTask() {
 
   syncDailyInfoLabel();
   updateMetaInfo();
-}
 
-
-  syncDailyInfoLabel();
-  updateMetaInfo();
-    // 今日の課題中はカテゴリ・テーマをロック
+      // 今日の課題中はカテゴリ・テーマをロック
   if (categoryEl) categoryEl.disabled = true;
   if (themeEl) themeEl.disabled = true;
   // 今日の課題中は操作不可（難度で固定されるため）
   if (lengthGroupEl) lengthGroupEl.disabled = true;
-
 }
 
 function disableDailyTask() {
@@ -1256,6 +1251,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
