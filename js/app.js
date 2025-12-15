@@ -562,7 +562,6 @@ function stableIndex(seed, mod) {
 ========================================================= */
 function buildPool() {
   if (State.daily.enabled) {
-    // daily は setCurrentItem 時に pickDaily するので pool は使わない
     State.pool = [];
     return;
   }
@@ -572,7 +571,7 @@ function buildPool() {
   const category = getPracticeCategory();
   const theme = getPracticeTheme();
 
-  let arr = State.allItems.filter(x => {
+  const arr = State.allItems.filter(x => {
     if (!x.text) return false;
     if (x.difficulty !== diff) return false;
     if (x.lengthGroup !== lg) return false;
@@ -581,13 +580,14 @@ function buildPool() {
     return true;
   });
 
-  // 0件なら「難度だけ」まで緩和（詰み防止）
-  if (arr.length === 0) {
-    arr = State.allItems.filter(x => x.text && x.difficulty === diff);
-  }
-
   State.pool = arr;
+
+  // ★ 0件の場合は「文章なし」状態にする
+  if (arr.length === 0) {
+    showNoItemMessage(diff, lg, category, theme);
+  }
 }
+
 
 function pickRandomDifferentText() {
   if (State.pool.length === 0) return null;
@@ -1331,6 +1331,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
