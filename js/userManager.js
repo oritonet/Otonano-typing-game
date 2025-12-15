@@ -1,179 +1,308 @@
 import {
-  getAuth,
-  onAuthStateChanged
-} from "firebase/auth";
-
-import {
-  getFirestore,
+  collection,
   doc,
+  getDocs,
   getDoc,
   setDoc,
   deleteDoc,
-  collection,
+  serverTimestamp,
+  runTransaction,
   query,
-  where,
-  getDocs,
-  serverTimestamp
-} from "firebase/firestore";
+  where
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-class UserManager {
-  constructor() {
-    this.auth = getAuth();
-    this.db = getFirestore();
+export class UserManager {
+  constructor({ selectEl, addBtn, renameBtn, deleteBtn, db }) {
+    if (!db) throw new Error("UserManager: Firestore db is required");
 
-    this.authUser = null;
-    this.currentUserName = null;
+    this.db = db;
 
-    this.onChangeCallbacks = [];
+    this.userSelect = selectEl || null;
+    this.addBtn = addBtn || null;
+    this.renameBtn = renameBtn || null;
+    this.deleteBtn = deleteBtn || null;
+
+    this.users = [];
+    this.currentUserName = "";
+    this._authUid = "";
+    this._listeners = new Set();
+
+    this._bindEvents();
   }
 
   /* =========================
-     初期化
+     init
   ========================= */
+  async init(authUid) {
+    this._authUid = (authUid || "").toString();
+    if (!this._authUid) throw new Error("UserManager.init: authUid is required");
 
-  init() {
-    onAuthStateChanged(this.auth, async (user) => {
-      this.authUser = user || null;
+    this.users = await this.listUsers();
 
-      if (!user) {
-        this.currentUserName = null;
-        this._notify();
-        return;
-      }
+    const last = this._getLastUserName();
 
-      // uid に紐づく userName を読み込む
-      const names = await this.loadMyUserNames();
+    if (last && this.users.includes(last)) {
+      this.currentUserName = last;
+    } else if (this.users.length > 0) {
+      this.currentUserName = this.users[0];
+    } else {
+      const guest = await this._createUniqueGuestUser();
+      this.currentUserName = guest;
+      this.users = await this.listUsers();
+    }
 
-      if (names.length === 0) {
-        // ★ userName が1つも無い場合は自動生成
-        const autoName = this._generateGuestName();
-        await this.createUserName(autoName);
-        this.currentUserName = autoName;
-      } else {
-        // localStorage に保存されている userName を優先
-        const saved = localStorage.getItem(this._storageKey());
-        this.currentUserName = names.includes(saved)
-          ? saved
-          : names[0];
-      }
+    this._setLastUserName(this.currentUserName);
+    this.render();
+    this._emitChanged();
 
-      this._saveCurrent();
-      this._notify();
-    });
+    return this.currentUserName;
   }
 
   /* =========================
-     public API
+     イベント
   ========================= */
+  onUserChanged(fn) {
+    if (typeof fn !== "function") return () => {};
+    this._listeners.add(fn);
+    return () => this._listeners.delete(fn);
+  }
 
-  getAuthUser() {
-    return this.authUser;
+  _emitChanged() {
+    for (const fn of this._listeners) {
+      try {
+        fn(this.currentUserName);
+      } catch (e) {
+        console.error("onUserChanged handler error:", e);
+      }
+    }
+  }
+
+  _bindEvents() {
+    if (this.userSelect) {
+      this.userSelect.addEventListener("change", () => {
+        const v = (this.userSelect.value || "").toString();
+        if (!v || !this.users.includes(v)) return;
+
+        this.currentUserName = v;
+        this._setLastUserName(v);
+        this._emitChanged();
+      });
+    }
+
+    if (this.addBtn) {
+      this.addBtn.addEventListener("click", async () => {
+        const name = prompt("ユーザー名を入力してください（全体で一意）");
+        if (!name) return;
+        try {
+          await this.addUser(name);
+        } catch (e) {
+          alert(e.message || "ユーザー作成に失敗しました");
+        }
+      });
+    }
+
+    if (this.renameBtn) {
+      this.renameBtn.addEventListener("click", async () => {
+        if (!this.currentUserName) return;
+        const newName = prompt("新しいユーザー名", this.currentUserName);
+        if (!newName || newName === this.currentUserName) return;
+        try {
+          await this.renameUser(this.currentUserName, newName);
+        } catch (e) {
+          alert(e.message || "改名に失敗しました");
+        }
+      });
+    }
+
+    if (this.deleteBtn) {
+      this.deleteBtn.addEventListener("click", async () => {
+        if (!this.currentUserName) return;
+        if (!confirm(`ユーザー「${this.currentUserName}」を削除しますか？`)) return;
+        try {
+          await this.deleteUser(this.currentUserName);
+        } catch (e) {
+          alert(e.message || "削除に失敗しました");
+        }
+      });
+    }
+  }
+
+  /* =========================
+     UI
+  ========================= */
+  render() {
+    if (!this.userSelect) return;
+
+    this.userSelect.innerHTML = "";
+    for (const name of this.users) {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      this.userSelect.appendChild(opt);
+    }
+
+    if (this.currentUserName) {
+      this.userSelect.value = this.currentUserName;
+    }
   }
 
   getCurrentUserName() {
     return this.currentUserName;
   }
 
-  onChange(cb) {
-    this.onChangeCallbacks.push(cb);
-  }
+  /* =========================
+     Firestore
+  ========================= */
 
-  async loadMyUserNames() {
-    if (!this.authUser) return [];
-
+  // ★ ここが最大の修正点
+  async listUsers() {
     const q = query(
       collection(this.db, "userUserNames"),
-      where("uid", "==", this.authUser.uid)
+      where("uid", "==", this._authUid)
     );
-
     const snap = await getDocs(q);
-    return snap.docs.map(d => d.data().userName);
+    return snap.docs.map(d => d.data().userName).sort();
   }
 
-  async createUserName(userName) {
-    if (!this.authUser) {
-      throw new Error("not signed in");
-    }
+  async addUser(nameRaw) {
+    const name = nameRaw.trim();
+    if (!name) throw new Error("ユーザー名が空です");
 
-    const uid = this.authUser.uid;
-
-    // ① 全体一意（userNames）
-    const nameRef = doc(this.db, "userNames", userName);
-    const exists = await getDoc(nameRef);
-    if (exists.exists()) {
-      throw new Error("userName already exists");
+    const nameRef = doc(this.db, "userNames", name);
+    if ((await getDoc(nameRef)).exists()) {
+      throw new Error("このユーザー名は既に使われています");
     }
 
     await setDoc(nameRef, {
-      createdByUid: uid,
-      createdAt: serverTimestamp()
+      createdAt: serverTimestamp(),
+      createdByUid: this._authUid
     });
 
-    // ② uid 所有（userUserNames）
     await setDoc(
-      doc(this.db, "userUserNames", `${uid}_${userName}`),
+      doc(this.db, "userUserNames", `${this._authUid}_${name}`),
       {
-        uid,
-        userName,
+        uid: this._authUid,
+        userName: name,
         createdAt: serverTimestamp()
       }
     );
 
-    this.currentUserName = userName;
-    this._saveCurrent();
-    this._notify();
+    this.users = await this.listUsers();
+    this.currentUserName = name;
+    this._setLastUserName(name);
+    this.render();
+    this._emitChanged();
   }
 
-  async deleteUserName(userName) {
-    if (!this.authUser) return;
-    if (this.currentUserName === userName) {
-      throw new Error("cannot delete current user");
+  async renameUser(oldName, newName) {
+    if (!this.users.includes(oldName)) throw new Error("権限がありません");
+
+    const oldRef = doc(this.db, "userNames", oldName);
+    const newRef = doc(this.db, "userNames", newName);
+
+    if ((await getDoc(newRef)).exists()) {
+      throw new Error("新しいユーザー名は既に使われています");
     }
 
-    const uid = this.authUser.uid;
+    await setDoc(newRef, {
+      createdAt: serverTimestamp(),
+      createdByUid: this._authUid
+    });
+    await deleteDoc(oldRef);
 
-    await deleteDoc(doc(this.db, "userNames", userName));
-    await deleteDoc(doc(this.db, "userUserNames", `${uid}_${userName}`));
+    await deleteDoc(doc(this.db, "userUserNames", `${this._authUid}_${oldName}`));
+    await setDoc(
+      doc(this.db, "userUserNames", `${this._authUid}_${newName}`),
+      {
+        uid: this._authUid,
+        userName: newName,
+        createdAt: serverTimestamp()
+      }
+    );
 
-    this._notify();
+    this._cleanupLocalStorageForUser(oldName);
+
+    this.users = await this.listUsers();
+    this.currentUserName = newName;
+    this._setLastUserName(newName);
+    this.render();
+    this._emitChanged();
   }
 
-  async switchUserName(userName) {
-    const names = await this.loadMyUserNames();
-    if (!names.includes(userName)) {
-      throw new Error("userName not owned by this uid");
+  async deleteUser(name) {
+    if (!this.users.includes(name)) return;
+
+    await deleteDoc(doc(this.db, "userNames", name));
+    await deleteDoc(doc(this.db, "userUserNames", `${this._authUid}_${name}`));
+
+    this._cleanupLocalStorageForUser(name);
+
+    this.users = await this.listUsers();
+
+    if (this.users.length === 0) {
+      const guest = await this._createUniqueGuestUser();
+      this.users = await this.listUsers();
+      this.currentUserName = guest;
+    } else {
+      this.currentUserName = this.users[0];
     }
 
-    this.currentUserName = userName;
-    this._saveCurrent();
-    this._notify();
+    this._setLastUserName(this.currentUserName);
+    this.render();
+    this._emitChanged();
   }
 
   /* =========================
-     private
+     guest 生成
   ========================= */
+  async _createUniqueGuestUser() {
+    for (let i = 0; i < 30; i++) {
+      const name = `guest-${this._randBase36(10)}`;
+      const ref = doc(this.db, "userNames", name);
 
-  _storageKey() {
-    return `currentUserName:${this.authUser?.uid ?? ""}`;
-  }
+      const ok = await runTransaction(this.db, async (tx) => {
+        if ((await tx.get(ref)).exists()) return null;
+        tx.set(ref, { createdAt: serverTimestamp(), createdByUid: this._authUid });
+        return name;
+      });
 
-  _saveCurrent() {
-    if (!this.authUser || !this.currentUserName) return;
-    localStorage.setItem(this._storageKey(), this.currentUserName);
-  }
-
-  _notify() {
-    for (const cb of this.onChangeCallbacks) {
-      cb(this.currentUserName);
+      if (ok) {
+        await setDoc(
+          doc(this.db, "userUserNames", `${this._authUid}_${ok}`),
+          {
+            uid: this._authUid,
+            userName: ok,
+            createdAt: serverTimestamp()
+          }
+        );
+        return ok;
+      }
     }
+    throw new Error("guest 作成失敗");
   }
 
-  _generateGuestName() {
-    // 絶対衝突しない（uid + 時刻）
-    const uidPart = this.authUser.uid.slice(-6);
-    const timePart = Date.now().toString(36);
-    return `guest-${uidPart}-${timePart}`;
+  _randBase36(n) {
+    const bytes = new Uint8Array(n);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes).map(b => (b % 36).toString(36)).join("");
+  }
+
+  /* =========================
+     localStorage
+  ========================= */
+  _lastKey() {
+    return `lastUserName_v1:${this._authUid}`;
+  }
+
+  _getLastUserName() {
+    return localStorage.getItem(this._lastKey()) || "";
+  }
+
+  _setLastUserName(name) {
+    localStorage.setItem(this._lastKey(), name);
+  }
+
+  _cleanupLocalStorageForUser(userName) {
+    localStorage.removeItem(`currentGroupId_v1:${userName}`);
   }
 }
-
-export const userMgr = new UserManager();
