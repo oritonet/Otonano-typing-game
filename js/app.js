@@ -124,17 +124,23 @@ const pendingList = $("pendingList");
 /* =========================================================
    Services
 ========================================================= */
-const userMgr = new UserManager(db, userSelect);
-await userMgr.init();
-userMgr.bindUI();
+const userMgr = new UserManager({
+  selectEl: userSelect,
+  addBtn: addUserBtn,
+  renameBtn: renameUserBtn,
+  deleteBtn: deleteUserBtn,
+  db
+});
 
+const rankingSvc = new RankingService({ db });
+const groupSvc = new GroupService(db);
+
+// userName切替時：グループSelect即更新 + ランキング更新
 userMgr.onUserChanged(async () => {
   await refreshMyGroups();
   await reloadAllRankings();
 });
 
-const rankingSvc = new RankingService({ db });
-const groupSvc = new GroupService(db);
 
 /* =========================================================
    State
@@ -923,11 +929,12 @@ async function refreshMyGroups() {
   if (!State.authUser) return;
   if (!currentGroupSelect) return;
 
+  const uid = State.authUser.uid;
+  const userName = userMgr.getCurrentUserName();
+
   let groups = [];
   try {
-    groups = await groupSvc.getMyGroups(
-     userMgr.getCurrentUserName()
-    );
+    groups = await groupSvc.getMyGroups(uid, userName);
   } catch (e) {
     console.error("getMyGroups failed:", e);
     groups = [];
@@ -951,28 +958,25 @@ async function refreshMyGroups() {
     currentGroupSelect.appendChild(opt);
   }
 
-  const userName = currentUserNameSafe();
+  // ★ 保存・復元は「userName単位」でOK
   const saved = getSavedGroupIdFor(userName);
   const optionValues = Array.from(currentGroupSelect.options).map(o => o.value);
-  
+
   let nextGroupId = null;
   if (saved && optionValues.includes(saved)) {
     nextGroupId = saved;
   } else if (groups.length > 0) {
     nextGroupId = groups[0].groupId;
   }
-  
+
   currentGroupSelect.value = nextGroupId || "";
   State.currentGroupId = nextGroupId;
-  
+
   setSavedGroupIdFor(userName, nextGroupId);
-  
+
   await onGroupChanged();
-
-
-
-
 }
+
 
 async function loadPendingRequests() {
   if (!pendingList) return;
@@ -1441,11 +1445,14 @@ onAuthStateChanged(auth, async (user) => {
   if (!user) return;
 
   try {
+    // ★ auth.uid が確定してから init（端末ごとの last userName 復元 or guest 新規作成）
+    await userMgr.init(user.uid);
     await initApp();
   } catch (e) {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
