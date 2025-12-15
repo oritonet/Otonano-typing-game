@@ -923,7 +923,15 @@ async function refreshMyGroups() {
   const exists = Array.from(currentGroupSelect.options).some(o => o.value === saved);
   currentGroupSelect.value = exists ? saved : "";
 
+    // 保存された groupId が無効な場合、先頭グループを自動選択
+  if (!currentGroupSelect.value && groups.length > 0) {
+    currentGroupSelect.value = groups[0].groupId;
+    State.currentGroupId = groups[0].groupId;
+    localStorage.setItem(GROUP_STORAGE_KEY, State.currentGroupId);
+  }
+
   await onGroupChanged();
+
 }
 
 async function loadPendingRequests() {
@@ -1402,6 +1410,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
