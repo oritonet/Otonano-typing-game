@@ -289,7 +289,7 @@ export class TypingEngine {
   }
 
   /* =========================
-     ガイド表示（index.html の data-guide）
+     ガイド表示（スタート前）
   ========================= */
   _showGuideCharInTextarea() {
     if (!this.inputEl) return;
@@ -329,5 +329,6 @@ export class TypingEngine {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
+
 
 
