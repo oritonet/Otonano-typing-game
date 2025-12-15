@@ -1321,7 +1321,7 @@ function bindGroupUI() {
 
   on(currentGroupSelect, "change", onGroupChanged);
   
-  on(leaveGroupeBtn, "click", async () => {
+  on(leaveGroupBtn, "click", async () => {
     if (!State.currentGroupId) return;
   
     if (!confirm("このグループから退出しますか？")) return;
@@ -1341,7 +1341,8 @@ function bindGroupUI() {
     }
   });
 
-  on(deleteGroupeBtn, "click", async () => {
+
+  on(deleteGroupBtn, "click", async () => {
     if (!State.currentGroupId) return;
     if (State.currentGroupRole !== "owner") return;
   
@@ -1359,6 +1360,7 @@ function bindGroupUI() {
       alert("グループ削除に失敗しました");
     }
   });
+
 
 }
 
@@ -1489,6 +1491,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
