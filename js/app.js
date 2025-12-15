@@ -1226,12 +1226,24 @@ function bindPracticeFilters() {
   on(themeEl, "change", () => {
     if (State.daily.enabled) return;
   
+    const theme = themeEl.value;
+    const currentCategory = categoryEl?.value ?? "all";
+  
+    // ★ カテゴリが「すべて」のときだけ、テーマから自動設定
+    if (currentCategory === "all") {
+      const item = State.allItems.find(x => x.theme === theme);
+      if (item && categoryEl) {
+        categoryEl.value = item.category;
+      }
+    }
+  
     buildPool();
     if (!State.hasNoItem) {
       setCurrentItem(pickRandomDifferentText(), { daily: false });
     }
     updateMetaInfo();
   });
+
 
 
   on(dailyTaskEl, "change", () => {
@@ -1542,6 +1554,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
