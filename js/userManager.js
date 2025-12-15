@@ -3,7 +3,8 @@ import {
   getDocs,
   setDoc,
   deleteDoc,
-  doc
+  doc,
+  runTransaction
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 export class UserManager {
@@ -32,22 +33,15 @@ export class UserManager {
 
   /* =========================
      初期化
-     - ユーザー0人なら guest を自動作成
+     - ユーザー0人なら guest を自動作成（衝突なし）
   ========================= */
 
   async init() {
     this.users = await this.listUsers();
 
-    // ★ ユーザーが0人の場合は自動で guest を作成
+    // ★ ユーザーが0人の場合は Firestore transaction で一意 guest を作成
     if (this.users.length === 0) {
-      let guest;
-      do {
-        guest = this._generateGuestName();
-      } while (this.users.includes(guest));
-
-      await setDoc(doc(this.db, "userNames", guest), {
-        createdAt: Date.now()
-      });
+      const guest = await this._createUniqueGuestUser();
 
       this.users = [guest];
       this.currentUserName = guest;
@@ -89,12 +83,10 @@ export class UserManager {
   async renameUser(oldName, newName) {
     if (!oldName || !newName || oldName === newName) return;
 
-    // 新しい名前を作成
     await setDoc(doc(this.db, "userNames", newName), {
       createdAt: Date.now()
     });
 
-    // 古い名前を削除
     await deleteDoc(doc(this.db, "userNames", oldName));
 
     this.users = await this.listUsers();
@@ -114,7 +106,6 @@ export class UserManager {
 
     this.render();
 
-    // ★ 削除後に0人なら、次回リロード時に guest が自動作成される
     if (this.currentUserName) {
       this._emitUserChanged();
     }
@@ -125,7 +116,6 @@ export class UserManager {
   ========================= */
 
   render() {
-    // select を作り直す
     this.userSelect.innerHTML = "";
 
     for (const name of this.users) {
@@ -137,12 +127,11 @@ export class UserManager {
 
     this.userSelect.value = this.currentUserName || "";
 
-    // 見た目上の混乱防止（任意）
+    // 見た目上の混乱防止
     this.userSelect.disabled = (this.users.length === 0);
   }
 
   bindUI() {
-    // select 変更 → 即通知
     this.userSelect.addEventListener("change", () => {
       const selected = this.userSelect.value;
       if (selected === this.currentUserName) return;
@@ -166,12 +155,30 @@ export class UserManager {
     }
   }
 
+  // ★ Math.random を使わない guest 名生成（Firestore auto ID）
   _generateGuestName() {
-    const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-    let s = "";
-    for (let i = 0; i < 8; i++) {
-      s += chars[Math.floor(Math.random() * chars.length)];
+    const id = doc(this.db, "_").id;
+    return `guest-${id.slice(0, 10)}`;
+  }
+
+  // ★ Firestore transaction で一意に guest を作成
+  async _createUniqueGuestUser() {
+    while (true) {
+      const guest = this._generateGuestName();
+      const ref = doc(this.db, "userNames", guest);
+
+      try {
+        await runTransaction(this.db, async (tx) => {
+          const snap = await tx.get(ref);
+          if (snap.exists()) {
+            throw new Error("collision");
+          }
+          tx.set(ref, { createdAt: Date.now() });
+        });
+        return guest; // 成功
+      } catch (e) {
+        // 衝突したら再生成
+      }
     }
-    return `guest-${s}`;
   }
 }
