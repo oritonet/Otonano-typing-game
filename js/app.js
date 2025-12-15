@@ -624,6 +624,11 @@ function setCurrentItem(item, { daily = false } = {}) {
     inputEl.value = "";
     inputEl.disabled = true; // Start押すまで無効
   }
+
+  if (startBtn) {
+  startBtn.disabled = false;
+}
+
 }
 
 /* =========================================================
@@ -647,6 +652,33 @@ function updateMetaInfo() {
 
   metaInfoEl.textContent = parts.join(" / ");
 }
+
+function showNoItemMessage(diff, lg, category, theme) {
+  if (textEl) {
+    textEl.textContent = "該当する文章がありません。";
+  }
+
+  if (inputEl) {
+    inputEl.value = "";
+    inputEl.disabled = true;
+  }
+
+  if (startBtn) {
+    startBtn.disabled = true;
+  }
+
+  if (metaInfoEl) {
+    const parts = [];
+    parts.push(`難度：${diffLabel(diff)}`);
+    parts.push(`長さ：${lengthLabel(lg)}`);
+    if (category !== "all") parts.push(`カテゴリ：${category}`);
+    if (theme !== "all") parts.push(`テーマ：${theme}`);
+    parts.push("※該当文章なし");
+
+    metaInfoEl.textContent = parts.join(" / ");
+  }
+}
+
 
 /* =========================================================
    Typing engine setup
@@ -1331,6 +1363,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
