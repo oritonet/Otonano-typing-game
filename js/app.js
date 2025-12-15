@@ -1003,7 +1003,16 @@ async function loadPendingRequests() {
       return;
     }
 
+    // ★★★ ここが重要：同一人物をまとめる ★★★
+    const map = new Map(); // key = uid::userName
     for (const r of reqs) {
+      const key = `${r.uid}::${r.userName}`;
+      if (!map.has(key)) {
+        map.set(key, r);
+      }
+    }
+
+    for (const r of map.values()) {
       const li = document.createElement("li");
       li.style.display = "flex";
       li.style.gap = "8px";
@@ -1018,32 +1027,18 @@ async function loadPendingRequests() {
       const ng = document.createElement("button");
       ng.textContent = "却下";
 
-      // ★ 承認
-      on(ok, "click", async () => {
-        try {
-          await groupSvc.approveMember({
-            requestId: r.id,
-            ownerUid: State.authUser.uid,
-            ownerUserName: userMgr.getCurrentUserName()
-          });
-
-          //await loadPendingRequests();
-          await refreshMyGroups();
-        } catch (e) {
-          console.error("approve failed:", e);
-          alert("承認に失敗しました");
-        }
+      ok.addEventListener("click", async () => {
+        await groupSvc.approveMember({
+          requestId: r.id,
+          ownerUid: State.authUser.uid,
+          ownerUserName: userMgr.getCurrentUserName()
+        });
+        await refreshMyGroups();
       });
 
-      // ★ 却下
-      on(ng, "click", async () => {
-        try {
-          await groupSvc.rejectMember({ requestId: r.id });
-          await refreshMyGroups(); // ★ 統一
-        } catch (e) {
-          console.error("reject failed:", e);
-          alert("却下に失敗しました");
-        }
+      ng.addEventListener("click", async () => {
+        await groupSvc.rejectMember({ requestId: r.id });
+        await refreshMyGroups();
       });
 
       li.appendChild(nameSpan);
@@ -1051,6 +1046,7 @@ async function loadPendingRequests() {
       li.appendChild(ng);
       pendingList.appendChild(li);
     }
+
   } catch (e) {
     console.error("loadPendingRequests failed:", e);
     const li = document.createElement("li");
@@ -1058,6 +1054,7 @@ async function loadPendingRequests() {
     pendingList.appendChild(li);
   }
 }
+
 
 
 async function onGroupChanged() {
@@ -1495,6 +1492,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
