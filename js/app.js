@@ -235,10 +235,10 @@ function difficultyByText(text) {
    文章長：5段階
 ========================= */
 function lengthGroupOf(len) {
-  if (len <= 20) return "xs";
-  if (len <= 40) return "short";
-  if (len <= 80) return "medium";
-  if (len <= 140) return "long";
+  if (len <= 50) return "xs";
+  if (len <= 100) return "short";
+  if (len <= 150) return "medium";
+  if (len <= 200) return "long";
   return "xl";
 }
 
@@ -1331,6 +1331,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
