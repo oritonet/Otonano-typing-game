@@ -630,7 +630,7 @@ function setCurrentItem(item, { daily = false } = {}) {
 
   if (startBtn) {
   startBtn.disabled = false;
-}
+  }
 
 }
 
@@ -671,16 +671,11 @@ function showNoItemMessage(diff, lg, category, theme) {
   }
 
   if (metaInfoEl) {
-    const parts = [];
-    parts.push(`難度：${diffLabel(diff)}`);
-    parts.push(`長さ：${lengthLabel(lg)}`);
-    if (category !== "all") parts.push(`カテゴリ：${category}`);
-    if (theme !== "all") parts.push(`テーマ：${theme}`);
-    parts.push("※該当文章なし");
-
-    metaInfoEl.textContent = parts.join(" / ");
+    metaInfoEl.textContent =
+      `難度：${diffLabel(diff)} / 長さ：${lengthLabel(lg)} / ※該当文章なし`;
   }
 }
+
 
 
 /* =========================================================
@@ -1022,7 +1017,9 @@ function bindModal() {
       setCurrentItem(pickDailyItemForCurrent(), { daily: true });
     } else {
       buildPool();
-      setCurrentItem(pickRandomDifferentText(), { daily: false });
+      if (!State.hasNoItem) {
+        setCurrentItem(pickRandomDifferentText(), { daily: false });
+      }
     }
     updateMetaInfo();
   });
@@ -1051,7 +1048,9 @@ function bindTypingButtons() {
     }
 
     buildPool();
-    setCurrentItem(pickRandomDifferentText(), { daily: false });
+    if (!State.hasNoItem) {
+      setCurrentItem(pickRandomDifferentText(), { daily: false });
+    }
     updateMetaInfo();
   });
 }
@@ -1063,7 +1062,9 @@ function bindPracticeFilters() {
       enableDailyTask();
     } else {
       buildPool();
-      setCurrentItem(pickRandomDifferentText(), { daily: false });
+      if (!State.hasNoItem) {
+        setCurrentItem(pickRandomDifferentText(), { daily: false });
+      }
       updateMetaInfo();
     }
   });
@@ -1075,7 +1076,9 @@ function bindPracticeFilters() {
       return;
     }
     buildPool();
-    setCurrentItem(pickRandomDifferentText(), { daily: false });
+    if (!State.hasNoItem) {
+      setCurrentItem(pickRandomDifferentText(), { daily: false });
+    }
     updateMetaInfo();
   });
 
@@ -1085,7 +1088,9 @@ function bindPracticeFilters() {
     if (State.daily.enabled) return;
   
     buildPool();
-    setCurrentItem(pickRandomDifferentText(), { daily: false });
+    if (!State.hasNoItem) {
+      setCurrentItem(pickRandomDifferentText(), { daily: false });
+    }
     updateMetaInfo();
   });
 
@@ -1095,7 +1100,9 @@ function bindPracticeFilters() {
     if (State.daily.enabled) return;
   
     buildPool();
-    setCurrentItem(pickRandomDifferentText(), { daily: false });
+    if (!State.hasNoItem) {
+      setCurrentItem(pickRandomDifferentText(), { daily: false });
+    }
     updateMetaInfo();
   });
 
@@ -1106,7 +1113,9 @@ function bindPracticeFilters() {
     } else {
       disableDailyTask();
       buildPool();
+      if (!State.hasNoItem) {
       setCurrentItem(pickRandomDifferentText(), { daily: false });
+    }
       updateMetaInfo();
     }
     reloadAllRankings();
@@ -1322,7 +1331,9 @@ engine.attach();
    disableDailyTask();
    buildPool();
 
-  setCurrentItem(pickRandomDifferentText(), { daily: false });
+  if (!State.hasNoItem) {
+    setCurrentItem(pickRandomDifferentText(), { daily: false });
+  }
   updateMetaInfo();
   syncDailyInfoLabel();
 
@@ -1366,6 +1377,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
