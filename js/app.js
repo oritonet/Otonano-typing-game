@@ -983,6 +983,7 @@ async function refreshMyGroups() {
 
 
 async function loadPendingRequests() {
+  console.log("### loadPendingRequests called ###");
   if (!pendingList) return;
   pendingList.innerHTML = "";
 
@@ -1492,6 +1493,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
