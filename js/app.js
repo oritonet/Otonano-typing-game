@@ -643,18 +643,34 @@ function updateMetaInfo() {
   const daily = State.daily.enabled;
   const diff = daily ? State.daily.diff : getPracticeDifficulty();
   const lg = daily ? State.daily.lengthGroup : getPracticeLengthGroup();
-  const category = getPracticeCategory();
-  const theme = getPracticeTheme();
+
+  const selectedCategory = getPracticeCategory();
+  const selectedTheme = getPracticeTheme();
+
+  const item = State.currentItem;
 
   const parts = [];
-  parts.push(`難度：${diffLabel(diff)}`);
-  parts.push(`長さ：${lengthLabel(lg)}`);
+  parts.push(`${diffLabel(diff)}`);
+  parts.push(`${lengthLabel(lg)}`);
   if (daily) parts.push("今日の課題：ON");
-  if (category && category !== "all") parts.push(`カテゴリ：${category}`);
-  if (theme && theme !== "all") parts.push(`テーマ：${theme}`);
+
+  // ★ カテゴリ表示
+  if (selectedCategory !== "all") {
+    parts.push(`カテゴリ：${selectedCategory}`);
+  } else if (item?.category && item.category !== "all") {
+    parts.push(`カテゴリ：${item.category}`);
+  }
+
+  // ★ テーマ表示
+  if (selectedTheme !== "all") {
+    parts.push(`テーマ：${selectedTheme}`);
+  } else if (item?.theme && item.theme !== "all") {
+    parts.push(`テーマ：${item.theme}`);
+  }
 
   metaInfoEl.textContent = parts.join(" / ");
 }
+
 
 function showNoItemMessage(diff, lg, category, theme) {
   if (textEl) {
@@ -1377,6 +1393,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
