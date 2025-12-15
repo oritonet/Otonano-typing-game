@@ -1220,21 +1220,28 @@ function bindPracticeFilters() {
     }
     updateMetaInfo();
   });
-
-
-
+  
   on(themeEl, "change", () => {
     if (State.daily.enabled) return;
   
     const theme = themeEl.value;
-    const currentCategory = categoryEl?.value ?? "all";
+    const prevCategory = categoryEl?.value ?? "all";
   
-    // ★ カテゴリが「すべて」のときだけ、テーマから自動設定
-    if (currentCategory === "all") {
+    let categoryChanged = false;
+  
+    // ① カテゴリが all のときだけ、テーマからカテゴリを確定
+    if (prevCategory === "all") {
       const item = State.allItems.find(x => x.theme === theme);
       if (item && categoryEl) {
         categoryEl.value = item.category;
+        categoryChanged = true;
       }
+    }
+  
+    // ② カテゴリが変わったなら、テーマ選択肢を再構築
+    if (categoryChanged) {
+      rebuildThemeOptions(); // ★ 既存のカテゴリ変更時処理と同じ関数
+      themeEl.value = theme; // ★ 今選んだテーマを維持
     }
   
     buildPool();
@@ -1243,8 +1250,6 @@ function bindPracticeFilters() {
     }
     updateMetaInfo();
   });
-
-
 
   on(dailyTaskEl, "change", () => {
     if (dailyTaskEl.checked) {
@@ -1554,6 +1559,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
