@@ -377,6 +377,8 @@ function enableDailyTask() {
     // 今日の課題中はカテゴリ・テーマをロック
   if (categoryEl) categoryEl.disabled = true;
   if (themeEl) themeEl.disabled = true;
+  // 今日の課題中は操作不可（難度で固定されるため）
+  if (lengthGroupEl) lengthGroupEl.disabled = true;
 
 }
 
@@ -393,6 +395,9 @@ function disableDailyTask() {
     // 通常モードに戻す：カテゴリ・テーマを解放
   if (categoryEl) categoryEl.disabled = false;
   if (themeEl) themeEl.disabled = false;
+    // 通常モードに戻す：長さも操作可
+  if (lengthGroupEl) lengthGroupEl.disabled = false;
+
 
 }
 
@@ -1231,6 +1236,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
