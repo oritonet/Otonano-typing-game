@@ -52,6 +52,11 @@ function setText(el, txt) {
   if (!el) return;
   el.textContent = (txt ?? "").toString();
 }
+function hide(el) {
+  if (!el) return;
+  el.style.display = "none"; // レイアウトから消す（余白が残らない）
+}
+
 
 /* =========================================================
    DOM refs
@@ -848,14 +853,8 @@ async function loadDailyRanking() {
   const dailyTaskKey = dailyTaskKeyOf(diff);
   const lg = fixedLengthByDifficulty(diff);
 
-  if (dailyRankLabel) {
-    // 「チェックしてなくても表示」
-    const th = getPracticeTheme();
-    setText(
-      dailyRankLabel,
-      `今日の課題ランキング（${dateKey} / 難度：${diffLabel(diff)} / 長さ：${lengthLabel(lg)} / テーマ：${th || "-"}）`
-    );
-  }
+  hide(dailyRankLabel);
+
 
   try {
     const rows = await rankingSvc.loadDailyTask({
@@ -873,7 +872,7 @@ async function loadDailyRanking() {
 async function loadOverallRanking() {
   if (!rankingUL) return;
 
-  if (overallLabel) setText(overallLabel, `全国ランキング（難度：${diffLabel(State.activeRankDiff)}）`);
+  hide(overallLabel);
 
   try {
     // 全国ランキング：長さ/テーマでフィルタしない（ranking.js の方針に合わせる）
@@ -896,7 +895,7 @@ async function loadGroupRanking() {
   }
 
   groupRankingBox.style.display = "block";
-  setText(groupRankLabel, `グループランキング（難度：${diffLabel(State.activeRankDiff)}）`);
+  hide(groupRankLabel);
 
   try {
     const rowsRaw = await fetchScoresGroup({
@@ -923,7 +922,7 @@ async function reloadAllRankings() {
 ========================================================= */
 async function loadMyAnalytics() {
   if (analyticsTitle) setText(analyticsTitle, "成績・分析");
-  if (analyticsLabel) setText(analyticsLabel, `表示難度：${diffLabel(State.activeRankDiff)}`);
+  hide(analyticsLabel);
 
   if (bestByDifficultyUL) {
     bestByDifficultyUL.innerHTML = "";
@@ -1559,6 +1558,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
