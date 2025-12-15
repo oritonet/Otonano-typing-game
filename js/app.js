@@ -1453,26 +1453,31 @@ function onTypingFinish({ metrics, meta }) {
     const groupId = State.currentGroupId || null;
 
     if (uid) {
-      submitScoreDoc({
-        uid,
-        userName,
-        cpm,
-        rank,
-        timeSec,
-        difficulty,
-        lengthGroup,
-        category,
-        theme,
-        dateKey,
-        isDailyTask,
-        dailyTaskKey,
-        dailyTaskName,
-        groupId
-      }).catch(e => console.error("submitScoreDoc error:", e));
+      try {
+        await submitScoreDoc({
+          uid,
+          userName,
+          cpm,
+          rank,
+          timeSec,
+          difficulty,
+          lengthGroup,
+          category,
+          theme,
+          dateKey,
+          isDailyTask,
+          dailyTaskKey,
+          dailyTaskName,
+          groupId
+        });
+      } catch (e) {
+        console.error("submitScoreDoc error:", e);
+      }
     }
-
-    // 終了後にランキング更新
+    
+    // ★ 保存完了後にランキング更新
     reloadAllRankings().catch(() => {});
+
   } catch (e) {
     console.error("onTypingFinish error:", e);
   }
@@ -1537,6 +1542,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
