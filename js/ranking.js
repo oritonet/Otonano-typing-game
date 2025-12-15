@@ -4,100 +4,93 @@ import {
   getDocs,
   query,
   where,
-  orderBy,
   limit
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 export class RankingService {
   constructor({ db }) {
+    if (!db) throw new Error("RankingService: db required");
     this.db = db;
   }
 
-  /* =========================
-     今日の課題ランキング
-  ========================= */
-  async loadDailyTask({ dailyTaskKey, dateKey, difficulty, max = 200 }) {
-    if (!dailyTaskKey || !dateKey) return [];
+  /**
+   * 全国（難度のみ）
+   * - 「同一端末で userName を変えたら別扱い」に合わせ、best集計は userName 単位
+   */
+  async loadOverall({ difficulty, maxFetch = 800 } = {}) {
+    const colRef = collection(this.db, "scores");
+
+    const filters = [];
+    if (difficulty) filters.push(where("difficulty", "==", difficulty));
+
+    const q = query(colRef, ...filters, limit(maxFetch));
+    const snap = await getDocs(q);
+    const rows = snap.docs.map(d => d.data());
+
+    return this._bestByUserName(rows).slice(0, 10);
+  }
+
+  /**
+   * 今日の課題ランキング（dailyTaskKeyで絞る）
+   */
+  async loadDailyTask({ dailyTaskKey, difficulty, maxFetch = 800 } = {}) {
+    if (!dailyTaskKey) return [];
 
     const colRef = collection(this.db, "scores");
     const q = query(
       colRef,
       where("isDailyTask", "==", true),
       where("dailyTaskKey", "==", dailyTaskKey),
-      where("dateKey", "==", dateKey),
-      where("difficulty", "==", difficulty),
-      orderBy("cpm", "desc"),
-      limit(max)
+      ...(difficulty ? [where("difficulty", "==", difficulty)] : []),
+      limit(maxFetch)
     );
 
     const snap = await getDocs(q);
-    return snap.docs.map(d => d.data());
+    const rows = snap.docs.map(d => d.data());
+
+    return this._bestByUserName(rows).slice(0, 10);
   }
 
-  /* =========================
-     全国ランキング（難度のみ）
-  ========================= */
-  async loadOverall({ difficulty, max = 200 }) {
-    if (!difficulty) return [];
-
-    const colRef = collection(this.db, "scores");
-    const q = query(
-      colRef,
-      where("difficulty", "==", difficulty),
-      orderBy("cpm", "desc"),
-      limit(max)
-    );
-
-    const snap = await getDocs(q);
-    return snap.docs.map(d => d.data());
-  }
-
-  /* =========================
-     描画
-  ========================= */
-  renderList(ul, rows, options = {}) {
+  renderList(ul, rows, { highlightUserName = null } = {}) {
     if (!ul) return;
-
-    const highlightName = options.highlightUserName || null;
-
     ul.innerHTML = "";
 
     if (!rows || rows.length === 0) {
       const li = document.createElement("li");
-      li.textContent = "まだスコアがありません。";
+      li.textContent = "記録がありません";
       ul.appendChild(li);
       return;
     }
 
-    // uid ごとのベストを抽出
-    const bestMap = new Map();
-    for (const r of rows) {
-      const uid = r.uid || "";
-      if (!uid) continue;
-      const prev = bestMap.get(uid);
-      if (!prev || Number(r.cpm) > Number(prev.cpm)) {
-        bestMap.set(uid, r);
-      }
-    }
-
-    const list = Array.from(bestMap.values())
-      .sort((a, b) => Number(b.cpm) - Number(a.cpm))
-      .slice(0, 10);
-
-    list.forEach((r, idx) => {
+    rows.forEach((r, idx) => {
       const li = document.createElement("li");
 
-      const rank = idx + 1;
-      const name = r.userName || "NoName";
-      const cpm = Number(r.cpm || 0);
+      const name = (r.userName || "").toString() || (r.uid || "").toString() || "(unknown)";
+      const cpm = Number(r.cpm ?? 0);
 
-      li.textContent = `${rank}. ${name} - ${cpm} CPM`;
+      li.textContent = `${idx + 1}位  ${name}  ${cpm.toFixed(0)} CPM`;
 
-      if (highlightName && name === highlightName) {
+      if (highlightUserName && name === highlightUserName) {
         li.style.fontWeight = "bold";
       }
 
       ul.appendChild(li);
     });
+  }
+
+  _bestByUserName(rows) {
+    const best = new Map(); // userName -> row
+
+    for (const r of rows) {
+      const userName = (r.userName || "").toString();
+      if (!userName) continue;
+
+      const prev = best.get(userName);
+      if (!prev || Number(r.cpm ?? 0) > Number(prev.cpm ?? 0)) {
+        best.set(userName, r);
+      }
+    }
+
+    return Array.from(best.values()).sort((a, b) => Number(b.cpm ?? 0) - Number(a.cpm ?? 0));
   }
 }
