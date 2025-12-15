@@ -360,34 +360,35 @@ function enableDailyTask() {
   State.daily.enabled = true;
   State.daily.dateKey = todayKey();
 
-  State.daily.diff = getPracticeDifficulty();
-  State.daily.lengthGroup = fixedLengthByDifficulty(State.daily.diff);
-  State.daily.dailyTaskKey = dailyTaskKeyOf(State.daily.diff);
+  const diff = getPracticeDifficulty();
+  const lg = fixedLengthByDifficulty(diff);
 
-  if (lengthGroupEl) lengthGroupEl.value = State.daily.lengthGroup;
+  State.daily.diff = diff;
+  State.daily.lengthGroup = lg;
+  State.daily.dailyTaskKey = dailyTaskKeyOf(diff);
 
-  buildPool();
-  const item = pickDailyItemForCurrent();
+  const item = pickDailyItemFor(diff);
 
+  State.daily.meta = item;
   State.daily.text = item?.text ?? "";
-  State.daily.meta = item ?? null;
 
   setCurrentItem(item, { daily: true });
 
-  // ★ここから追加（修正対象①）
-  const meta = State.daily.meta;
-  if (meta) {
-    if (categoryEl && meta.category) {
-      categoryEl.value = meta.category;
-    }
-
-    updateThemeOptionsByCategory();
-
-    if (themeEl && meta.theme) {
-      themeEl.value = meta.theme;
-    }
+  if (lengthGroupEl) {
+    lengthGroupEl.value = lg;
+    lengthGroupEl.disabled = true;
   }
-  // ★ここまで追加
+
+  if (categoryEl) {
+    categoryEl.value = item?.category ?? "all";
+    categoryEl.disabled = true;
+  }
+
+  if (themeEl) {
+    updateThemeOptionsByCategory();
+    themeEl.value = item?.theme ?? "all";
+    themeEl.disabled = true;
+  }
 
   syncDailyInfoLabel();
   updateMetaInfo();
@@ -414,6 +415,8 @@ function disableDailyTask() {
   if (themeEl) themeEl.disabled = false;
     // 通常モードに戻す：長さも操作可
   if (lengthGroupEl) lengthGroupEl.disabled = false;
+
+  buildPool();
 
 
 }
@@ -459,6 +462,23 @@ function pickDailyItemForCurrent() {
   if (candidates.length === 0) return null;
 
   const seed = `${dateKey}::${diff}::${lg}::${theme}::${category}`;
+  const idx = stableIndex(seed, candidates.length);
+  return candidates[idx];
+}
+
+function pickDailyItemFor(diff) {
+  const dateKey = todayKey();
+  const lg = fixedLengthByDifficulty(diff);
+
+  const candidates = State.allItems.filter(x =>
+    x.text &&
+    x.difficulty === diff &&
+    x.lengthGroup === lg
+  );
+
+  if (candidates.length === 0) return null;
+
+  const seed = `${dateKey}::${diff}`;
   const idx = stableIndex(seed, candidates.length);
   return candidates[idx];
 }
@@ -960,32 +980,25 @@ function bindPracticeFilters() {
   });
 
   on(categoryEl, "change", () => {
-    // ★カテゴリ変更 → テーマを必ず再生成
     updateThemeOptionsByCategory();
   
-    if (!State.daily.enabled) {
-      buildPool();
-      setCurrentItem(pickRandomDifferentText(), { daily: false });
-    } else {
-      enableDailyTask();
-    }
+    if (State.daily.enabled) return;
   
+    buildPool();
+    setCurrentItem(pickRandomDifferentText(), { daily: false });
     updateMetaInfo();
-    syncDailyInfoLabel();
   });
+
 
 
   on(themeEl, "change", () => {
-    if (!State.daily.enabled) {
-      buildPool();
-      setCurrentItem(pickRandomDifferentText(), { daily: false });
-    } else {
-      enableDailyTask();
-    }
+    if (State.daily.enabled) return;
+  
+    buildPool();
+    setCurrentItem(pickRandomDifferentText(), { daily: false });
     updateMetaInfo();
-    syncDailyInfoLabel();
-    reloadAllRankings();
   });
+
 
   on(dailyTaskEl, "change", () => {
     if (dailyTaskEl.checked) {
@@ -1253,6 +1266,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
