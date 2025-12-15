@@ -431,12 +431,29 @@ function getPracticeLengthGroup() {
 }
 
 function getPracticeCategory() {
-  return (categoryEl?.value ?? "all").toString();
+  const cat = (categoryEl?.value ?? "all").toString();
+  if (cat !== "all") return cat;
+
+  // ★ カテゴリが all の場合、テーマから補完
+  const theme = getPracticeTheme();
+  return categoryByTheme(theme);
 }
+
 
 function getPracticeTheme() {
   return (themeEl?.value ?? "all").toString();
 }
+
+/* =========================================================
+    Theme→ Category 連動
+========================================================= */
+function categoryByTheme(theme) {
+  if (!theme || theme === "all") return "all";
+
+  const item = State.allItems.find(x => x.theme === theme);
+  return item?.category ?? "all";
+}
+
 
 /* =========================================================
    今日の課題
@@ -1520,6 +1537,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
