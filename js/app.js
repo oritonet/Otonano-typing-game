@@ -920,17 +920,28 @@ async function refreshMyGroups() {
   }
 
   const saved = localStorage.getItem(GROUP_STORAGE_KEY) || "";
-  const exists = Array.from(currentGroupSelect.options).some(o => o.value === saved);
-  currentGroupSelect.value = exists ? saved : "";
-
-    // 保存された groupId が無効な場合、先頭グループを自動選択
-  if (!currentGroupSelect.value && groups.length > 0) {
-    currentGroupSelect.value = groups[0].groupId;
-    State.currentGroupId = groups[0].groupId;
-    localStorage.setItem(GROUP_STORAGE_KEY, State.currentGroupId);
+  const optionValues = Array.from(currentGroupSelect.options).map(o => o.value);
+  
+  // ① 選択すべき groupId を決定
+  let nextGroupId = null;
+  if (saved && optionValues.includes(saved)) {
+    nextGroupId = saved;
+  } else if (groups.length > 0) {
+    nextGroupId = groups[0].groupId;
   }
-
+  
+  // ② UI と State を先に確定
+  currentGroupSelect.value = nextGroupId || "";
+  State.currentGroupId = nextGroupId;
+  if (nextGroupId) {
+    localStorage.setItem(GROUP_STORAGE_KEY, nextGroupId);
+  } else {
+    localStorage.removeItem(GROUP_STORAGE_KEY);
+  }
+  
+  // ③ 最後に change 処理
   await onGroupChanged();
+
 
 }
 
@@ -1410,6 +1421,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
