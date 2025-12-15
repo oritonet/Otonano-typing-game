@@ -121,6 +121,9 @@ const deleteGroupBtn = $("deleteGroupBtn");
 const pendingBox = $("pendingBox");
 const pendingList = $("pendingList");
 
+const currentUserName = userMgr.getCurrentUserName();
+
+
 /* =========================================================
    Services
 ========================================================= */
@@ -1397,6 +1400,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
