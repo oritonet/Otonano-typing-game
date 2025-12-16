@@ -2054,11 +2054,16 @@ function onTypingFinish({ metrics, meta }) {
         if (typeof loadMyAnalytics === "function") {
           loadMyAnalytics().catch(() => {});
         }
-    
+
       } catch (e) {
         console.error("async finish task error:", e);
       }
     });
+
+  } catch (e) {
+    console.error("onTypingFinish error:", e);
+  }
+}
 
 
 const engine = new TypingEngine({
@@ -2145,6 +2150,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
