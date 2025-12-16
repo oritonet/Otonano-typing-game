@@ -1342,8 +1342,11 @@ async function loadGroupRanking() {
 }
 
 async function reloadAllRankings() {
-  const rows = await rankingSvc.loadOverallRanking(...);
-  
+  const rows = await rankingSvc.loadOverallRanking({
+    difficulty: State.activeRankDiff,
+    lengthGroup: fixedLengthByDifficulty(State.activeRankDiff)
+  });
+
   const userNameMap = await buildUserNameMapFromScores(db, rows);
   
   rankingSvc.renderList(rankingUL, rows, {
@@ -2134,6 +2137,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
