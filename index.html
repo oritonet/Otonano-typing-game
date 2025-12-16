@@ -256,15 +256,28 @@
       display: none !important;
     }
     
-    /* ユーザー／グループの見出し・select・ボタンを上下中央揃え */
+    /* ヘッダー1行の基準高さを固定 */
     .headerCard .row {
       align-items: center;
+      min-height: 36px;
     }
+
     /* select 内文字の上下余白を均等にする */
     .headerCard select {
       height: 36px;
       padding: 0 12px;   /* 上下0・左右だけ余白 */
     }
+    
+    /* ユーザー / グループのラベル文字 */
+    .headerCard .sectionTitle {
+      line-height: 36px;
+    }
+    
+    /* 「ユーザー設定」「グループ設定」ボタン */
+    .headerCard .toggleBtn {
+      line-height: 36px;
+    }
+
 
   </style>
 </head>
@@ -481,6 +494,7 @@
   <script type="module" src="./js/app.js"></script>
 </body>
 </html>
+
 
 
 
