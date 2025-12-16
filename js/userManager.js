@@ -284,18 +284,22 @@ export class UserManager {
     this.render();
     this._emitChanged();
   }
-
+  
   async deleteUser(personalId) {
     const me = this.users.find(u => u.personalId === personalId);
     if (!me) return;
-
+  
+    // userName の一意制約だけ解除
     await deleteDoc(doc(this.db, "userNames", me.userName));
-    await deleteDoc(doc(this.db, "userProfiles", personalId));
-
+  
+    // ★ userProfiles は削除しない（仕様）
+    // await deleteDoc(doc(this.db, "userProfiles", personalId)); ← 削除
+  
     this._cleanupLocalStorageForUser(me.userName, personalId);
-
-    this.users = await this.listUsers();
-
+  
+    // Firestore 再取得は不要。ローカルで除外する
+    this.users = this.users.filter(u => u.personalId !== personalId);
+  
     if (this.users.length === 0) {
       const guest = await this._createUniqueGuestUser();
       this.users = await this.listUsers();
@@ -305,7 +309,7 @@ export class UserManager {
       this.currentPersonalId = this.users[0].personalId;
       this.currentUserName = this.users[0].userName;
     }
-
+  
     this._setLastPersonalId(this.currentPersonalId);
     this.render();
     this._emitChanged();
@@ -365,4 +369,5 @@ export class UserManager {
     if (personalId) localStorage.removeItem(`currentGroupId_v1:${personalId}`);
   }
 }
+
 
