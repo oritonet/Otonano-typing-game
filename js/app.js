@@ -240,37 +240,67 @@ function lengthLabel(v) {
    文章解析ユーティリティ（難易度・文章長 自動判定）
 ========================================================= */
 
-// 記号スコア（IME入力の負荷を反映）
-function punctScore(text) {
-  const strong = (text.match(/[（）「」『』［］【】＜＞”’]/g) || []).length;
-  const middle = (text.match(/[￥＄：；]/g) || []).length;
-  const weak = (text.match(/[ー・＃％＆＋－＝／]/g) || []).length;
-  const basic = (text.match(/[、。,.!！?？]/g) || []).length;
-
-  return strong * 3 + middle * 2 + weak * 1 + basic * 1;
-}
-
-function digitCount(text) {
-  return (text.match(/[0-9]/g) || []).length;
-}
-
+// 漢字密度
 function kanjiRatio(text) {
-  const total = text.length || 1;
+  const total = Math.max(text.length, 30);
   const kanji = (text.match(/[一-龥]/g) || []).length;
   return kanji / total;
+}
+
+// 記号密度（IME負荷を考慮した重み付き）
+function punctDensity(text) {
+  const total = Math.max(text.length, 30);
+
+  const strong = (text.match(/[（）「」『』［］【】＜＞”’]/g) || []).length;
+  const middle = (text.match(/[￥＄：；]/g) || []).length;
+  const weak   = (text.match(/[ー・＃％＆＋－＝／]/g) || []).length;
+  const basic  = (text.match(/[、。,.!！?？]/g) || []).length;
+
+  return (
+    strong * 3 +
+    middle * 2 +
+    weak   * 1 +
+    basic  * 0.5
+  ) / total;
+}
+
+// 数字密度
+function digitRatio(text) {
+  const total = Math.max(text.length, 30);
+  const digits = (text.match(/[0-9]/g) || []).length;
+  return digits / total;
+}
+
+//IME入力負荷目線
+function imeScore(text) {
+  return (
+    kanjiRatio(text)   * 60 +
+    punctDensity(text) * 30 +
+    digitRatio(text)  * 20
+  );
+}
+
+//読解難度目線
+function readingScore(text) {
+  return (
+    kanjiRatio(text)   * 80 +
+    punctDensity(text) * 25 +
+    digitRatio(text)  * 10
+  );
 }
 
 /* =========================
    難易度：3段階
 ========================= */
 function difficultyByText(text) {
-  const score =
-    kanjiRatio(text) * 100 +
-    punctScore(text) * 6 +
-    digitCount(text) * 10;
+  const ime = imeScore(text);
+  const reading = readingScore(text);
 
-  if (score < 35) return "easy";
-  if (score < 65) return "normal";
+  // 合成比率（用途に応じて調整）
+  const combined = ime * 0.5 + reading * 0.5;
+
+  if (combined < 30) return "easy";
+  if (combined < 55) return "normal";
   return "hard";
 }
 
