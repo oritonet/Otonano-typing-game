@@ -105,11 +105,9 @@
     .split { display: grid; grid-template-columns: 1fr; gap: 12px; }
     @media (min-width: 860px) {
       .split {
-        grid-template-columns: auto 1fr;
-        align-items: start;
+        grid-template-columns: 1fr 1fr;
       }
     }
-
 
     canvas { width: 100%; height: 220px; border: 1px solid #eee; border-radius: 10px; background: #fff; }
     details { border: 1px solid #ddd; border-radius: 12px; padding: 10px 12px; background: #fff; }
@@ -570,6 +568,7 @@
   <script type="module" src="./js/app.js"></script>
 </body>
 </html>
+
 
 
 
