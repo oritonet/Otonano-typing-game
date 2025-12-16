@@ -359,23 +359,42 @@
       text-align: center;
     }
     
-    /* 表と称号画像を横並び */
+    /* 表＋画像を包む共通の外枠 */
     .powerInner {
       display: flex;
-      gap: 14px;
+      gap: 0;                    /* ← 隙間をなくす */
       align-items: stretch;
+      border: 2px solid #000;    /* ← 共通枠 */
     }
     
-    /* 称号画像枠（黄色） */
+    /* 左の表：外枠を消す */
+    .powerTable {
+      border: none;              /* ← ここ重要 */
+      margin: 0;
+    }
+    
+    /* 表のセルはそのまま */
+    .powerTable td {
+      border: 1px solid #000;
+    }
+    
+    /* 右の称号画像枠 */
     #rankImageBox {
       width: 160px;
       min-height: 160px;
-      border: 2px solid #000;
-      background: #ff0;
+      background: #000;
+    
+      /* 外枠は powerInner が持つので消す */
+      border: none;
+    
+      /* 左側だけ区切り線を入れる */
+      border-left: 2px solid #000;
+    
       display: flex;
       align-items: center;
       justify-content: center;
     }
+
 
   </style>
 </head>
@@ -603,6 +622,7 @@
   <script type="module" src="./js/app.js"></script>
 </body>
 </html>
+
 
 
 
