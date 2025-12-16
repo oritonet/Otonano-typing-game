@@ -2022,13 +2022,16 @@ function onTypingFinish({ metrics, meta }) {
 
     // groupId は「選択中グループ」をそのまま保存（グループランキングのため）
     const groupId = State.currentGroupId || null;
-
-    if (uid) {
+    
+    // ★ 非同期処理は TypingEngine から完全に切り離す
+    Promise.resolve().then(async () => {
       try {
+        if (!uid) return;
+    
         const personalId = userMgr.getCurrentPersonalId();
-        
+    
         await submitScoreDoc({
-          personalId,   // ★追加
+          personalId,
           uid,
           userName,
           cpm,
@@ -2044,19 +2047,19 @@ function onTypingFinish({ metrics, meta }) {
           dailyTaskName,
           groupId
         });
-
-      } catch (e) {
-        console.error("submitScoreDoc error:", e);
-      }
-    }
     
-    // ★ 保存完了後にランキング更新
-    reloadAllRankings().catch(() => {});
+        reloadAllRankings().catch(() => {});
+    
+        // 入力分析を即更新
+        if (typeof loadMyAnalytics === "function") {
+          loadMyAnalytics().catch(() => {});
+        }
+    
+      } catch (e) {
+        console.error("async finish task error:", e);
+      }
+    });
 
-  } catch (e) {
-    console.error("onTypingFinish error:", e);
-  }
-}
 
 const engine = new TypingEngine({
   textEl,
@@ -2142,6 +2145,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
