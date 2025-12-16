@@ -423,15 +423,34 @@ function fixedLengthByDifficulty(diff) {
   return "medium";
 }
 
-function rankByCPM(cpm) {
-  if (cpm >= 800) return "SSS";
-  if (cpm >= 700) return "SS";
-  if (cpm >= 600) return "S";
-  if (cpm >= 500) return "A";
-  if (cpm >= 400) return "B";
-  if (cpm >= 300) return "C";
-  return "D";
+function rankByCPM(cpm, difficulty = getPracticeDifficulty()) {
+  const base = Number(cpm) || 0;
+  const k =
+    difficulty === "easy" ? 1.05 :
+    difficulty === "hard" ? 0.92 : 1.0;
+  const v = base / k;
+
+  const thresholds = [
+    ["G-", 0],   ["G", 10],   ["G+", 20],
+    ["F-", 30],  ["F", 40],   ["F+", 50],
+    ["E-", 60],  ["E", 70],   ["E+", 80],
+    ["D-", 90],  ["D", 100],  ["D+", 110],
+    ["C-", 120], ["C", 130],  ["C+", 140],
+    ["B-", 150], ["B", 160],  ["B+", 170],
+    ["A-", 180], ["A", 190],  ["A+", 200],
+    ["S-", 210], ["S", 220],  ["S+", 230],
+    ["SS-", 240],["SS", 250], ["SS+", 260],
+    ["SSS-", 270],["SSS", 280],["SSS+", 290],
+  ];
+
+  let r = "G-";
+  for (const [name, need] of thresholds) {
+    if (v >= need) r = name;
+    else break;
+  }
+  return r;
 }
+
 
 /* =========================================================
    Modal
@@ -890,12 +909,57 @@ function showNoItemMessage(diff, lg, category, theme) {
 /* =========================================================
    Typing engine setup
 ========================================================= */
-function setModalMetrics({ cpm, rank, timeSec, difficulty, lengthGroup, isDailyTask, theme, category }) {
+function setModalMetrics({
+  cpm,
+  rank,
+  timeSec,
+  difficulty,
+  lengthGroup,
+  isDailyTask,
+  theme,
+  category
+}) {
+  /* =========================
+     ランク表示
+  ========================= */
   setText(mRank, rank);
+
+  // ★ 達人以上は金色
+  mRank.classList.toggle("rankGold", isMasterOrAbove(rank));
+
   setText(mCPM, String(cpm));
   setText(mTimeSec, String(timeSec));
   setText(mLen, lengthLabel(lengthGroup));
 
+  /* =========================
+     ランクアップ判定
+  ========================= */
+  const rankUpEl = document.getElementById("mRankUp");
+
+  // ユーザー×難易度ごとに前回ベストを保存
+  const key = `bestRank::${State.authUser?.uid || "guest"}::${difficulty}`;
+  const prevRank = localStorage.getItem(key) || "G-";
+
+  if (rankIndex(rank) > rankIndex(prevRank)) {
+    localStorage.setItem(key, rank);
+
+    const fromStage = rankStage(prevRank);
+    const toStage = rankStage(rank);
+
+    if (rankUpEl) {
+      rankUpEl.textContent =
+        fromStage !== toStage
+          ? `${fromStage} → ${toStage}`
+          : `ランクアップ！ ${prevRank} → ${rank}`;
+      rankUpEl.style.display = "";
+    }
+  } else {
+    if (rankUpEl) rankUpEl.style.display = "none";
+  }
+
+  /* =========================
+     メタ情報
+  ========================= */
   const metaParts = [];
   metaParts.push(`難度:${diffLabel(difficulty)}`);
   metaParts.push(`長さ:${lengthLabel(lengthGroup)}`);
@@ -906,41 +970,6 @@ function setModalMetrics({ cpm, rank, timeSec, difficulty, lengthGroup, isDailyT
   setText(mMeta, metaParts.join(" / "));
 }
 
-async function submitScoreDoc({
-  uid,
-  userName,
-  cpm,
-  rank,
-  timeSec,
-  difficulty,
-  lengthGroup,
-  category,
-  theme,
-  dateKey,
-  isDailyTask,
-  dailyTaskKey,
-  dailyTaskName,
-  groupId
-}) {
-  await addDoc(collection(db, "scores"), {
-    uid,
-    userName,
-    cpm,
-    rank,
-    timeSec,
-    length: (State.currentItem?.text ?? "").length,
-    lengthGroup,
-    difficulty,
-    category,
-    theme,
-    dateKey,
-    isDailyTask: !!isDailyTask,
-    dailyTaskKey: dailyTaskKey || null,
-    dailyTaskName: dailyTaskName || null,
-    groupId: groupId || null,
-    createdAt: serverTimestamp()
-  });
-}
 
 /* =========================================================
    Ranking fetch (group ranking needs custom fetch)
@@ -1627,6 +1656,32 @@ async function onTypingFinish({ metrics, meta }) {
       category
     });
 
+    // setModalMetrics(...) の直後あたり
+    const rankUpEl = document.getElementById("mRankUp");
+    
+    // 前回ベスト（ユーザー×難易度で保持）
+    const key = `bestRank::${(State.authUser?.uid || "guest")}::${difficulty}`;
+    const prevBest = localStorage.getItem(key) || "G-";
+    
+    const prevStage = rankStage(prevBest);
+    const nowStage  = rankStage(rank);
+    
+    if (rankIndex(rank) > rankIndex(prevBest)) {
+      localStorage.setItem(key, rank);
+    
+      if (rankUpEl) {
+        if (prevStage !== nowStage) {
+          rankUpEl.textContent = `${prevStage} → ${nowStage}`;
+        } else {
+          rankUpEl.textContent = `ランクアップ！ ${prevBest} → ${rank}`;
+        }
+        rankUpEl.style.display = "";
+      }
+    } else {
+      if (rankUpEl) rankUpEl.style.display = "none";
+    }
+
+
     showModal();
 
     const user = State.authUser;
@@ -1754,5 +1809,6 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
