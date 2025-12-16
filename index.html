@@ -188,7 +188,7 @@
     /* ===== 折りたたみ ===== */
     .collapsible {
       display: none;
-      width: 100%;
+      width: auto;
     }
     
     .collapsible.open {
@@ -205,14 +205,32 @@
     }
     /* セクション見出し（ユーザー／グループ共通） */
     .sectionTitle {
-      font-size: 0.9rem;   /* 少し大きく */
-      font-weight: 700;    /* 太字 */
+      font-size: 1.05rem;   /* 少し大きく */
+      font-weight: 900;    /* 太字 */
       color: #222;
       margin-right: 6px;
     }
     /* セクション見出し直下の select に共通余白 */
     .sectionTitle + select {
       margin-bottom: 10px;
+    }
+    /* ★ 追加：ヘッダーの上段（ユーザー/グループ/認証） */
+    .topControls {
+      align-items: center;
+    }
+    
+    /* ★ 追加：ヘッダーの下段（開いたパネルが並ぶ段） */
+    .panelRow {
+      margin-top: 8px;
+      align-items: flex-start;
+      gap: 22px;
+    }
+    
+    /* ★ 追加：パネルを“その場”に出すための箱 */
+    .panelBox {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
     }
 
   </style>
@@ -226,90 +244,92 @@
       評価は <strong>スコア（CPM）＝文章長 ÷ 完了時間</strong>（1分換算）を重視します。
     </p>
     
-    <div class="row between">
+    <!-- 上段：常時表示（ユーザー／参加中グループ／認証） -->
+    <div class="row between topControls">
+  
+      <!-- ユーザー -->
       <div class="row">
         <label class="sectionTitle">ユーザー</label>
         <select id="userSelect" aria-label="ユーザー選択"></select>
-    
-        <!-- 開閉タブ -->
+  
         <button id="toggleUserPanel" type="button" class="toggleBtn">
           ユーザー設定 ▾
         </button>
       </div>
-    
+  
+      <!-- 参加中グループ（← main から移動してくる） -->
+      <div class="row">
+        <label class="sectionTitle">参加中のグループ</label>
+        <select id="currentGroupSelect" aria-label="参加中グループ"></select>
+  
+        <button id="toggleGroupPanel" type="button" class="toggleBtn">
+          グループ設定 ▾
+        </button>
+      </div>
+  
+      <!-- 認証 -->
       <div class="muted" id="authBadge">認証：準備中…</div>
     </div>
-    
-    <!-- 折りたたみは row の外へ -->
-    <div id="userPanel" class="collapsible">
-      <button id="addUserBtn" type="button">ユーザー追加</button>
-      <button id="renameUserBtn" type="button">名前変更</button>
-      <button id="deleteUserBtn" type="button">削除</button>
+  
+    <!-- 下段：パネル（開いた時だけ出る。左右に並ぶ） -->
+    <div class="row panelRow">
+  
+      <!-- 左：ユーザー設定 -->
+      <div class="panelBox">
+        <div id="userPanel" class="collapsible">
+          <button id="addUserBtn" type="button">ユーザー追加</button>
+          <button id="renameUserBtn" type="button">名前変更</button>
+          <button id="deleteUserBtn" type="button">削除</button>
+        </div>
+      </div>
+  
+      <!-- 右：グループ設定（← main から移動してくる） -->
+      <div class="panelBox">
+        <div id="groupPanel" class="collapsible">
+  
+          <div class="row">
+            <div class="inlineBtns">
+              <button id="leaveGroupBtn" type="button" disabled>退出</button>
+              <button id="deleteGroupBtn" type="button" disabled>グループ削除</button>
+            </div>
+          </div>
+  
+          <p class="hint">
+            ※ 参加中グループを選ぶと、以降のスコアはそのグループにも記録されます（個人記録も残ります）。
+          </p>
+  
+          <div class="dividerLine"></div>
+  
+          <div class="row">
+            <input id="groupCreateName" type="text" placeholder="新しいグループ名（例：営業チーム）" />
+            <button id="groupCreateBtn" type="button">グループ作成</button>
+          </div>
+  
+          <div class="dividerLine"></div>
+  
+          <div class="row">
+            <input id="groupSearchInput" type="text" placeholder="グループ名で検索" />
+            <button id="groupSearchBtn" type="button">検索</button>
+          </div>
+  
+          <ul id="groupSearchResult" style="margin-top:10px;"></ul>
+  
+          <div class="dividerLine"></div>
+  
+          <div id="pendingBox" style="display:none;">
+            <h3 style="margin-top:0;">参加申請（承認待ち）</h3>
+            <p class="hint">owner のみ表示されます。</p>
+            <ul id="pendingList"></ul>
+          </div>
+  
+        </div>
+      </div>
     </div>
 
 
   </header>
 
   <main>
-
-    <!-- =========================
-         グループ（追加）
-         - app.js で制御するためのDOMだけ用意
-         - owner のみ承認待ちを表示するため pendingBox は初期非表示
-    ========================= -->
-      <!-- 参加中グループ切替 -->
-      <div class="row">
-        <label class="sectionTitle">グループ</label>
-        <select id="currentGroupSelect" aria-label="参加中グループ"></select>
-      
-        <!-- 開閉タブ -->
-        <button id="toggleGroupPanel" type="button" class="toggleBtn">
-          グループ設定 ▾
-        </button>
-      </div>
-      
-      <!-- 折りたたみ -->
-      <div id="groupPanel" class="collapsible">
-      
-        <div class="row">
-          <div class="inlineBtns">
-            <button id="leaveGroupBtn" type="button" disabled>退出</button>
-            <button id="deleteGroupBtn" type="button" disabled>グループ削除</button>
-          </div>
-        </div>
-      
-        <p class="hint">
-          ※ 参加中グループを選ぶと、以降のスコアはそのグループにも記録されます（個人記録も残ります）。
-        </p>
-      
-        <div class="dividerLine"></div>
-      
-        <!-- グループ作成 -->
-        <div class="row">
-          <input id="groupCreateName" type="text" placeholder="新しいグループ名（例：営業チーム）" />
-          <button id="groupCreateBtn" type="button">グループ作成</button>
-        </div>
-      
-        <div class="dividerLine"></div>
-      
-        <!-- グループ検索 -->
-        <div class="row">
-          <input id="groupSearchInput" type="text" placeholder="グループ名で検索" />
-          <button id="groupSearchBtn" type="button">検索</button>
-        </div>
-      
-        <ul id="groupSearchResult" style="margin-top:10px;"></ul>
-      
-        <div class="dividerLine"></div>
-      
-        <!-- 承認待ち -->
-        <div id="pendingBox" style="display:none;">
-          <h3 style="margin-top:0;">参加申請（承認待ち）</h3>
-          <p class="hint">owner のみ表示されます。</p>
-          <ul id="pendingList"></ul>
-        </div>
-      
-      </div> <!-- ← ★ groupPanel をここで閉じる -->
 
     </section>
 
@@ -452,6 +472,7 @@
   <script type="module" src="./js/app.js"></script>
 </body>
 </html>
+
 
 
 
