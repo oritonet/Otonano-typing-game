@@ -139,7 +139,17 @@ export class UserManager {
     if (this.deleteBtn) {
       this.deleteBtn.addEventListener("click", async () => {
         if (!this.currentPersonalId) return;
-        if (!confirm(`ユーザー「${this.currentUserName}」を削除しますか？`)) return;
+    
+        // ★ 追加：最後の1人は削除不可
+        if (this.users.length <= 1) {
+          alert(
+            "このユーザーは削除できません。\n\n" +
+            "先に別のユーザーを作成してから削除してください。"
+          );
+          return;
+        }
+    
+        // confirm は使わない（②の方針）
         try {
           await this.deleteUser(this.currentPersonalId);
         } catch (e) {
@@ -355,3 +365,4 @@ export class UserManager {
     if (personalId) localStorage.removeItem(`currentGroupId_v1:${personalId}`);
   }
 }
+
