@@ -27,7 +27,7 @@ export class RankingService {
     const snap = await getDocs(q);
     const rows = snap.docs.map(d => d.data());
 
-    return this._bestByUserName(rows).slice(0, 10);
+    return this._bestByPersonalId(rows).slice(0, 10);
   }
 
   /**
@@ -48,49 +48,61 @@ export class RankingService {
     const snap = await getDocs(q);
     const rows = snap.docs.map(d => d.data());
 
-    return this._bestByUserName(rows).slice(0, 10);
+    return this._bestByPersonalId(rows).slice(0, 10);
   }
-
-  renderList(ul, rows, { highlightUserName = null } = {}) {
+  
+  renderList(ul, rows, { highlightPersonalId = null } = {}) {
     if (!ul) return;
     ul.innerHTML = "";
-
+  
     if (!rows || rows.length === 0) {
       const li = document.createElement("li");
       li.textContent = "記録がありません";
       ul.appendChild(li);
       return;
     }
-
+  
     rows.forEach((r, idx) => {
       const li = document.createElement("li");
-
-      const name = (r.userName || "").toString() || (r.uid || "").toString() || "(unknown)";
+  
+      const name =
+        (r.userName || "").toString() ||
+        (r.uid || "").toString() ||
+        "(unknown)";
+  
       const cpm = Number(r.cpm ?? 0);
-
+  
       li.textContent = `${idx + 1}位  ${name}  ${cpm.toFixed(0)} CPM`;
-
-      if (highlightUserName && name === highlightUserName) {
+  
+      if (
+        highlightPersonalId &&
+        r.personalId &&
+        r.personalId === highlightPersonalId
+      ) {
         li.style.fontWeight = "bold";
       }
-
+  
       ul.appendChild(li);
     });
   }
 
-  _bestByUserName(rows) {
-    const best = new Map(); // userName -> row
-
+  _bestByPersonalId(rows) {
+    const best = new Map(); // personalId -> row
+  
     for (const r of rows) {
-      const userName = (r.userName || "").toString();
-      if (!userName) continue;
-
-      const prev = best.get(userName);
+      const personalId = (r.personalId || "").toString();
+      if (!personalId) continue;
+  
+      const prev = best.get(personalId);
       if (!prev || Number(r.cpm ?? 0) > Number(prev.cpm ?? 0)) {
-        best.set(userName, r);
+        best.set(personalId, r);
       }
     }
-
-    return Array.from(best.values()).sort((a, b) => Number(b.cpm ?? 0) - Number(a.cpm ?? 0));
+  
+    return Array.from(best.values()).sort(
+      (a, b) => Number(b.cpm ?? 0) - Number(a.cpm ?? 0)
+    );
   }
+
 }
+
