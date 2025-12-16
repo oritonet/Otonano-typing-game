@@ -1387,6 +1387,12 @@ async function loadMyAnalytics() {
 
   if (rows.length === 0) {
     bestByDifficulty.textContent = "まだ記録がありません。";
+
+    const imgBox = document.getElementById("rankImageBox");
+    if (imgBox) {
+     imgBox.innerHTML = "";   // ★ 画像を必ずクリア
+    }
+    
     return;
   }
 
@@ -2150,6 +2156,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
