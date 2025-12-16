@@ -1440,7 +1440,7 @@ async function refreshMyGroups() {
 
   let groups = [];
   try {
-    groups = await groupSvc.getMyGroups(uid, userName);
+    groups = await groupSvc.getMyGroups(userMgr.getCurrentPersonalId());
   } catch (e) {
     console.error("getMyGroups failed:", e);
     groups = [];
@@ -2142,6 +2142,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
