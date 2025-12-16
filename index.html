@@ -235,17 +235,18 @@
         <button id="toggleUserPanel" type="button" class="toggleBtn">
           ユーザー設定 ▾
         </button>
-    
-        <!-- 折りたたみ -->
-        <div id="userPanel" class="collapsible">
-          <button id="addUserBtn" type="button">ユーザー追加</button>
-          <button id="renameUserBtn" type="button">名前変更</button>
-          <button id="deleteUserBtn" type="button">削除</button>
-        </div>
       </div>
     
       <div class="muted" id="authBadge">認証：準備中…</div>
     </div>
+    
+    <!-- 折りたたみは row の外へ -->
+    <div id="userPanel" class="collapsible">
+      <button id="addUserBtn" type="button">ユーザー追加</button>
+      <button id="renameUserBtn" type="button">名前変更</button>
+      <button id="deleteUserBtn" type="button">削除</button>
+    </div>
+
 
   </header>
 
@@ -451,6 +452,7 @@
   <script type="module" src="./js/app.js"></script>
 </body>
 </html>
+
 
 
 
