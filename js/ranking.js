@@ -51,7 +51,7 @@ export class RankingService {
     return this._bestByPersonalId(rows).slice(0, 10);
   }
   
-  renderList(ul, rows, { highlightPersonalId = null } = {}) {
+  renderList(ul, rows, { highlightPersonalId = null, userNameMap = null } = {}) {
     if (!ul) return;
     ul.innerHTML = "";
   
@@ -66,10 +66,10 @@ export class RankingService {
       const li = document.createElement("li");
   
       const name =
+        (userNameMap && r.personalId && userNameMap.get(r.personalId)) ||
         (r.userName || "").toString() ||
-        (r.uid || "").toString() ||
         "(unknown)";
-  
+
       const cpm = Number(r.cpm ?? 0);
   
       li.textContent = `${idx + 1}位  ${name}  ${cpm.toFixed(0)} CPM`;
@@ -105,4 +105,5 @@ export class RankingService {
   }
 
 }
+
 
