@@ -1537,7 +1537,7 @@ async function loadPendingRequests() {
         await groupSvc.approveMember({
           requestId: r.id,
           ownerUid: State.authUser.uid,
-          ownerUserName: userMgr.getCurrentPersonalId()
+          ownerUserName: userMgr.getCurrentUserName()
         });
         await refreshMyGroups();
       });
@@ -2142,6 +2142,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
