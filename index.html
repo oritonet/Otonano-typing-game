@@ -335,8 +335,16 @@
     
     .powerTable .message {
       padding: 10px;
-      line-height: 1.4;
+      line-height: 1.5;
+    
+      /* ★ 追加・重要 */
+      white-space: normal;        /* 強制1行を解除 */
+      word-break: break-word;     /* 日本語＋英数字の折返し */
+      overflow-wrap: anywhere;    /* 長い語でも枠内に収める */
+    
+      text-align: center;
     }
+
 
 
 
@@ -556,6 +564,7 @@
   <script type="module" src="./js/app.js"></script>
 </body>
 </html>
+
 
 
 
