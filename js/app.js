@@ -299,8 +299,8 @@ function difficultyByText(text) {
   // 合成比率（用途に応じて調整）
   const combined = ime * 0.5 + reading * 0.5;
 
-  if (combined < 20) return "easy";
-  if (combined < 40) return "normal";
+  if (combined < 25) return "easy";
+  if (combined < 33) return "normal";
   return "hard";
 }
 
@@ -1602,6 +1602,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
