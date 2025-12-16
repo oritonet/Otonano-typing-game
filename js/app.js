@@ -1291,7 +1291,6 @@ async function loadMyAnalytics() {
     imgBox.innerHTML = RANK_IMAGES[stage] ?? "";
   }
 }
-}
 
 /* =========================================================
    Group UI
@@ -2007,6 +2006,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
