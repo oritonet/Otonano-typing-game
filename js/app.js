@@ -215,6 +215,7 @@ userMgr.onUserChanged(async () => {
 
   await refreshMyGroups();
   await reloadAllRankings();
+  await loadMyAnalytics();
 });
 
 async function buildUserNameMapFromScores(db, rows) {
@@ -2156,6 +2157,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
