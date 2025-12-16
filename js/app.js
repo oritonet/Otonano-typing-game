@@ -152,35 +152,46 @@ const rankingSvc = new RankingService({ db });
 const groupSvc = new GroupService(db);
 
 async function submitScoreDoc({
-  metrics,
-  meta,
+  uid,
+  userName,
+  cpm,
+  rank,
+  timeSec,
   difficulty,
   lengthGroup,
-  theme,
   category,
-  isDailyTask
+  theme,
+  dateKey,
+  isDailyTask,
+  dailyTaskKey,
+  dailyTaskName,
+  groupId
 }) {
-  if (!State.authUser) return;
+  if (!uid) return;
 
   try {
     await addDoc(collection(db, "scores"), {
-      uid: State.authUser.uid,
-      userName: userMgr.getCurrentUserName(),
-      cpm: metrics.cpm,
-      rank: metrics.rank,
-      timeSec: metrics.timeSec,
+      uid,
+      userName,
+      cpm,
+      rank,
+      timeSec,
       difficulty,
       lengthGroup,
-      theme,
       category,
+      theme,
+      dateKey,
       isDailyTask: !!isDailyTask,
-      groupId: State.currentGroupId || null,
+      dailyTaskKey: dailyTaskKey || null,
+      dailyTaskName: dailyTaskName || null,
+      groupId: groupId || null,
       createdAt: serverTimestamp()
     });
   } catch (e) {
     console.error("submitScoreDoc failed:", e);
   }
 }
+
 
 // userName切替時：グループSelect即更新 + ランキング更新
 userMgr.onUserChanged(async () => {
@@ -1874,6 +1885,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
