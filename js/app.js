@@ -164,9 +164,11 @@ userMgr.onUserChanged(async () => {
 /* =========================================================
    State
 ========================================================= */
-State.beforeDailyPrefs = null;
 const State = {
   authUser: null,
+
+  // ★ 追加：今日の課題 ON 前の退避
+  beforeDailyPrefs: null,
 
   // 出題側（practice）
   currentItem: null,
@@ -1329,97 +1331,97 @@ function bindPracticeFilters() {
     persistPrefsNow(); // ★追加
   });
 
-on(categoryEl, "change", () => {
-  const category = categoryEl.value;
-
-  // ★ カテゴリが all に戻ったら、テーマも all に戻す
-  if (category === "all") {
-    if (themeEl) themeEl.value = "all";
-    updateThemeOptionsByCategory(false); // keepTheme = false
-  } else {
-    updateThemeOptionsByCategory(true);  // 通常はテーマ維持
-  }
-
-  if (State.daily.enabled) return;
-
-  buildPool();
-  if (!State.hasNoItem) {
-    setCurrentItem(pickRandomDifferentText(), { daily: false });
-  }
-  updateMetaInfo();
-  persistPrefsNow(); // ★追加
-});
-
+  on(categoryEl, "change", () => {
+    const category = categoryEl.value;
   
-on(themeEl, "change", () => {
-  if (State.daily.enabled) return;
-
-  const selectedTheme = themeEl.value;
-  const prevCategory = categoryEl.value;
-
-  let categoryChanged = false;
-
-  // ① カテゴリが all の場合のみ、テーマからカテゴリ確定
-  if (prevCategory === "all" && selectedTheme !== "all") {
-    const cat = categoryByTheme(selectedTheme);
-    if (cat && cat !== "all") {
-      categoryEl.value = cat;
-      categoryChanged = true;
+    // ★ カテゴリが all に戻ったら、テーマも all に戻す
+    if (category === "all") {
+      if (themeEl) themeEl.value = "all";
+      updateThemeOptionsByCategory(false); // keepTheme = false
+    } else {
+      updateThemeOptionsByCategory(true);  // 通常はテーマ維持
     }
-  }
-
-  // ② カテゴリが変わったら、テーマ候補を再構築
-  if (categoryChanged) {
-    updateThemeOptionsByCategory(true);
-    themeEl.value = selectedTheme; // ★ 必ず維持
-  }
-
-  buildPool();
-  if (!State.hasNoItem) {
-    setCurrentItem(pickRandomDifferentText(), { daily: false });
-  }
-  updateMetaInfo();
-  persistPrefsNow(); // ★追加
-});
-
-on(dailyTaskEl, "change", () => {
-  if (dailyTaskEl.checked) {
-    // ONにする直前の状態を退避
-    State.beforeDailyPrefs = {
-      lengthGroup: lengthGroupEl?.value ?? "medium",
-      category: categoryEl?.value ?? "all",
-      theme: themeEl?.value ?? "all"
-    };
-
-    enableDailyTask();
-  } else {
-    disableDailyTask();
-
-    // OFFに戻したら元の状態を復元
-    if (State.beforeDailyPrefs) {
-      const { lengthGroup, category, theme } = State.beforeDailyPrefs;
-
-      if (lengthGroupEl) lengthGroupEl.value = lengthGroup;
-      if (categoryEl) categoryEl.value = category;
-
-      updateThemeOptionsByCategory();
-      if (themeEl) themeEl.value = theme;
-
-      State.beforeDailyPrefs = null;
-    }
-
+  
+    if (State.daily.enabled) return;
+  
     buildPool();
     if (!State.hasNoItem) {
       setCurrentItem(pickRandomDifferentText(), { daily: false });
     }
     updateMetaInfo();
-
-    persistPrefsNow();
-  }
-
-  reloadAllRankings();
-});
-
+    persistPrefsNow(); // ★追加
+  });
+  
+    
+  on(themeEl, "change", () => {
+    if (State.daily.enabled) return;
+  
+    const selectedTheme = themeEl.value;
+    const prevCategory = categoryEl.value;
+  
+    let categoryChanged = false;
+  
+    // ① カテゴリが all の場合のみ、テーマからカテゴリ確定
+    if (prevCategory === "all" && selectedTheme !== "all") {
+      const cat = categoryByTheme(selectedTheme);
+      if (cat && cat !== "all") {
+        categoryEl.value = cat;
+        categoryChanged = true;
+      }
+    }
+  
+    // ② カテゴリが変わったら、テーマ候補を再構築
+    if (categoryChanged) {
+      updateThemeOptionsByCategory(true);
+      themeEl.value = selectedTheme; // ★ 必ず維持
+    }
+  
+    buildPool();
+    if (!State.hasNoItem) {
+      setCurrentItem(pickRandomDifferentText(), { daily: false });
+    }
+    updateMetaInfo();
+    persistPrefsNow(); // ★追加
+  });
+  
+  on(dailyTaskEl, "change", () => {
+    if (dailyTaskEl.checked) {
+      // ONにする直前の状態を退避
+      State.beforeDailyPrefs = {
+        lengthGroup: lengthGroupEl?.value ?? "medium",
+        category: categoryEl?.value ?? "all",
+        theme: themeEl?.value ?? "all"
+      };
+  
+      enableDailyTask();
+    } else {
+      disableDailyTask();
+  
+      // OFFに戻したら元の状態を復元
+      if (State.beforeDailyPrefs) {
+        const { lengthGroup, category, theme } = State.beforeDailyPrefs;
+  
+        if (lengthGroupEl) lengthGroupEl.value = lengthGroup;
+        if (categoryEl) categoryEl.value = category;
+  
+        updateThemeOptionsByCategory();
+        if (themeEl) themeEl.value = theme;
+  
+        State.beforeDailyPrefs = null;
+      }
+  
+      buildPool();
+      if (!State.hasNoItem) {
+        setCurrentItem(pickRandomDifferentText(), { daily: false });
+      }
+      updateMetaInfo();
+  
+      persistPrefsNow();
+    }
+  
+    reloadAllRankings();
+  });
+}
 
 
 function bindRankDiffTabs() {
@@ -1711,13 +1713,6 @@ engine.attach();
   updateMetaInfo();
   syncDailyInfoLabel();
 
-  bindModal();
-  bindTypingButtons();
-  bindPracticeFilters();
-  bindRankDiffTabs();
-  bindGroupUI();
-  bindUserSwitchHooks();
-
   // 初回ランキング
   await reloadAllRankings();
   await loadMyAnalytics();
@@ -1745,6 +1740,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
