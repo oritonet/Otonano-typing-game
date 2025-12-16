@@ -152,6 +152,7 @@ const rankingSvc = new RankingService({ db });
 const groupSvc = new GroupService(db);
 
 async function submitScoreDoc({
+  personalId,
   uid,
   userName,
   cpm,
@@ -167,12 +168,13 @@ async function submitScoreDoc({
   dailyTaskName,
   groupId
 }) {
-  if (!uid) return;
+  if (!personalId || !uid) return;
 
   try {
     await addDoc(collection(db, "scores"), {
+      personalId,          // ★追加（主キー）
       uid,
-      userName,
+      userName,            // 表示用
       cpm,
       rank,
       timeSec,
@@ -191,6 +193,7 @@ async function submitScoreDoc({
     console.error("submitScoreDoc failed:", e);
   }
 }
+
 
 
 // userName切替時：グループSelect即更新 + ランキング更新
@@ -253,13 +256,13 @@ const GROUP_STORAGE_KEY = "currentGroupId_v1";
    Practice/Ranking UI state (localStorage)
    userName 単位で復元（端末内の複数ユーザーに対応）
 ========================================================= */
-function prefsKeyOf(userName) {
-  return `practicePrefs_v1:${userName || "unknown"}`;
+function prefsKeyOf(personalId) {
+  return `practicePrefs_v1:${personalId || "unknown"}`;
 }
 
-function loadPrefsOf(userName) {
+function loadPrefsOf(personalId) {
   try {
-    const raw = localStorage.getItem(prefsKeyOf(userName));
+    const raw = localStorage.getItem(prefsKeyOf(personalId));
     if (!raw) return null;
     return JSON.parse(raw);
   } catch {
@@ -267,9 +270,9 @@ function loadPrefsOf(userName) {
   }
 }
 
-function savePrefsOf(userName, prefs) {
+function savePrefsOf(personalId, prefs) {
   try {
-    localStorage.setItem(prefsKeyOf(userName), JSON.stringify(prefs || {}));
+    localStorage.setItem(prefsKeyOf(personalId), JSON.stringify(prefs || {}));
   } catch {}
 }
 
@@ -313,29 +316,27 @@ function applyPrefsToUI(prefs) {
 }
 
 function persistPrefsNow() {
-  const userName = currentUserNameSafe(); // 既存 :contentReference[oaicite:4]{index=4}
-  if (!userName) return;
-  savePrefsOf(userName, collectCurrentPrefs());
+  const personalId = userMgr.getCurrentPersonalId();
+  if (!personalId) return;
+  savePrefsOf(personalId, collectCurrentPrefs());
 }
-
-
 
 function currentUserNameSafe() {
   return (userMgr.getCurrentUserName?.() ?? "").toString();
 }
 
-function groupStorageKeyOf(userName) {
-  return `currentGroupId_v1:${userName}`;
+function groupStorageKeyOf(personalId) {
+  return `currentGroupId_v1:${personalId}`;
 }
 
-function getSavedGroupIdFor(userName) {
-  if (!userName) return "";
-  return localStorage.getItem(groupStorageKeyOf(userName)) || "";
+function getSavedGroupIdFor(personalId) {
+  if (!personalId) return "";
+  return localStorage.getItem(groupStorageKeyOf(personalId)) || "";
 }
 
-function setSavedGroupIdFor(userName, groupId) {
-  if (!userName) return;
-  const key = groupStorageKeyOf(userName);
+function setSavedGroupIdFor(personalId, groupId) {
+  if (!personalId) return;
+  const key = groupStorageKeyOf(personalId);
   if (groupId) localStorage.setItem(key, groupId);
   else localStorage.removeItem(key);
 }
@@ -1159,7 +1160,9 @@ async function loadOverallRanking() {
   try {
     // 全国ランキング：長さ/テーマでフィルタしない（ranking.js の方針に合わせる）
     const rows = await rankingSvc.loadOverall({ difficulty: State.activeRankDiff });
-    rankingSvc.renderList(rankingUL, rows, { highlightUserName: userMgr.getCurrentUserName?.() ?? null });
+    rankingSvc.renderList(rankingUL, rows, {
+      highlightPersonalId: userMgr.getCurrentPersonalId()
+    });
   } catch (e) {
     console.error("loadOverallRanking error:", e);
     rankingUL.innerHTML = "<li>ランキングの読み込みに失敗しました</li>";
@@ -1858,7 +1861,10 @@ async function onTypingFinish({ metrics, meta }) {
 
     if (uid) {
       try {
+        const personalId = userMgr.getCurrentPersonalId();
+        
         await submitScoreDoc({
+          personalId,   // ★追加
           uid,
           userName,
           cpm,
@@ -1874,6 +1880,7 @@ async function onTypingFinish({ metrics, meta }) {
           dailyTaskName,
           groupId
         });
+
       } catch (e) {
         console.error("submitScoreDoc error:", e);
       }
@@ -1904,8 +1911,8 @@ engine.attach();
   
   // ★ 前回の選択を復元（options 構築後じゃないと反映できない）
   {
-    const userName = currentUserNameSafe();
-    const prefs = loadPrefsOf(userName);
+    const personalId = userMgr.getCurrentPersonalId();
+    const prefs = loadPrefsOf(personalId);
     applyPrefsToUI(prefs);
   }
   
@@ -1971,6 +1978,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
