@@ -1667,7 +1667,14 @@ engine.attach();
   }
   updateMetaInfo();
   syncDailyInfoLabel();
-  ...
+   
+  bindModal();
+  bindTypingButtons();
+  bindPracticeFilters();
+  bindRankDiffTabs();
+  bindGroupUI();
+  bindUserSwitchHooks();
+   
   // 初回ランキング：activeRankDiff も復元済みの State.activeRankDiff で走る
   await reloadAllRankings();
   await loadMyAnalytics();
@@ -1713,6 +1720,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
