@@ -142,9 +142,23 @@ const groupSvc = new GroupService(db);
 
 // userName切替時：グループSelect即更新 + ランキング更新
 userMgr.onUserChanged(async () => {
+  // ★ ユーザーごとの前回状態を復元
+  const userName = currentUserNameSafe();
+  const prefs = loadPrefsOf(userName);
+  applyPrefsToUI(prefs);
+
+  if (dailyTaskEl?.checked) enableDailyTask();
+  else disableDailyTask();
+
+  buildPool();
+  if (!State.hasNoItem) setCurrentItem(pickRandomDifferentText(), { daily: false });
+  updateMetaInfo();
+  syncDailyInfoLabel();
+
   await refreshMyGroups();
   await reloadAllRankings();
 });
+
 
 
 /* =========================================================
@@ -178,6 +192,77 @@ const State = {
 };
 
 const GROUP_STORAGE_KEY = "currentGroupId_v1";
+
+/* =========================================================
+   Practice/Ranking UI state (localStorage)
+   userName 単位で復元（端末内の複数ユーザーに対応）
+========================================================= */
+function prefsKeyOf(userName) {
+  return `practicePrefs_v1:${userName || "unknown"}`;
+}
+
+function loadPrefsOf(userName) {
+  try {
+    const raw = localStorage.getItem(prefsKeyOf(userName));
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function savePrefsOf(userName, prefs) {
+  try {
+    localStorage.setItem(prefsKeyOf(userName), JSON.stringify(prefs || {}));
+  } catch {}
+}
+
+function collectCurrentPrefs() {
+  return {
+    difficulty: (difficultyEl?.value ?? "normal").toString(),
+    lengthGroup: (lengthGroupEl?.value ?? "medium").toString(),
+    category: (categoryEl?.value ?? "all").toString(),
+    theme: (themeEl?.value ?? "all").toString(),
+    dailyTaskEnabled: !!dailyTaskEl?.checked,
+    activeRankDiff: (State.activeRankDiff ?? "normal").toString()
+    // グループは既存の currentGroupId_v1:${userName} で別保存なのでここでは持たない
+  };
+}
+
+function applyPrefsToUI(prefs) {
+  if (!prefs) return;
+
+  // option が存在する値だけ反映（存在しない値は無視）
+  const setIfExists = (selectEl, v) => {
+    if (!selectEl) return;
+    const val = (v ?? "").toString();
+    if (!val) return;
+    const ok = Array.from(selectEl.options).some(o => o.value === val);
+    if (ok) selectEl.value = val;
+  };
+
+  setIfExists(difficultyEl, prefs.difficulty);
+  setIfExists(lengthGroupEl, prefs.lengthGroup);
+
+  // category は先に反映 → theme options 再構築 → theme 反映、の順が必須
+  setIfExists(categoryEl, prefs.category);
+  updateThemeOptionsByCategory(); // 既存関数 :contentReference[oaicite:3]{index=3}
+  setIfExists(themeEl, prefs.theme);
+
+  if (dailyTaskEl) dailyTaskEl.checked = !!prefs.dailyTaskEnabled;
+
+  if (prefs.activeRankDiff === "easy" || prefs.activeRankDiff === "normal" || prefs.activeRankDiff === "hard") {
+    State.activeRankDiff = prefs.activeRankDiff;
+  }
+}
+
+function persistPrefsNow() {
+  const userName = currentUserNameSafe(); // 既存 :contentReference[oaicite:4]{index=4}
+  if (!userName) return;
+  savePrefsOf(userName, collectCurrentPrefs());
+}
+
+
 
 function currentUserNameSafe() {
   return (userMgr.getCurrentUserName?.() ?? "").toString();
@@ -1224,6 +1309,7 @@ function bindPracticeFilters() {
         setCurrentItem(pickRandomDifferentText(), { daily: false });
       }
       updateMetaInfo();
+      persistPrefsNow(); // ★追加
     }
   });
 
@@ -1238,6 +1324,7 @@ function bindPracticeFilters() {
       setCurrentItem(pickRandomDifferentText(), { daily: false });
     }
     updateMetaInfo();
+    persistPrefsNow(); // ★追加
   });
 
 on(categoryEl, "change", () => {
@@ -1258,6 +1345,7 @@ on(categoryEl, "change", () => {
     setCurrentItem(pickRandomDifferentText(), { daily: false });
   }
   updateMetaInfo();
+  persistPrefsNow(); // ★追加
 });
 
   
@@ -1289,6 +1377,7 @@ on(themeEl, "change", () => {
     setCurrentItem(pickRandomDifferentText(), { daily: false });
   }
   updateMetaInfo();
+  persistPrefsNow(); // ★追加
 });
 
 
@@ -1302,6 +1391,7 @@ on(themeEl, "change", () => {
       setCurrentItem(pickRandomDifferentText(), { daily: false });
     }
       updateMetaInfo();
+      persistPrefsNow(); // ★追加
     }
     reloadAllRankings();
   });
@@ -1316,6 +1406,7 @@ function bindRankDiffTabs() {
       const d = btn.dataset.diff;
       if (!d) return;
       State.activeRankDiff = d;
+      persistPrefsNow(); // ★追加
 
       // UI active
       buttons.forEach(b => b.classList.toggle("active", b.dataset.diff === State.activeRankDiff));
@@ -1553,14 +1644,34 @@ engine.attach();
    App init
 ========================================================= */
  async function initApp() {
-   await loadTrivia();
-   initFilterOptions(); // ← ★これを追加
+  await loadTrivia();
+  initFilterOptions();
+  
+  // ★ 前回の選択を復元（options 構築後じゃないと反映できない）
+  {
+    const userName = currentUserNameSafe();
+    const prefs = loadPrefsOf(userName);
+    applyPrefsToUI(prefs);
+  }
+  
+  // ★ daily は「復元したチェック状態」に従う
+  if (dailyTaskEl?.checked) {
+    enableDailyTask();
+  } else {
+    disableDailyTask();
+  }
+  
+  buildPool();
+  if (!State.hasNoItem) {
+    setCurrentItem(pickRandomDifferentText(), { daily: false });
+  }
+  updateMetaInfo();
+  syncDailyInfoLabel();
+  ...
+  // 初回ランキング：activeRankDiff も復元済みの State.activeRankDiff で走る
+  await reloadAllRankings();
+  await loadMyAnalytics();
 
-   hide(renameUserBtn); //名前変更非表示
- 
-   // 初期：今日の課題は OFF、通常出題
-   disableDailyTask();
-   buildPool();
 
   if (!State.hasNoItem) {
     setCurrentItem(pickRandomDifferentText(), { daily: false });
@@ -1602,6 +1713,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
