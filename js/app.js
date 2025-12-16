@@ -570,6 +570,32 @@ const RANK_MESSAGES = {
   }
 };
 
+const RANK_IMAGES = {
+  SSS: `
+<svg viewBox="0 0 200 200" width="140" height="140">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff3b0"/>
+      <stop offset="100%" stop-color="#d4af37"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="10" y="10" width="180" height="180" rx="20"
+        fill="url(#gold)" stroke="#000" stroke-width="4"/>
+
+  <circle cx="100" cy="70" r="30"
+          fill="#fff" stroke="#000" stroke-width="3"/>
+
+  <path d="M45 150 C70 120, 130 120, 155 150"
+        fill="none" stroke="#000" stroke-width="4"/>
+
+  <text x="100" y="188"
+        text-anchor="middle"
+        font-size="28"
+        font-weight="900">無双</text>
+</svg>
+`
+};
 
 
 
@@ -1263,7 +1289,16 @@ async function loadMyAnalytics() {
   `;
 }
 
+// ===== 称号画像の表示 =====
+const imgBox = document.getElementById("rankImageBox");
 
+if (imgBox) {
+  if (RANK_IMAGES[stage]) {
+    imgBox.innerHTML = RANK_IMAGES[stage];
+  } else {
+    imgBox.innerHTML = ""; // 該当ランクなしの場合は空
+  }
+}
 
 /* =========================================================
    Group UI
@@ -1979,6 +2014,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
