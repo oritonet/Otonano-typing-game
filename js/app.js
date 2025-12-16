@@ -1332,7 +1332,13 @@ async function loadGroupRanking() {
 }
 
 async function reloadAllRankings() {
-  const userNameMap = await loadUserNameMap(db);
+  const userNameMap = await buildUserNameMapFromScores(db, rows);
+  
+  rankingSvc.renderList(rankingUL, rows, {
+    highlightPersonalId: userMgr.getCurrentPersonalId(),
+    userNameMap
+  });
+
   await loadDailyRanking();
   await loadOverallRanking();
   await loadGroupRanking();
@@ -2116,6 +2122,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
