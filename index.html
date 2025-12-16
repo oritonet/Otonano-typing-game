@@ -203,6 +203,14 @@
       cursor: pointer;
       padding: 4px 6px;
     }
+    /* セクション見出し（ユーザー／グループ共通） */
+    .sectionTitle {
+      font-size: 1.1rem;   /* 少し大きく */
+      font-weight: 700;    /* 太字 */
+      color: #222;
+      margin-right: 6px;
+    }
+
   </style>
 </head>
 
@@ -216,7 +224,7 @@
     
     <div class="row between">
       <div class="row">
-        <label class="muted">ユーザー</label>
+        <label class="sectionTitle">ユーザー</label>
         <select id="userSelect" aria-label="ユーザー選択"></select>
     
         <!-- 開閉タブ -->
@@ -244,12 +252,9 @@
          - app.js で制御するためのDOMだけ用意
          - owner のみ承認待ちを表示するため pendingBox は初期非表示
     ========================= -->
-    <section style="margin-top:16px;" aria-label="グループ">
-      <h2 style="margin-top:0;">グループ</h2>
-
       <!-- 参加中グループ切替 -->
       <div class="row">
-        <label class="muted">参加中</label>
+        <label class="sectionTitle">参加中のグループ</label>
         <select id="currentGroupSelect" aria-label="参加中グループ"></select>
       
         <!-- 開閉タブ -->
@@ -442,6 +447,7 @@
   <script type="module" src="./js/app.js"></script>
 </body>
 </html>
+
 
 
 
