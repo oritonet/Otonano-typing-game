@@ -215,6 +215,17 @@ userMgr.onUserChanged(async () => {
   await reloadAllRankings();
 });
 
+async function loadUserNameMap(db) {
+  const snap = await getDocs(collection(db, "userProfiles"));
+  const map = new Map();
+  snap.forEach(d => {
+    const data = d.data();
+    if (data.personalId && data.userName) {
+      map.set(data.personalId, data.userName);
+    }
+  });
+  return map;
+}
 
 
 /* =========================================================
@@ -322,7 +333,7 @@ function persistPrefsNow() {
 }
 
 function currentUserNameSafe() {
-  return (userMgr.getCurrentUserName?.() ?? "").toString();
+  return (userMgr.getCurrentPersonalId?.() ?? "").toString();
 }
 
 function groupStorageKeyOf(personalId) {
@@ -1254,7 +1265,7 @@ async function loadDailyRanking() {
       dateKey,
       difficulty: diff
     });
-    rankingSvc.renderList(dailyRankingUL, rows, { highlightUserName: userMgr.getCurrentUserName?.() ?? null });
+    rankingSvc.renderList(dailyRankingUL, rows, { highlightPersonalId: userMgr.getCurrentPersonalId?.() ?? null });
   } catch (e) {
     console.error("loadDailyRanking error:", e);
     dailyRankingUL.innerHTML = "<li>ランキングの読み込みに失敗しました</li>";
@@ -1269,9 +1280,11 @@ async function loadOverallRanking() {
   try {
     // 全国ランキング：長さ/テーマでフィルタしない（ranking.js の方針に合わせる）
     const rows = await rankingSvc.loadOverall({ difficulty: State.activeRankDiff });
-    rankingSvc.renderList(rankingUL, rows, {
-      highlightPersonalId: userMgr.getCurrentPersonalId()
-    });
+  rankingSvc.renderList(rankingUL, rows, {
+    highlightPersonalId: userMgr.getCurrentPersonalId(),
+    userNameMap
+  });
+
   } catch (e) {
     console.error("loadOverallRanking error:", e);
     rankingUL.innerHTML = "<li>ランキングの読み込みに失敗しました</li>";
@@ -1298,7 +1311,7 @@ async function loadGroupRanking() {
     });
 
     const rows = sortAndTop10(rowsRaw);
-    rankingSvc.renderList(groupRankingUL, rows, { highlightUserName: userMgr.getCurrentUserName?.() ?? null });
+    rankingSvc.renderList(groupRankingUL, rows, { highlightPersonalId: userMgr.getCurrentPersonalId?.() ?? null });
   } catch (e) {
     console.error("loadGroupRanking error:", e);
     groupRankingUL.innerHTML = "<li>ランキングの読み込みに失敗しました</li>";
@@ -1306,6 +1319,7 @@ async function loadGroupRanking() {
 }
 
 async function reloadAllRankings() {
+  const userNameMap = await loadUserNameMap(db);
   await loadDailyRanking();
   await loadOverallRanking();
   await loadGroupRanking();
@@ -1315,7 +1329,7 @@ async function reloadAllRankings() {
    Analytics (最低限で落ちない)
 ========================================================= */
 async function loadMyAnalytics() {
-  const userName = userMgr.getCurrentUserName?.();
+  const userName = userMgr.getCurrentPersonalId?.();
   if (!userName) return;
 
   setText(analyticsTitle, "入力分析");
@@ -1383,7 +1397,7 @@ async function refreshMyGroups() {
   if (!currentGroupSelect) return;
 
   const uid = State.authUser.uid;
-  const userName = userMgr.getCurrentUserName();
+  const userName = userMgr.getCurrentPersonalId();
 
   let groups = [];
   try {
@@ -1484,7 +1498,7 @@ async function loadPendingRequests() {
         await groupSvc.approveMember({
           requestId: r.id,
           ownerUid: State.authUser.uid,
-          ownerUserName: userMgr.getCurrentUserName()
+          ownerUserName: userMgr.getCurrentPersonalId()
         });
         await refreshMyGroups();
       });
@@ -1774,13 +1788,13 @@ function bindGroupUI() {
   
     try {
       const ownerUid = State.authUser.uid;
-      const ownerUserName = userMgr.getCurrentUserName();
+      const ownerUserName = userMgr.getCurrentPersonalId();
   
       const created = await groupSvc.createGroup({
         groupName,
         ownerPersonalId: userMgr.getCurrentPersonalId(),
         ownerUid: auth.currentUser.uid,
-        ownerUserName: userMgr.getCurrentUserName()
+        ownerUserName: userMgr.getCurrentPersonalId()
       });
   
       groupCreateName.value = "";
@@ -1826,7 +1840,7 @@ function bindGroupUI() {
             await groupSvc.requestJoin({
               groupId: g.groupId,
               uid: State.authUser.uid,
-              userName: userMgr.getCurrentUserName(),
+              userName: userMgr.getCurrentPersonalId(),
               targetOwnerUserName: g.ownerUserName   // ★追加
             });
             alert("参加申請を送信しました。");
@@ -1853,7 +1867,7 @@ function bindGroupUI() {
     if (!gid) return;
 
     try {
-      await groupSvc.requestJoin(gid, State.authUser.uid, userMgr.getCurrentUserName?.() ?? "Guest");
+      await groupSvc.requestJoin(gid, State.authUser.uid, userMgr.getCurrentPersonalId?.() ?? "Guest");
       alert("参加申請しました。承認されるまでお待ちください。");
     } catch (e) {
       console.error("requestJoin failed:", e);
@@ -1872,7 +1886,7 @@ function bindGroupUI() {
       await groupSvc.leaveGroup({
         groupId: State.currentGroupId,
         uid: State.authUser.uid,
-        userName: userMgr.getCurrentUserName()
+        userName: userMgr.getCurrentPersonalId()
       });
   
       await refreshMyGroups();
@@ -1962,7 +1976,7 @@ async function onTypingFinish({ metrics, meta }) {
 
     const user = State.authUser;
     const uid = user?.uid;
-    const userName = userMgr.getCurrentUserName?.() ?? "Guest";
+    const userName = userMgr.getCurrentPersonalId?.() ?? "Guest";
     const dateKey = todayKey();
     const dailyTaskKey = meta?.dailyTaskKey ?? (isDailyTask ? State.daily.dailyTaskKey : null);
     const dailyTaskName = isDailyTask ? (theme !== "all" ? theme : (category !== "all" ? category : "今日の課題")) : null;
@@ -2089,6 +2103,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
