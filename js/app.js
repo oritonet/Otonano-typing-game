@@ -1271,19 +1271,29 @@ async function loadDailyRanking() {
 
   hide(dailyRankLabel);
 
-
   try {
+    // ① ランキングデータ取得
     const rows = await rankingSvc.loadDailyTask({
       dailyTaskKey,
       dateKey,
       difficulty: diff
     });
-    rankingSvc.renderList(dailyRankingUL, rows, { highlightPersonalId: userMgr.getCurrentPersonalId?.() ?? null });
+
+    // ② rows から最新 userNameMap を作成
+    const userNameMap = await buildUserNameMapFromScores(db, rows);
+
+    // ③ 表示（最新 userName を使用）
+    rankingSvc.renderList(dailyRankingUL, rows, {
+      highlightPersonalId: userMgr.getCurrentPersonalId?.() ?? null,
+      userNameMap
+    });
+
   } catch (e) {
     console.error("loadDailyRanking error:", e);
     dailyRankingUL.innerHTML = "<li>ランキングの読み込みに失敗しました</li>";
   }
 }
+
 
 async function loadOverallRanking() {
   if (!rankingUL) return;
@@ -1332,6 +1342,8 @@ async function loadGroupRanking() {
 }
 
 async function reloadAllRankings() {
+  const rows = await rankingSvc.loadOverallRanking(...);
+  
   const userNameMap = await buildUserNameMapFromScores(db, rows);
   
   rankingSvc.renderList(rankingUL, rows, {
@@ -2122,6 +2134,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
