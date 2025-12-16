@@ -345,8 +345,37 @@
       text-align: center;
     }
 
-
-
+    /* ===== 実力ブロック（タイトル＋表＋称号画像） ===== */
+    .powerBlock {
+      display: flex;
+      flex-direction: column;
+      align-items: center;   /* タイトルと中身を中央揃え */
+    }
+    
+    .powerTitle {
+      font-size: 1.4rem;
+      font-weight: 900;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    
+    /* 表と称号画像を横並び */
+    .powerInner {
+      display: flex;
+      gap: 14px;
+      align-items: stretch;
+    }
+    
+    /* 称号画像枠（黄色） */
+    #rankImageBox {
+      width: 160px;
+      min-height: 160px;
+      border: 2px solid #000;
+      background: #ff0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
   </style>
 </head>
@@ -506,19 +535,29 @@
         <div class="muted" id="analyticsLabel" style="margin: 0 0 10px;"></div>
 
         <div class="split">
-          <div>
-            <h3>あなたの実力</h3>
-            <div id="bestByDifficulty"></div>
+          <!-- 左：実力ブロック -->
+          <div class="powerBlock">
+            <div class="powerTitle">あなたの実力</div>
+        
+            <div class="powerInner">
+              <!-- 表（JSが描画） -->
+              <div id="bestByDifficulty"></div>
+        
+              <!-- 称号画像（JSが差し込む） -->
+              <div id="rankImageBox"></div>
+            </div>
           </div>
-
+        
+          <!-- 右：グラフ＋履歴 -->
           <div>
             <h3>スコア（CPM）の推移（縦：スコア / 横：日付）</h3>
             <canvas id="scoreChart"></canvas>
-
+        
             <h3>最近の履歴</h3>
             <ul id="myRecent"></ul>
           </div>
         </div>
+
       </div>
     </section>
 
@@ -564,6 +603,7 @@
   <script type="module" src="./js/app.js"></script>
 </body>
 </html>
+
 
 
 
