@@ -1712,6 +1712,9 @@ engine.attach();
   bindRankDiffTabs();
   bindGroupUI();
   bindUserSwitchHooks();
+  bindToggle("toggleUserPanel", "userPanel");
+  bindToggle("toggleGroupPanel", "groupPanel");
+
    
   // 初回ランキング：activeRankDiff も復元済みの State.activeRankDiff で走る
   await reloadAllRankings();
@@ -1751,4 +1754,5 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
