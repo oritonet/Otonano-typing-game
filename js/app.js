@@ -2096,45 +2096,49 @@ function bindRankDiffTabs() {
 }
 
 function bindGroupUI() {
+
+  /* =========================
+     グループ作成
+  ========================= */
   on(groupCreateBtn, "click", async () => {
     if (!State.authUser) return;
-  
+
     const groupName = (groupCreateName?.value ?? "").trim();
     if (!groupName) {
       alert("グループ名を入力してください。");
       return;
     }
-  
+
     try {
-      const ownerUid = State.authUser.uid;
-      const ownerUserName = userMgr.getCurrentUserName();
-  
       const created = await groupSvc.createGroup({
         groupName,
         ownerPersonalId: userMgr.getCurrentPersonalId(),
-        ownerUid: auth.currentUser.uid,
-        ownerUserName: userMgr.getCurrentUserName()
+        ownerUid: State.authUser.uid
       });
-  
+
       groupCreateName.value = "";
-  
+
       await refreshMyGroups();
       if (currentGroupSelect) {
         currentGroupSelect.value = created.groupId;
       }
       await onGroupChanged();
-  
+
       alert("グループを作成しました。");
     } catch (e) {
       console.error("createGroup failed:", e);
       alert("グループ作成に失敗しました。");
     }
   });
-  
+
+
+  /* =========================
+     グループ検索 & 参加申請
+  ========================= */
   on(groupSearchBtn, "click", async () => {
     const name = (groupSearchInput?.value ?? "").trim();
     if (!name) return;
-  
+
     try {
       const results = await groupSvc.searchGroupsByName(name);
 
@@ -2143,99 +2147,104 @@ function bindGroupUI() {
         (await groupSvc.getMyGroups(personalId)).map(g => g.groupId)
       );
       const pendingSet = await groupSvc.getMyPendingGroupIds(personalId);
-  
+
       groupSearchResult.innerHTML = "";
-  
+
       if (!results || results.length === 0) {
         const li = document.createElement("li");
         li.textContent = "該当するグループはありません。";
         groupSearchResult.appendChild(li);
         return;
       }
-  
+
       for (const g of results) {
         const row = document.createElement("div");
         row.className = "groupRow";
-      
+
+        /* グループ名 */
         const nameSpan = document.createElement("span");
         nameSpan.textContent = g.name;
-      
+        row.appendChild(nameSpan);
+
+        /* ★ オーナー名は UI 側で解決 */
+        const ownerName = await resolveUserName(db, g.ownerPersonalId);
+
+        const ownerSpan = document.createElement("span");
+        ownerSpan.className = "groupOwner";
+        ownerSpan.textContent = `（オーナー：${ownerName}）`;
+        row.appendChild(ownerSpan);
+
+        /* 操作ボタン */
         const btn = document.createElement("button");
-      
+
         if (myGroups.has(g.groupId)) {
           btn.textContent = "参加済み";
           btn.disabled = true;
-      
+
         } else if (pendingSet.has(g.groupId)) {
           btn.textContent = "申請中";
           btn.disabled = true;
-      
+
         } else {
           btn.textContent = "参加申請";
           btn.addEventListener("click", async () => {
-            const ownerName = await resolveUserName(db, g.ownerPersonalId);
-
             const ok = confirm(
               `グループ「${g.name}」\n` +
               `オーナー：${ownerName}\n\n` +
               `参加申請しますか？`
             );
             if (!ok) return;
-            
+
             await groupSvc.requestJoin({
               groupId: g.groupId,
               personalId,
-              uid: State.authUser.uid,
-              userName: userMgr.getCurrentUserName(),
-              targetOwnerUserName: g.ownerUserName
+              uid: State.authUser.uid
             });
-      
+
             // ★ 即時UI反映
             btn.textContent = "申請中";
             btn.disabled = true;
           });
         }
-      
-        row.appendChild(nameSpan);
+
         row.appendChild(btn);
         groupSearchResult.appendChild(row);
       }
 
     } catch (e) {
       console.error("searchGroups failed:", e);
+      alert("グループ検索に失敗しました。");
     }
   });
 
 
-  // groupSearchResult クリックで加入申請（index.htmlは「結果エリア」なのでここで操作）
-  on(groupSearchResult, "click", async () => {
-    if (!State.authUser) return;
+  /* =========================
+     ※ 旧：groupSearchResult クリック申請（不要）
+     → ボタン処理に一本化するため削除
+  ========================= */
+  // on(groupSearchResult, "click", async () => { ... });
 
-    const gid = groupSearchResult?.dataset?.groupId || "";
-    if (!gid) return;
 
-    try {
-      await groupSvc.requestJoin(gid, State.authUser.uid, userMgr.getCurrentPersonalId?.() ?? "Guest");
-      alert("参加申請しました。承認されるまでお待ちください。");
-    } catch (e) {
-      console.error("requestJoin failed:", e);
-      alert("参加申請に失敗しました。");
-    }
-  });
-
+  /* =========================
+     グループ切替
+  ========================= */
   on(currentGroupSelect, "change", onGroupChanged);
-  
+
+
+  /* =========================
+     グループ退出
+  ========================= */
   on(leaveGroupBtn, "click", async () => {
     if (!State.currentGroupId) return;
-  
+
     if (!confirm("このグループから退出しますか？")) return;
-  
+
     try {
       await groupSvc.leaveGroup({
         groupId: State.currentGroupId,
         personalId: userMgr.getCurrentPersonalId()
       });
-  
+
       await refreshMyGroups();
       await onGroupChanged();
     } catch (e) {
@@ -2245,17 +2254,20 @@ function bindGroupUI() {
   });
 
 
+  /* =========================
+     グループ削除（owner のみ）
+  ========================= */
   on(deleteGroupBtn, "click", async () => {
     if (!State.currentGroupId) return;
     if (State.currentGroupRole !== "owner") return;
-  
+
     if (!confirm("このグループを削除しますか？")) return;
-  
+
     try {
       await groupSvc.deleteGroup({
         groupId: State.currentGroupId
       });
-  
+
       await refreshMyGroups();
       await onGroupChanged();
     } catch (e) {
@@ -2263,9 +2275,8 @@ function bindGroupUI() {
       alert("グループ削除に失敗しました");
     }
   });
-
-
 }
+
 
 /* =========================================================
    TypingEngine instance (must be after DOM refs)
@@ -2470,6 +2481,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
