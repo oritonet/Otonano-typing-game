@@ -1397,6 +1397,8 @@ function drawScoreTrend(rows) {
 
   ctx.clearRect(0, 0, w, h);
 
+  const today = todayKey(); // 既存関数を使用
+
   const data = rows
     .filter(r => !isNaN(Number(r.cpm)) && r.dateKey)
     .map(r => ({ ...r, cpm: Number(r.cpm) }))
@@ -1409,15 +1411,22 @@ function drawScoreTrend(rows) {
     return;
   }
 
+  /* ===== ベスト & 今日 ===== */
+  let bestIndex = 0;
+  data.forEach((r, i) => {
+    if (r.cpm > data[bestIndex].cpm) bestIndex = i;
+  });
+  const todayIndex = data.findIndex(r => r.dateKey === today);
+
   const cpms = data.map(r => r.cpm);
   const min = Math.min(...cpms);
   const max = Math.max(...cpms);
 
   /* ===== グラフ領域 ===== */
-  const padL = 48;   // ← Y軸ラベル用
+  const padL = 52;
   const padR = 16;
   const padT = 16;
-  const padB = 36;   // ← X軸ラベル用
+  const padB = 40;
 
   const gx0 = padL;
   const gx1 = w - padR;
@@ -1430,7 +1439,7 @@ function drawScoreTrend(rows) {
   const yAt = v =>
     gy1 - (gy1 - gy0) * ((v - min) / Math.max(max - min, 1));
 
-  ctx.font = "12px sans-serif";
+  ctx.font = "11px sans-serif";
   ctx.fillStyle = "#444";
   ctx.strokeStyle = "#ccc";
 
@@ -1441,13 +1450,22 @@ function drawScoreTrend(rows) {
   ctx.lineTo(gx1, gy1);
   ctx.stroke();
 
-  /* ===== Y軸目盛（CPM） ===== */
+  /* ===== Y軸目盛 ===== */
   const yTicks = 4;
   for (let i = 0; i <= yTicks; i++) {
     const v = min + (max - min) * (i / yTicks);
     const y = yAt(v);
 
-    ctx.fillText(Math.round(v), gx0 - 6, y + 4);
+    const label = Math.round(v).toString();
+    const tw = ctx.measureText(label).width;
+
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(gx0 - tw - 10, y - 8, tw + 6, 14);
+
+    ctx.fillStyle = "#444";
+    ctx.textAlign = "right";
+    ctx.fillText(label, gx0 - 6, y + 4);
+
     ctx.beginPath();
     ctx.moveTo(gx0 - 3, y);
     ctx.lineTo(gx0, y);
@@ -1455,15 +1473,14 @@ function drawScoreTrend(rows) {
   }
 
   /* ===== X軸（日付） ===== */
-  const step = Math.max(1, Math.floor(data.length / 5));
+  ctx.textAlign = "center";
+  const step = data.length <= 4 ? 1 : Math.ceil(data.length / 4);
   data.forEach((r, i) => {
     if (i % step !== 0 && i !== data.length - 1) return;
-
     const x = xAt(i);
-    const label = r.dateKey.slice(5); // MM-DD
-
+    const label = r.dateKey.slice(5);
     ctx.save();
-    ctx.translate(x, gy1 + 14);
+    ctx.translate(x, gy1 + 22);
     ctx.rotate(-Math.PI / 6);
     ctx.fillText(label, 0, 0);
     ctx.restore();
@@ -1482,27 +1499,65 @@ function drawScoreTrend(rows) {
   ctx.stroke();
 
   /* ===== 点 ===== */
-  ctx.fillStyle = "#0b5ed7";
   data.forEach((r, i) => {
+    const x = xAt(i);
+    const y = yAt(r.cpm);
+
+    // 今日：赤
+    if (i === todayIndex) {
+      ctx.fillStyle = "#d9534f";
+    } else {
+      ctx.fillStyle = "#0b5ed7";
+    }
+
     ctx.beginPath();
-    ctx.arc(xAt(i), yAt(r.cpm), 3, 0, Math.PI * 2);
+    ctx.arc(x, y, 3, 0, Math.PI * 2);
     ctx.fill();
   });
+
+  /* ===== 今日の★ ===== */
+  if (todayIndex >= 0) {
+    const x = xAt(todayIndex);
+    const y = yAt(data[todayIndex].cpm) - 10;
+
+    ctx.fillStyle = "#d9534f";
+    ctx.font = "14px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("★", x, y);
+  }
+
+  /* ===== ベスト点：CPM表示 ===== */
+  {
+    const r = data[bestIndex];
+    const x = xAt(bestIndex);
+    const y = yAt(r.cpm);
+
+    const label = `${Math.round(r.cpm)} CPM`;
+    ctx.font = "12px sans-serif";
+    const tw = ctx.measureText(label).width;
+
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(x + 6, y - 10, tw + 6, 16);
+
+    ctx.fillStyle = "#000";
+    ctx.textAlign = "left";
+    ctx.fillText(label, x + 9, y + 2);
+  }
 
   /* ===== 軸ラベル ===== */
   ctx.fillStyle = "#000";
   ctx.font = "13px sans-serif";
+  ctx.textAlign = "center";
 
-  // Y軸ラベル
   ctx.save();
-  ctx.translate(14, (gy0 + gy1) / 2);
+  ctx.translate(16, (gy0 + gy1) / 2);
   ctx.rotate(-Math.PI / 2);
   ctx.fillText("CPM", 0, 0);
   ctx.restore();
 
-  // X軸ラベル
-  ctx.fillText("日付", (gx0 + gx1) / 2 - 10, h - 6);
+  ctx.fillText("日付", (gx0 + gx1) / 2, h - 6);
 }
+
 
 
 
@@ -2321,6 +2376,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
