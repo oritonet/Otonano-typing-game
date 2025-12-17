@@ -141,6 +141,11 @@ export class GroupService {
       targetOwnerUserName,
       createdAt: serverTimestamp()
     });
+
+    const memRef = doc(this.db, "groupMembers", memberIdOf(personalId, groupId));
+    if ((await getDoc(memRef)).exists()) {
+      throw new Error("already member");
+    }
   }
 
   /* =========================
@@ -289,6 +294,7 @@ export class GroupService {
     }
   }
 }
+
 
 
 
