@@ -25,3 +25,27 @@ export function rankByCPM(cpm, difficulty = "normal") {
   }
   return r;
 }
+
+
+/* =========================================================
+   追加：ランク比較用インデックス
+========================================================= */
+export function rankIndex(rank) {
+  if (!rank) return -1;
+
+  // + / - を含めた完全順序（低→高）
+  const order = [
+    "G-", "G", "G+",
+    "F-", "F", "F+",
+    "E-", "E", "E+",
+    "D-", "D", "D+",
+    "C-", "C", "C+",
+    "B-", "B", "B+",
+    "A-", "A", "A+",
+    "S-", "S", "S+",
+    "SS-", "SS", "SS+",
+    "SSS-", "SSS", "SSS+"
+  ];
+
+  return order.indexOf(rank);
+}
