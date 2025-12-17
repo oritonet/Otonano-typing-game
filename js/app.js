@@ -1399,10 +1399,28 @@ function drawScoreTrend(rows) {
 
   const today = todayKey();
 
+  /* ===== データ正規化 & 完全時系列ソート ===== */
   const data = rows
     .filter(r => !isNaN(Number(r.cpm)) && r.dateKey)
-    .map(r => ({ ...r, cpm: Number(r.cpm) }))
-    .sort((a, b) => a.dateKey.localeCompare(b.dateKey));
+    .map((r, idx) => ({
+      ...r,
+      cpm: Number(r.cpm),
+      _idx: idx
+    }))
+    .sort((a, b) => {
+      // ① 日付
+      if (a.dateKey !== b.dateKey) {
+        return a.dateKey.localeCompare(b.dateKey);
+      }
+      // ② 作成時刻（Firestore Timestamp）
+      const ta = a.createdAt?.seconds ?? null;
+      const tb = b.createdAt?.seconds ?? null;
+      if (ta != null && tb != null) return ta - tb;
+      if (ta != null) return 1;
+      if (tb != null) return -1;
+      // ③ 最終フォールバック
+      return a._idx - b._idx;
+    });
 
   if (data.length === 0) {
     ctx.fillStyle = "#999";
@@ -1422,10 +1440,10 @@ function drawScoreTrend(rows) {
   const min = Math.min(...cpms);
   const max = Math.max(...cpms);
 
-  /* ===== グラフ領域（★対策で上を広げる） ===== */
+  /* ===== 描画領域（余白調整済み） ===== */
   const padL = 52;
   const padR = 16;
-  const padT = 32;   // ← ★対策
+  const padT = 32;   // ★が見切れない
   const padB = 36;
 
   const gx0 = padL;
@@ -1478,7 +1496,7 @@ function drawScoreTrend(rows) {
   data.forEach((r, i) => {
     if (i % step !== 0 && i !== data.length - 1) return;
     const x = xAt(i);
-    const label = r.dateKey.slice(5);
+    const label = r.dateKey.slice(5); // MM-DD
     ctx.save();
     ctx.translate(x, gy1 + 22);
     ctx.rotate(-Math.PI / 6);
@@ -1510,20 +1528,19 @@ function drawScoreTrend(rows) {
   if (todayIndex >= 0) {
     const x = xAt(todayIndex);
     const y = Math.max(gy0 + 12, yAt(data[todayIndex].cpm) - 10);
-
     ctx.fillStyle = "#d9534f";
     ctx.font = "14px sans-serif";
     ctx.textAlign = "center";
     ctx.fillText("★", x, y);
   }
 
-  /* ===== ベスト点：CPM表示 ===== */
+  /* ===== ベスト点ラベル ===== */
   {
     const r = data[bestIndex];
     const x = xAt(bestIndex);
     const y = yAt(r.cpm);
 
-    const label = `${Math.round(r.cpm)} CPM`;
+    const label = `BEST: ${Math.round(r.cpm)} CPM`;
     ctx.font = "12px sans-serif";
     const tw = ctx.measureText(label).width;
 
@@ -1535,7 +1552,7 @@ function drawScoreTrend(rows) {
     ctx.fillText(label, x + 9, y + 2);
   }
 
-  /* ===== Y軸ラベルのみ ===== */
+  /* ===== Y軸ラベル ===== */
   ctx.fillStyle = "#000";
   ctx.font = "13px sans-serif";
   ctx.textAlign = "center";
@@ -1545,6 +1562,7 @@ function drawScoreTrend(rows) {
   ctx.fillText("CPM", 0, 0);
   ctx.restore();
 }
+
 
 
 async function loadMyAnalytics() {
@@ -2361,6 +2379,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
