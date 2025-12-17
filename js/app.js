@@ -1112,15 +1112,6 @@ function setCurrentItem(item, { daily = false } = {}) {
 
   engine.enableReadyState();
 
-  if (inputEl) {
-    inputEl.disabled = true; // Start押すまで無効
-    // フォーカス時（タップで入力開始）
-    inputEl.addEventListener("focus", scrollTextToTopOnMobile);
-  
-    // IME 変換開始時（日本語入力）
-    inputEl.addEventListener("compositionstart", scrollTextToTopOnMobile);
-  }
-
   if (startBtn) {
     startBtn.disabled = false;
     startBtn.style.display = ""; // ★文章更新で必ず復活
@@ -1857,6 +1848,9 @@ function bindTypingButtons() {
   const startSequence = async () => {
     if (!inputEl || !canStartNow()) return;
 
+    // ★ スタート押下時に見本文を画面上へ
+    scrollTextToTopOnMobile();
+
     // 開始したらスタートを消す（要件）
     startBtn.style.display = "none";
 
@@ -2450,6 +2444,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
