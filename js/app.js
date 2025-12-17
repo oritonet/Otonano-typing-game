@@ -1533,40 +1533,49 @@ function drawScoreTrend(rows) {
     ctx.textAlign = "center";
     ctx.fillText("★", x, y);
   }
-
-  /* ===== ベスト点ラベル（はみ出し防止） ===== */
+  
+  /* ===== ベスト点ラベル（上下左右 衝突回避） ===== */
   {
     const r = data[bestIndex];
-    const x = xAt(bestIndex);
-    const y = yAt(r.cpm);
+    const px = xAt(bestIndex);
+    const py = yAt(r.cpm);
   
     const label = `BEST: ${Math.round(r.cpm)} CPM`;
     ctx.font = "12px sans-serif";
     const tw = ctx.measureText(label).width;
   
-    const margin = 6;
+    const pad = 6;
+    const boxW = tw + 6;
+    const boxH = 16;
   
-    // 右に出すと見切れるか？
-    const drawRight = (x + tw + margin * 2) < w;
-  
+    /* --- 左右判定（はみ出し防止） --- */
+    const drawRight = (px + boxW + pad) < w;
     const boxX = drawRight
-      ? x + margin
-      : x - tw - margin;
+      ? px + pad
+      : px - boxW - pad;
   
-    const textX = drawRight
-      ? boxX + 3
-      : boxX + 3;
+    /* --- 上下判定（プロット衝突防止） --- */
+    let boxY = py - boxH - 8; // 基本：点の上
   
-    // 背景
+    // 上にはみ出るなら下へ
+    if (boxY < gy0) {
+      boxY = py + 8;
+    }
+  
+    // 下にもはみ出る場合（極端ケース）
+    if (boxY + boxH > gy1) {
+      boxY = gy1 - boxH;
+    }
+  
+    /* --- 背景 --- */
     ctx.fillStyle = "#fff";
-    ctx.fillRect(boxX, y - 10, tw + 6, 16);
+    ctx.fillRect(boxX, boxY, boxW, boxH);
   
-    // テキスト
+    /* --- テキスト --- */
     ctx.fillStyle = "#000";
     ctx.textAlign = "left";
-    ctx.fillText(label, textX, y + 2);
+    ctx.fillText(label, boxX + 3, boxY + 12);
   }
-
 
   /* ===== Y軸ラベル ===== */
   ctx.fillStyle = "#000";
@@ -2395,6 +2404,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
