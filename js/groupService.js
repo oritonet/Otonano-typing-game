@@ -306,7 +306,34 @@ export class GroupService {
     return new Set(snap.docs.map(d => d.data().groupId));
   }
 
+  /* =========================
+   ownerUserName を一括更新
+  ========================= */
+  async updateOwnerUserName({ ownerPersonalId, newUserName }) {
+    if (!ownerPersonalId || !newUserName) return;
+  
+    const q = query(
+      collection(this.db, "groups"),
+      where("ownerPersonalId", "==", ownerPersonalId)
+    );
+  
+    const snap = await getDocs(q);
+    if (snap.empty) return;
+  
+    const batch = writeBatch(this.db);
+  
+    for (const d of snap.docs) {
+      batch.update(d.ref, {
+        ownerUserName: newUserName
+      });
+    }
+  
+    await batch.commit();
+  }
+
+
 }
+
 
 
 
