@@ -1397,7 +1397,7 @@ function drawScoreTrend(rows) {
 
   ctx.clearRect(0, 0, w, h);
 
-  const today = todayKey(); // 既存関数を使用
+  const today = todayKey();
 
   const data = rows
     .filter(r => !isNaN(Number(r.cpm)) && r.dateKey)
@@ -1422,11 +1422,11 @@ function drawScoreTrend(rows) {
   const min = Math.min(...cpms);
   const max = Math.max(...cpms);
 
-  /* ===== グラフ領域 ===== */
+  /* ===== グラフ領域（★対策で上を広げる） ===== */
   const padL = 52;
   const padR = 16;
-  const padT = 16;
-  const padB = 40;
+  const padT = 32;   // ← ★対策
+  const padB = 36;
 
   const gx0 = padL;
   const gx1 = w - padR;
@@ -1472,7 +1472,7 @@ function drawScoreTrend(rows) {
     ctx.stroke();
   }
 
-  /* ===== X軸（日付） ===== */
+  /* ===== X軸（日付：点ラベルのみ） ===== */
   ctx.textAlign = "center";
   const step = data.length <= 4 ? 1 : Math.ceil(data.length / 4);
   data.forEach((r, i) => {
@@ -1500,25 +1500,16 @@ function drawScoreTrend(rows) {
 
   /* ===== 点 ===== */
   data.forEach((r, i) => {
-    const x = xAt(i);
-    const y = yAt(r.cpm);
-
-    // 今日：赤
-    if (i === todayIndex) {
-      ctx.fillStyle = "#d9534f";
-    } else {
-      ctx.fillStyle = "#0b5ed7";
-    }
-
+    ctx.fillStyle = (i === todayIndex) ? "#d9534f" : "#0b5ed7";
     ctx.beginPath();
-    ctx.arc(x, y, 3, 0, Math.PI * 2);
+    ctx.arc(xAt(i), yAt(r.cpm), 3, 0, Math.PI * 2);
     ctx.fill();
   });
 
-  /* ===== 今日の★ ===== */
+  /* ===== 今日の★（必ず枠内） ===== */
   if (todayIndex >= 0) {
     const x = xAt(todayIndex);
-    const y = yAt(data[todayIndex].cpm) - 10;
+    const y = Math.max(gy0 + 12, yAt(data[todayIndex].cpm) - 10);
 
     ctx.fillStyle = "#d9534f";
     ctx.font = "14px sans-serif";
@@ -1544,22 +1535,16 @@ function drawScoreTrend(rows) {
     ctx.fillText(label, x + 9, y + 2);
   }
 
-  /* ===== 軸ラベル ===== */
+  /* ===== Y軸ラベルのみ ===== */
   ctx.fillStyle = "#000";
   ctx.font = "13px sans-serif";
   ctx.textAlign = "center";
-
   ctx.save();
   ctx.translate(16, (gy0 + gy1) / 2);
   ctx.rotate(-Math.PI / 2);
   ctx.fillText("CPM", 0, 0);
   ctx.restore();
-
-  ctx.fillText("日付", (gx0 + gx1) / 2, h - 6);
 }
-
-
-
 
 
 async function loadMyAnalytics() {
@@ -2376,6 +2361,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
