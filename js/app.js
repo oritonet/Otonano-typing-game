@@ -123,7 +123,7 @@ const analyticsTitle = $("analyticsTitle");
 const analyticsLabel = $("analyticsLabel");
 const bestByDifficultyUL = $("bestByDifficulty");
 const myRecentUL = $("myRecent");
-const scoreTrendCanvas = $("scoreTrendCanvas");
+const scoreTrendCanvas = $("scoreTrendCanvas") || $("scoreChart");
 
 // difficulty tabs (ranking side)
 const diffTabsUnified = $("diffTabsUnified");
@@ -2266,6 +2266,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
