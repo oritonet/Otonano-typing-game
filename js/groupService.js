@@ -21,6 +21,7 @@ export class GroupService {
     if (!db) throw new Error("GroupService: db required");
     this.db = db;
   }
+}
 
   /* =========================
      グループ作成（owner）
@@ -305,6 +306,7 @@ export class GroupService {
     const snap = await getDocs(q);
     return new Set(snap.docs.map(d => d.data().groupId));
   }
+
 
 
 
