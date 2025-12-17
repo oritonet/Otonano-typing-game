@@ -178,7 +178,6 @@ const userMgr = new UserManager({
 async function submitScoreDoc({
   personalId,
   uid,
-  userName,
   cpm,
   rank,
   timeSec,
@@ -2448,6 +2447,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
