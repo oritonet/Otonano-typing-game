@@ -67,8 +67,16 @@
       padding-right: calc(16px + var(--sbw, 0px));
     }
     
-    .ok { color: #0b5ed7; font-weight: 700; }
-    .ng { color: #c00000; font-weight: 700; }
+    /*.ok { color: #0b5ed7; font-weight: 700; }*/
+    /*.ng { color: #c00000; font-weight: 700; }*/
+
+    .ok,
+    .ng {
+      font-weight: 400;               /* 固定 */
+      text-shadow:
+        0.4px 0 0 currentColor,
+       -0.4px 0 0 currentColor;
+    }
 
     #input {
       width: 100%;
@@ -675,6 +683,7 @@
   <script type="module" src="./js/app.js"></script>
 </body>
 </html>
+
 
 
 
