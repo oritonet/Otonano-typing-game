@@ -2123,6 +2123,12 @@ function bindGroupUI() {
   
     try {
       const results = await groupSvc.searchGroupsByName(name);
+
+      const personalId = userMgr.getCurrentPersonalId();
+      const myGroups = new Set(
+        (await groupSvc.getMyGroups(personalId)).map(g => g.groupId)
+      );
+      const pendingSet = await groupSvc.getMyPendingGroupIds(personalId);
   
       groupSearchResult.innerHTML = "";
   
@@ -2134,40 +2140,44 @@ function bindGroupUI() {
       }
   
       for (const g of results) {
-        const li = document.createElement("li");
-        li.textContent = g.name ?? "(no name)";
-  
+        const row = document.createElement("div");
+        row.className = "groupRow";
+      
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = g.name;
+      
         const btn = document.createElement("button");
-        btn.textContent = "参加申請";
-  
-        on(btn, "click", async () => {
-          try {
-            const already = await groupSvc.isAlreadyMember({
-              groupId: g.groupId,
-              personalId: userMgr.getCurrentPersonalId()
-            });
-            if (already) {
-              alert("すでにこのグループに参加しています。");
-              return;
-            }
-            
+      
+        if (myGroups.has(g.groupId)) {
+          btn.textContent = "参加済み";
+          btn.disabled = true;
+      
+        } else if (pendingSet.has(g.groupId)) {
+          btn.textContent = "申請中";
+          btn.disabled = true;
+      
+        } else {
+          btn.textContent = "参加申請";
+          btn.addEventListener("click", async () => {
             await groupSvc.requestJoin({
               groupId: g.groupId,
-              personalId: userMgr.getCurrentPersonalId(),
+              personalId,
               uid: State.authUser.uid,
               userName: userMgr.getCurrentUserName(),
-              targetOwnerUserName: g.ownerUserName   // ★追加
+              targetOwnerUserName: g.ownerUserName
             });
-            alert("参加申請を送信しました。");
-          } catch (e) {
-            console.error("requestJoin failed:", e);
-            alert("参加申請に失敗しました。");
-          }
-        });
-  
-        li.appendChild(btn);
-        groupSearchResult.appendChild(li);
+      
+            // ★ 即時UI反映
+            btn.textContent = "申請中";
+            btn.disabled = true;
+          });
+        }
+      
+        row.appendChild(nameSpan);
+        row.appendChild(btn);
+        groupSearchResult.appendChild(row);
       }
+
     } catch (e) {
       console.error("searchGroups failed:", e);
     }
@@ -2425,6 +2435,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
