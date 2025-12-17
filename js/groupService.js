@@ -40,7 +40,6 @@ export class GroupService {
       name,
       ownerPersonalId,
       ownerUid,
-      ownerUserName,
       createdAt: serverTimestamp()
     });
   
@@ -50,7 +49,6 @@ export class GroupService {
         groupId,
         personalId: ownerPersonalId,
         uid: ownerUid,
-        userName: ownerUserName,
         role: "owner",
         createdAt: serverTimestamp()
       }
@@ -80,7 +78,7 @@ export class GroupService {
 
       let gName = "(no name)";
       let ownerUid = null;
-      let ownerUserName = null;
+      //let ownerUserName = null;
 
       try {
         const gSnap = await getDoc(doc(this.db, "groups", groupId));
@@ -88,7 +86,7 @@ export class GroupService {
           const g = gSnap.data();
           gName = g.name ?? gName;
           ownerUid = g.ownerUid ?? null;
-          ownerUserName = g.ownerUserName ?? null;
+          //ownerUserName = g.ownerUserName ?? null;
         }
       } catch {}
 
@@ -97,7 +95,7 @@ export class GroupService {
         name: gName,
         role: m.role || "member",
         ownerUid,
-        ownerUserName
+        //ownerUserName
       });
     }
 
@@ -138,7 +136,6 @@ export class GroupService {
       groupId,
       personalId,
       uid,
-      userName,
       targetOwnerUserName,
       createdAt: serverTimestamp()
     });
@@ -204,7 +201,6 @@ export class GroupService {
       groupId,
       personalId,
       uid,
-      userName,
       role: "member",
       approvedByUid: ownerUid || null,
       approvedByUserName: ownerUserName || null,
@@ -308,6 +304,7 @@ export class GroupService {
   }
 
 }
+
 
 
 
