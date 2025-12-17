@@ -1392,13 +1392,13 @@ function drawScoreTrend(rows) {
   if (!scoreTrendCanvas) return;
 
   const ctx = scoreTrendCanvas.getContext("2d");
-  const w = scoreTrendCanvas.width = scoreTrendCanvas.clientWidth || 300;
-  const h = scoreTrendCanvas.height = scoreTrendCanvas.clientHeight || 150;
+  const w = scoreTrendCanvas.width = scoreTrendCanvas.clientWidth || 320;
+  const h = scoreTrendCanvas.height = scoreTrendCanvas.clientHeight || 180;
 
   ctx.clearRect(0, 0, w, h);
 
   const data = rows
-    .filter(r => !isNaN(Number(r.cpm)))
+    .filter(r => !isNaN(Number(r.cpm)) && r.dateKey)
     .map(r => ({ ...r, cpm: Number(r.cpm) }))
     .sort((a, b) => a.dateKey.localeCompare(b.dateKey));
 
@@ -1413,24 +1413,63 @@ function drawScoreTrend(rows) {
   const min = Math.min(...cpms);
   const max = Math.max(...cpms);
 
-  const pad = 24;
-  const gx0 = pad;
-  const gx1 = w - pad;
-  const gy0 = pad;
-  const gy1 = h - pad;
+  /* ===== グラフ領域 ===== */
+  const padL = 48;   // ← Y軸ラベル用
+  const padR = 16;
+  const padT = 16;
+  const padB = 36;   // ← X軸ラベル用
+
+  const gx0 = padL;
+  const gx1 = w - padR;
+  const gy0 = padT;
+  const gy1 = h - padB;
 
   const xAt = i =>
     gx0 + (gx1 - gx0) * (i / Math.max(data.length - 1, 1));
+
   const yAt = v =>
     gy1 - (gy1 - gy0) * ((v - min) / Math.max(max - min, 1));
 
+  ctx.font = "12px sans-serif";
+  ctx.fillStyle = "#444";
   ctx.strokeStyle = "#ccc";
+
+  /* ===== 軸 ===== */
   ctx.beginPath();
   ctx.moveTo(gx0, gy0);
   ctx.lineTo(gx0, gy1);
   ctx.lineTo(gx1, gy1);
   ctx.stroke();
 
+  /* ===== Y軸目盛（CPM） ===== */
+  const yTicks = 4;
+  for (let i = 0; i <= yTicks; i++) {
+    const v = min + (max - min) * (i / yTicks);
+    const y = yAt(v);
+
+    ctx.fillText(Math.round(v), gx0 - 6, y + 4);
+    ctx.beginPath();
+    ctx.moveTo(gx0 - 3, y);
+    ctx.lineTo(gx0, y);
+    ctx.stroke();
+  }
+
+  /* ===== X軸（日付） ===== */
+  const step = Math.max(1, Math.floor(data.length / 5));
+  data.forEach((r, i) => {
+    if (i % step !== 0 && i !== data.length - 1) return;
+
+    const x = xAt(i);
+    const label = r.dateKey.slice(5); // MM-DD
+
+    ctx.save();
+    ctx.translate(x, gy1 + 14);
+    ctx.rotate(-Math.PI / 6);
+    ctx.fillText(label, 0, 0);
+    ctx.restore();
+  });
+
+  /* ===== 折れ線 ===== */
   ctx.strokeStyle = "#0b5ed7";
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -1442,13 +1481,29 @@ function drawScoreTrend(rows) {
   });
   ctx.stroke();
 
+  /* ===== 点 ===== */
   ctx.fillStyle = "#0b5ed7";
   data.forEach((r, i) => {
     ctx.beginPath();
     ctx.arc(xAt(i), yAt(r.cpm), 3, 0, Math.PI * 2);
     ctx.fill();
   });
+
+  /* ===== 軸ラベル ===== */
+  ctx.fillStyle = "#000";
+  ctx.font = "13px sans-serif";
+
+  // Y軸ラベル
+  ctx.save();
+  ctx.translate(14, (gy0 + gy1) / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText("CPM", 0, 0);
+  ctx.restore();
+
+  // X軸ラベル
+  ctx.fillText("日付", (gx0 + gx1) / 2 - 10, h - 6);
 }
+
 
 
 
@@ -2266,6 +2321,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
