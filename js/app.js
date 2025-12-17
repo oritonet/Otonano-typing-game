@@ -1397,8 +1397,6 @@ function drawScoreTrend(rows) {
 
   ctx.clearRect(0, 0, w, h);
 
-  const today = todayKey();
-
   /* ===== データ正規化 & 完全時系列ソート ===== */
   const data = rows
     .filter(r => !isNaN(Number(r.cpm)) && r.dateKey)
@@ -1418,7 +1416,7 @@ function drawScoreTrend(rows) {
       if (ta != null && tb != null) return ta - tb;
       if (ta != null) return 1;
       if (tb != null) return -1;
-      // ③ 最終フォールバック
+      // ③ フォールバック（取得順）
       return a._idx - b._idx;
     });
 
@@ -1429,21 +1427,20 @@ function drawScoreTrend(rows) {
     return;
   }
 
-  /* ===== ベスト & 今日 ===== */
+  /* ===== ベスト ===== */
   let bestIndex = 0;
   data.forEach((r, i) => {
     if (r.cpm > data[bestIndex].cpm) bestIndex = i;
   });
-  const todayIndex = data.findIndex(r => r.dateKey === today);
 
   const cpms = data.map(r => r.cpm);
   const min = Math.min(...cpms);
   const max = Math.max(...cpms);
 
-  /* ===== 描画領域（余白調整済み） ===== */
+  /* ===== 描画領域 ===== */
   const padL = 52;
   const padR = 16;
-  const padT = 32;   // ★が見切れない
+  const padT = 32;
   const padB = 36;
 
   const gx0 = padL;
@@ -1490,7 +1487,7 @@ function drawScoreTrend(rows) {
     ctx.stroke();
   }
 
-  /* ===== X軸（日付：点ラベルのみ） ===== */
+  /* ===== X軸（日付） ===== */
   ctx.textAlign = "center";
   const step = data.length <= 4 ? 1 : Math.ceil(data.length / 4);
   data.forEach((r, i) => {
@@ -1516,62 +1513,42 @@ function drawScoreTrend(rows) {
   });
   ctx.stroke();
 
-  /* ===== 点 ===== */
+  /* ===== 点（BESTのみ赤） ===== */
   data.forEach((r, i) => {
-    ctx.fillStyle = (i === todayIndex) ? "#d9534f" : "#0b5ed7";
+    ctx.fillStyle = (i === bestIndex) ? "#d9534f" : "#0b5ed7";
     ctx.beginPath();
     ctx.arc(xAt(i), yAt(r.cpm), 3, 0, Math.PI * 2);
     ctx.fill();
   });
 
-  /* ===== 今日の★（必ず枠内） ===== */
-  if (todayIndex >= 0) {
-    const x = xAt(todayIndex);
-    const y = Math.max(gy0 + 12, yAt(data[todayIndex].cpm) - 10);
-    ctx.fillStyle = "#d9534f";
-    ctx.font = "14px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("★", x, y);
-  }
-  
   /* ===== ベスト点ラベル（上下左右 衝突回避） ===== */
   {
     const r = data[bestIndex];
     const px = xAt(bestIndex);
     const py = yAt(r.cpm);
-  
+
     const label = `BEST: ${Math.round(r.cpm)} CPM`;
     ctx.font = "12px sans-serif";
     const tw = ctx.measureText(label).width;
-  
+
     const pad = 6;
     const boxW = tw + 6;
     const boxH = 16;
-  
-    /* --- 左右判定（はみ出し防止） --- */
+
+    // 左右（はみ出し防止）
     const drawRight = (px + boxW + pad) < w;
     const boxX = drawRight
       ? px + pad
       : px - boxW - pad;
-  
-    /* --- 上下判定（プロット衝突防止） --- */
-    let boxY = py - boxH - 8; // 基本：点の上
-  
-    // 上にはみ出るなら下へ
-    if (boxY < gy0) {
-      boxY = py + 8;
-    }
-  
-    // 下にもはみ出る場合（極端ケース）
-    if (boxY + boxH > gy1) {
-      boxY = gy1 - boxH;
-    }
-  
-    /* --- 背景 --- */
+
+    // 上下（プロット被り防止）
+    let boxY = py - boxH - 8;
+    if (boxY < gy0) boxY = py + 8;
+    if (boxY + boxH > gy1) boxY = gy1 - boxH;
+
     ctx.fillStyle = "#fff";
     ctx.fillRect(boxX, boxY, boxW, boxH);
-  
-    /* --- テキスト --- */
+
     ctx.fillStyle = "#000";
     ctx.textAlign = "left";
     ctx.fillText(label, boxX + 3, boxY + 12);
@@ -1587,8 +1564,6 @@ function drawScoreTrend(rows) {
   ctx.fillText("CPM", 0, 0);
   ctx.restore();
 }
-
-
 
 async function loadMyAnalytics() {
   const personalId = userMgr.getCurrentPersonalId();
@@ -2404,6 +2379,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
