@@ -1993,28 +1993,43 @@ function bindPracticeFilters() {
       enableDailyTask();
     } else {
       disableDailyTask();
-  
-      // OFFに戻したら元の状態を復元
-      if (State.beforeDailyPrefs) {
-        const { lengthGroup, category, theme } = State.beforeDailyPrefs;
-  
+    
+      let restore = State.beforeDailyPrefs;
+    
+      // ★ beforeDailyPrefs が無い場合は、保存済み prefs から復元
+      if (!restore) {
+        const personalId = userMgr.getCurrentPersonalId();
+        const prefs = loadPrefsOf(personalId);
+        if (prefs) {
+          restore = {
+            lengthGroup: prefs.lengthGroup,
+            category: prefs.category,
+            theme: prefs.theme
+          };
+        }
+      }
+    
+      if (restore) {
+        const { lengthGroup, category, theme } = restore;
+    
         if (lengthGroupEl) lengthGroupEl.value = lengthGroup;
         if (categoryEl) categoryEl.value = category;
-  
+    
         updateThemeOptionsByCategory();
         if (themeEl) themeEl.value = theme;
-  
-        State.beforeDailyPrefs = null;
       }
-  
+    
+      State.beforeDailyPrefs = null;
+    
       buildPool();
       if (!State.hasNoItem) {
         setCurrentItem(pickRandomDifferentText(), { daily: false });
       }
       updateMetaInfo();
-  
+    
       persistPrefsNow();
     }
+
   
     reloadAllRankings();
   });
@@ -2379,6 +2394,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
