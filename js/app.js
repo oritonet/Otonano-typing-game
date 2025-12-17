@@ -1746,11 +1746,35 @@ function bindTypingButtons() {
   });
 }
 
+function syncRankDifficultyFromPractice(diff) {
+  if (diff !== "easy" && diff !== "normal" && diff !== "hard") return;
+
+  // 既に同じなら何もしない
+  if (State.activeRankDiff === diff) return;
+
+  State.activeRankDiff = diff;
+
+  // ランキング側タブの active 表示を同期
+  if (diffTabsUnified) {
+    const buttons = diffTabsUnified.querySelectorAll("[data-diff]");
+    buttons.forEach(b =>
+      b.classList.toggle("active", b.dataset.diff === diff)
+    );
+  }
+
+  // 成績・分析を即更新
+  reloadAllRankings();
+  loadMyAnalytics();
+}
 
 function bindPracticeFilters() {
   on(difficultyEl, "change", () => {
+    const diff = getPracticeDifficulty();
+  
+    // ★ 練習 → 成績・分析 のみ同期
+    syncRankDifficultyFromPractice(diff);
+  
     if (State.daily.enabled) {
-      // 今日の課題中：難度変更→固定長更新→課題更新
       enableDailyTask();
     } else {
       buildPool();
@@ -1758,7 +1782,7 @@ function bindPracticeFilters() {
         setCurrentItem(pickRandomDifferentText(), { daily: false });
       }
       updateMetaInfo();
-      persistPrefsNow(); // ★追加
+      persistPrefsNow();
     }
   });
 
@@ -2227,6 +2251,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
