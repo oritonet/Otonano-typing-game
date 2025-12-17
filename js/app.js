@@ -1745,12 +1745,12 @@ async function loadPendingRequests() {
           ownerUid: State.authUser.uid,
           ownerUserName: userMgr.getCurrentUserName()
         });
-        await refreshMyGroups();
+        await loadPendingRequests();
       });
 
       ng.addEventListener("click", async () => {
         await groupSvc.rejectMember({ requestId: r.id });
-        await refreshMyGroups();
+        await loadPendingRequests();
       });
 
       li.appendChild(nameSpan);
@@ -2402,6 +2402,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
