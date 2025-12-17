@@ -1861,8 +1861,13 @@ function bindTypingButtons() {
   const startSequence = async () => {
     if (!inputEl || !canStartNow()) return;
     
-    // ★② iPhone対策：ユーザー操作中に focus してキーボードを出す
+    // ★② 入力欄を有効化
     inputEl.disabled = false;
+  
+    // ★③ Android対策：value を触る（これが決定打）
+    inputEl.value = "";
+  
+    // ★④ ユーザー操作中に focus（iOS / Android 両対応）
     inputEl.focus({ preventScroll: true });
     
     // ★ スタート押下時に見本文を画面上へ
@@ -2481,6 +2486,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
