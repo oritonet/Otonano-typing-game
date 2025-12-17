@@ -203,6 +203,7 @@ async function submitScoreDoc({
 
 // userName切替時：グループSelect即更新 + ランキング更新
 userMgr.onUserChanged(async () => {
+  if (isBooting) return; // ★初期化中はここで止める
   // ★ ユーザーごとの前回状態を復元
   const userName = currentUserNameSafe();
   const prefs = loadPrefsOf(userName);
@@ -263,6 +264,8 @@ async function filterRowsByExistingUsers(db, rows) {
 
   return rows.filter(r => alive.has(r.personalId));
 }
+
+let isBooting = true; // ★起動中は true
 
 
 /* =========================================================
@@ -2357,15 +2360,20 @@ engine.attach();
   await loadMyAnalytics();
 
 
-  if (!State.hasNoItem) {
-    setCurrentItem(pickRandomDifferentText(), { daily: false });
-  }
-  updateMetaInfo();
-  syncDailyInfoLabel();
+  //if (!State.hasNoItem) {
+    //setCurrentItem(pickRandomDifferentText(), { daily: false });
+  //}
+  //updateMetaInfo();
+  //syncDailyInfoLabel();
 
   // 初回ランキング
-  await reloadAllRankings();
-  await loadMyAnalytics();
+ //await reloadAllRankings();
+ //await loadMyAnalytics();
+
+  // ★ここまで来たら初期描画が完了している
+  isBooting = false;
+  document.body.classList.remove("preload");
+
 }
 
 /* =========================================================
@@ -2394,9 +2402,10 @@ onAuthStateChanged(auth, async (user) => {
 /* =========================================================
    初期描画完了後に表示（ガタつき防止）
 ========================================================= */
-window.addEventListener("load", () => {
-  document.body.classList.remove("preload");
-});
+//window.addEventListener("load", () => {
+  //document.body.classList.remove("preload");
+//});
+
 
 
 
