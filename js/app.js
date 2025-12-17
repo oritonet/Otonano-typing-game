@@ -179,7 +179,6 @@ async function submitScoreDoc({
       uid,
       userName,            // 表示用
       cpm,
-      rank,
       timeSec,
       difficulty,
       lengthGroup,
@@ -2434,6 +2433,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
