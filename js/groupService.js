@@ -107,19 +107,26 @@ export class GroupService {
   /* =========================
      グループ検索
   ========================= */
-  async searchGroupsByName(nameRaw) {
-    const name = (nameRaw || "").toString().trim();
-    if (!name) return [];
-
+  async searchGroupsByNamePrefix(prefixRaw) {
+    const prefix = (prefixRaw || "").toString().trim();
+    if (!prefix) return [];
+  
+    const end = prefix + "\uf8ff";
+  
     const q = query(
       collection(this.db, "groups"),
-      where("name", "==", name),
+      where("name", ">=", prefix),
+      where("name", "<=", end),
       limit(10)
     );
-
+  
     const snap = await getDocs(q);
-    return snap.docs.map(d => ({ groupId: d.id, ...(d.data() || {}) }));
+    return snap.docs.map(d => ({
+      groupId: d.id,
+      ...(d.data() || {})
+    }));
   }
+
 
   /* =========================
      参加申請（ID固定）
@@ -305,6 +312,7 @@ export class GroupService {
     const snap = await getDocs(q);
     return new Set(snap.docs.map(d => d.data().groupId));
   }
+
 
 
 
