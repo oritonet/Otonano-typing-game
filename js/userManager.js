@@ -43,6 +43,8 @@ export class UserManager {
     this._authUid = "";
     this._listeners = new Set();
 
+    this.groupSvc = groupSvc || null;
+
     this._bindEvents();
   }
 
@@ -372,6 +374,7 @@ export class UserManager {
     if (personalId) localStorage.removeItem(`currentGroupId_v1:${personalId}`);
   }
 }
+
 
 
 
