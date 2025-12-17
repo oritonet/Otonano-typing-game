@@ -2143,6 +2143,15 @@ function bindGroupUI() {
   
         on(btn, "click", async () => {
           try {
+            const already = await groupSvc.isAlreadyMember({
+              groupId: g.groupId,
+              personalId: userMgr.getCurrentPersonalId()
+            });
+            if (already) {
+              alert("すでにこのグループに参加しています。");
+              return;
+            }
+            
             await groupSvc.requestJoin({
               groupId: g.groupId,
               personalId: userMgr.getCurrentPersonalId(),
@@ -2417,6 +2426,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
