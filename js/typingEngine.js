@@ -4,6 +4,7 @@
 // ・CPM = 文章長 ÷ 完了時間
 // ・スタート前は index.html の data-guide を表示（上揃え・横中央）
 // ・カウントダウン時のみ上下中央
+import { rankByCPM } from "./rankUtil.js";
 const START_GUIDE_TEXT = "スタートボタン or Spaceキーで入力開始";
 export class TypingEngine {
   constructor(opts = {}) {
@@ -231,49 +232,18 @@ export class TypingEngine {
     const cpm = Math.round(len / minutes);
     const kpm = Math.round((keystrokes || 0) / minutes);
 
+    const difficulty = this.targetMeta?.difficulty || "normal";
+    const rank = rankByCPM(cpm, difficulty);
+    
     return {
       cpm,
-      rank: this.calcRank(cpm, this.meta?.difficulty),
+      rank, // ★ 表示用にその場で算出するだけ
       timeSec: Math.round(timeSec * 1000) / 1000,
       length: len,
       kpm,
-      seconds: Math.round(timeSec * 1000) / 1000 // 互換用
+      seconds: Math.round(timeSec * 1000) / 1000
     };
   }
-
-  // typingEngine.js に追加/置換
-  calcRank(cpm, difficulty = "normal") {
-    const base = Number(cpm) || 0;
-  
-    // 難易度補正（easyは厳しめ / hardは優しめ）
-    const k =
-      difficulty === "easy" ? 1.05 :
-      difficulty === "hard" ? 0.92 : 1.0;
-  
-    const v = base / k;
-  
-    // 下から順に「到達ライン」。ここを調整すれば難易度感が変わる
-    const thresholds = [
-      ["G-", 0],   ["G", 7],    ["G+", 14],
-      ["F-", 21],  ["F", 28],   ["F+", 35],
-      ["E-", 42],  ["E", 49],   ["E+", 56],
-      ["D-", 63],  ["D", 70],   ["D+", 77],
-      ["C-", 84],  ["C", 91],   ["C+", 98],
-      ["B-", 105], ["B", 112],  ["B+", 119],
-      ["A-", 126], ["A", 133],  ["A+", 140],
-      ["S-", 147], ["S", 154],  ["S+", 161],
-      ["SS-", 168],["SS", 175], ["SS+", 182],
-      ["SSS-", 189],["SSS", 196],["SSS+", 203],
-    ];
-  
-    let r = "G-";
-    for (const [name, need] of thresholds) {
-      if (v >= need) r = name;
-      else break;
-    }
-    return r;
-  }
-
 
   /* =========================
      見本文レンダリング
@@ -353,6 +323,7 @@ export class TypingEngine {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
+
 
 
 
