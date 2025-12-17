@@ -123,6 +123,7 @@ const analyticsTitle = $("analyticsTitle");
 const analyticsLabel = $("analyticsLabel");
 const bestByDifficultyUL = $("bestByDifficulty");
 const myRecentUL = $("myRecent");
+const scoreTrendCanvas = $("scoreTrendCanvas");
 
 // difficulty tabs (ranking side)
 const diffTabsUnified = $("diffTabsUnified");
@@ -1385,6 +1386,7 @@ async function loadMyAnalytics() {
 
   const snap = await getDocs(q);
   const rows = snap.docs.map(d => d.data());
+  drawScoreTrend(rows);   // ★ 追加
 
   if (rows.length === 0) {
     bestByDifficulty.textContent = "まだ記録がありません。";
@@ -2157,6 +2159,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error("initApp error:", e);
   }
 });
+
 
 
 
