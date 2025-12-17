@@ -429,16 +429,20 @@
       visibility: hidden;
     }
 
-    #text {
-      padding-left: 0;
-      padding-right: 0;
+    /* 見本文と入力欄の横位置を完全一致させる */
+    #text,
+    #input {
+      box-sizing: border-box;
+      padding-left: 16px;
+      padding-right: 16px;
+      line-height: 2.0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
     }
     
+    /* textarea 特有のスクロールバー分を常に確保 */
     #input {
-      padding-left: 0;
-      padding-right: 0;
+      overflow-y: scroll;
     }
-
     
   </style>
 </head>
@@ -664,6 +668,7 @@
   <script type="module" src="./js/app.js"></script>
 </body>
 </html>
+
 
 
 
