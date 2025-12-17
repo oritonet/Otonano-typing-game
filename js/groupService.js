@@ -68,40 +68,41 @@ export class GroupService {
       collection(this.db, "groupMembers"),
       where("personalId", "==", personalId)
     );
-
+  
     const snap = await getDocs(q);
     const rows = [];
-
+  
     for (const d of snap.docs) {
       const m = d.data();
       const groupId = m.groupId;
-
+  
       let gName = "(no name)";
       let ownerUid = null;
-      //let ownerUserName = null;
-
+      let ownerPersonalId = null;
+  
       try {
         const gSnap = await getDoc(doc(this.db, "groups", groupId));
         if (gSnap.exists()) {
           const g = gSnap.data();
           gName = g.name ?? gName;
           ownerUid = g.ownerUid ?? null;
-          //ownerUserName = g.ownerUserName ?? null;
+          ownerPersonalId = g.ownerPersonalId ?? null;
         }
       } catch {}
-
+  
       rows.push({
         groupId,
         name: gName,
         role: m.role || "member",
         ownerUid,
-        //ownerUserName
+        ownerPersonalId
       });
     }
-
+  
     rows.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
     return rows;
   }
+
 
   /* =========================
      グループ検索
@@ -123,8 +124,10 @@ export class GroupService {
   /* =========================
      参加申請（ID固定）
   ========================= */
-  async requestJoin({ groupId, personalId, uid, userName, targetOwnerUserName }) {
-    if (!groupId || !personalId) throw new Error("requestJoin: params invalid");
+  async requestJoin({ groupId, personalId, uid }) {
+    if (!groupId || !personalId) {
+      throw new Error("requestJoin: params invalid");
+    }
   
     const reqRef = doc(
       this.db,
@@ -136,15 +139,19 @@ export class GroupService {
       groupId,
       personalId,
       uid,
-      targetOwnerUserName,
       createdAt: serverTimestamp()
     });
-
-    const memRef = doc(this.db, "groupMembers", memberIdOf(personalId, groupId));
+  
+    const memRef = doc(
+      this.db,
+      "groupMembers",
+      memberIdOf(personalId, groupId)
+    );
     if ((await getDoc(memRef)).exists()) {
       throw new Error("already member");
     }
   }
+
 
   /* =========================
      承認待ち一覧
@@ -180,7 +187,7 @@ export class GroupService {
   /* =========================
      承認
   ========================= */
-  async approveMember({ requestId, ownerUid, ownerUserName }) {
+  async approveMember({ requestId, ownerUid }) {
     if (!requestId) throw new Error("approveMember: requestId required");
   
     const reqRef = doc(this.db, "groupJoinRequests", requestId);
@@ -188,7 +195,7 @@ export class GroupService {
     if (!reqSnap.exists()) throw new Error("申請が存在しません");
   
     const r = reqSnap.data();
-    const { groupId, personalId, uid, userName } = r;
+    const { groupId, personalId, uid } = r;
   
     const memRef = doc(
       this.db,
@@ -203,7 +210,6 @@ export class GroupService {
       uid,
       role: "member",
       approvedByUid: ownerUid || null,
-      approvedByUserName: ownerUserName || null,
       createdAt: serverTimestamp()
     });
     batch.delete(reqRef);
@@ -304,6 +310,7 @@ export class GroupService {
   }
 
 }
+
 
 
 
