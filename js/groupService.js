@@ -293,7 +293,21 @@ export class GroupService {
       await batch.commit();
     }
   }
+
+  async getMyPendingGroupIds(personalId) {
+    if (!personalId) return new Set();
+  
+    const q = query(
+      collection(this.db, "groupJoinRequests"),
+      where("personalId", "==", personalId)
+    );
+  
+    const snap = await getDocs(q);
+    return new Set(snap.docs.map(d => d.data().groupId));
+  }
+
 }
+
 
 
 
