@@ -22,7 +22,7 @@ import { UserManager } from "./userManager.js";
 import { TypingEngine } from "./typingEngine.js";
 import { RankingService } from "./ranking.js";
 import { GroupService } from "./groupService.js";
-import { rankByCPM } from "./rankUtil.js";
+import { rankByCPM, rankIndex } from "./rankUtil.js";
 
 /* =========================================================
    Firebase init
@@ -2396,6 +2396,7 @@ onAuthStateChanged(auth, async (user) => {
 window.addEventListener("load", () => {
   document.body.classList.remove("preload");
 });
+
 
 
 
