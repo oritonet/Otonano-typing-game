@@ -146,7 +146,7 @@ const pendingList = $("pendingList");
    Services
 ========================================================= */
 // ===== スマホ入力時：見本文を画面上へスクロール（少し下に余白）=====
-function scrollTextToTopOnMobile(offsetPx = 40) {
+function scrollTextToTopOnMobile(offsetPx = 50) {
   if (!textEl) return;
 
   // スマホ判定（iOS / Android）
@@ -201,7 +201,7 @@ async function startTypingByUserAction() {
 
   isCountingDown = true;
 
-  scrollTextToTopOnMobile(40);
+  scrollTextToTopOnMobile(50);
 
   inputEl.readOnly = false;
   inputEl.disabled = false;
@@ -2582,6 +2582,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
