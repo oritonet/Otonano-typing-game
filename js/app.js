@@ -1688,7 +1688,7 @@ async function refreshMyGroups() {
   setSavedGroupIdFor(personalId, nextGroupId);
 
   await onGroupChanged();
-  
+
   if (State.currentGroupId && State.currentGroupRole === "owner") {
   }
 }
@@ -1781,9 +1781,18 @@ async function loadPendingRequests() {
   }
 }
 
+async function resolveCurrentGroupRole() {
+  if (!State.currentGroupId) return null;
+  const pid = userMgr.getCurrentPersonalId();
+  if (!pid) return null;
 
+  const ref = doc(db, "groupMembers", `${pid}::${State.currentGroupId}`);
+  const snap = await getDoc(ref);
+  return snap.exists() ? snap.data().role : null;
+}
 
 async function onGroupChanged() {
+  State.currentGroupRole = await resolveCurrentGroupRole();
   if (!currentGroupSelect) return;
 
   const sel = currentGroupSelect.selectedOptions[0];
@@ -2478,6 +2487,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
