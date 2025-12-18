@@ -296,8 +296,8 @@ export class TypingEngine {
   
     el.disabled = false;    // ←タップできる状態にする
     el.readOnly = true;     // ←入力だけ禁止（タップ/フォーカスは可能）
-    el.classList.remove("countdown");
-    el.classList.add("input-guide");
+    el.classList.add("input-guide-before");
+    el.classList.remove("input-guide-after");
   
     // ★ スタート前専用ガイドを value に入れる
     el.value = START_GUIDE_TEXT;
@@ -328,6 +328,7 @@ export class TypingEngine {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
+
 
 
 
