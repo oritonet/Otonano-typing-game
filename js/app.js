@@ -1714,12 +1714,6 @@ async function refreshMyGroups() {
   await onGroupChanged();
 }
 
-
-async function updateCurrentGroupRoleUI() {
-  // 何もしない
-}
-
-
 async function loadPendingRequests() {
   if (!pendingList) return;
   pendingList.innerHTML = "";
@@ -1741,14 +1735,38 @@ async function loadPendingRequests() {
       return;
     }
 
-    // ★★★ ここが重要：同一人物をまとめる ★★★
-    const map = new Map(); // key = uid::userName
     for (const r of reqs) {
-      const key = r.personalId;
-      if (!map.has(key)) {
-        map.set(key, r);
-      }
+      const li = document.createElement("li");
+      li.style.display = "flex";
+      li.style.gap = "8px";
+      li.style.alignItems = "center";
+    
+      const nameSpan = document.createElement("span");
+      nameSpan.textContent = await resolveUserName(db, r.personalId);
+    
+      const ok = document.createElement("button");
+      ok.textContent = "承認";
+    
+      const ng = document.createElement("button");
+      ng.textContent = "却下";
+    
+      ok.onclick = async () => {
+        await groupSvc.approveMember({
+          requestId: r.id,
+          ownerUid: State.authUser.uid
+        });
+        await onGroupChanged();   // ★ 必須
+      };
+    
+      ng.onclick = async () => {
+        await groupSvc.rejectMember({ requestId: r.id });
+        await onGroupChanged();   // ★ 必須
+      };
+    
+      li.append(nameSpan, ok, ng);
+      pendingList.appendChild(li);
     }
+
 
     for (const r of map.values()) {
       const li = document.createElement("li");
@@ -1771,7 +1789,8 @@ async function loadPendingRequests() {
           requestId: r.id,
           ownerUid: State.authUser.uid
         });
-        await updateCurrentGroupRoleUI();
+        await onGroupChanged();
+
       });
 
       ng.addEventListener("click", async () => {
@@ -2516,6 +2535,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
