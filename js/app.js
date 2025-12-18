@@ -171,6 +171,7 @@ async function startTypingByUserAction() {
 
   // textarea を入力可能にして focus
   inputEl.readOnly = false;
+  inputEl.disabled = false;   // ★ 念のため明示
   inputEl.value = "";
   inputEl.focus({ preventScroll: true });
 
@@ -2515,6 +2516,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
