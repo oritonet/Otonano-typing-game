@@ -1888,12 +1888,12 @@ function bindTextareaStart() {
 
     startedByTap = true;
 
-    // 見本文を上へ（スマホ）
-    scrollTextToTopOnMobile();
-
     // Android 安定化（編集操作として認識させる）
     inputEl.disabled = false;
     inputEl.value = "";
+
+    // 見本文を上へ（スマホ）
+    scrollTextToTopOnMobile();
 
     // カウントダウン → 開始
     await engine.showCountdownInTextarea(3);
@@ -2453,6 +2453,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
