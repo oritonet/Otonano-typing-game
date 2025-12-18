@@ -481,7 +481,6 @@ function collectCurrentPrefs() {
     category: (categoryEl?.value ?? "all").toString(),
     theme: (themeEl?.value ?? "all").toString(),
     dailyTaskEnabled: !!dailyTaskEl?.checked,
-    activeRankDiff: (State.activeRankDiff ?? "normal").toString()
     // グループは既存の currentGroupId_v1:${userName} で別保存なのでここでは持たない
   };
 }
@@ -2541,6 +2540,10 @@ engine.attach();
   await reloadAllRankings();
   await loadMyAnalytics();
 
+  // ★ 起動完了後（isBooting を false にする直前 or 直後）
+  const diff = getPracticeDifficulty();
+  syncRankDifficultyFromPractice(diff);
+
   // ★ここまで来たら初期描画が完了している
   isBooting = false;
   document.body.classList.remove("preload");
@@ -2588,6 +2591,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
