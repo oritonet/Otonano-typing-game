@@ -69,7 +69,8 @@ export class TypingEngine {
       this._restoreBasePadding();
 
       this.inputEl.value = "";
-      this.inputEl.disabled = true;
+      this.inputEl.disabled = false; // ← true をやめる
+      this.inputEl.readOnly = true;  // ←開始前は readOnly
     }
 
     if (this.resultEl) this.resultEl.textContent = "";
@@ -293,7 +294,8 @@ export class TypingEngine {
     const el = this.inputEl;
     this._ensureBasePadding();
   
-    el.disabled = true;
+    el.disabled = false;    // ←タップできる状態にする
+    el.readOnly = true;     // ←入力だけ禁止（タップ/フォーカスは可能）
     el.classList.remove("countdown");
     el.classList.add("input-guide");
   
@@ -326,6 +328,7 @@ export class TypingEngine {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
+
 
 
 
