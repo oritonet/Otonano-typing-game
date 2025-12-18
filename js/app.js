@@ -163,24 +163,36 @@ function scrollTextToTopOnMobile() {
 }
 
 async function startTypingByUserAction() {
-  // すでに開始 or 終了済みは無視
   if (engine.started || engine.ended) return;
 
-  // 見本文を上へ（スマホ）
   scrollTextToTopOnMobile();
 
-  // textarea を入力可能にして focus
   inputEl.readOnly = false;
-  inputEl.disabled = false;   // ★ 念のため明示
+  inputEl.disabled = false;
   inputEl.value = "";
   inputEl.focus({ preventScroll: true });
 
-  // カウントダウン
-　await showCountdownOverlay(3);
+  await showCountdownOverlay(3);
 
-  // 開始
-  engine.startNow();
+  // ★ 最初の実入力でガイド解除 → 正式開始
+  const onFirstInput = () => {
+    inputEl.removeEventListener("input", onFirstInput);
+
+    // ★ ガイド用クラスをすべて外す（重要）
+    inputEl.classList.remove("input-guide-before");
+    inputEl.classList.remove("input-guide-after");
+
+    // ★ 通常入力状態に戻す
+    inputEl.style.textAlign = "";
+    inputEl.style.color = "";
+    inputEl.readOnly = false;
+
+    engine.startNow();
+  };
+
+  inputEl.addEventListener("input", onFirstInput);
 }
+
 
 
 const rankingSvc = new RankingService({ db });
@@ -2508,6 +2520,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
