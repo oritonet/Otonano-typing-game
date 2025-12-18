@@ -186,7 +186,7 @@ async function startTypingByUserAction() {
   requestAnimationFrame(() => {
     inputEl.focus({ preventScroll: true });
     try { inputEl.setSelectionRange(0, 0); } catch (_) {}
-    inputEl.readOnly = true;
+    // readOnly は true にしない
   });
 
   // ★ 最初の実入力でガイド解除 → 正式開始
@@ -197,6 +197,8 @@ async function startTypingByUserAction() {
     inputEl.classList.remove("input-guide-after");
 
     inputEl.value = "";
+    inputEl.style.textAlign = "";
+    inputEl.style.color = "";
     inputEl.readOnly = false;
 
     isCountingDown = false;
@@ -205,6 +207,7 @@ async function startTypingByUserAction() {
 
   inputEl.addEventListener("input", onFirstInput);
 }
+
 
 const rankingSvc = new RankingService({ db });
 const groupSvc = new GroupService(db);
@@ -2544,6 +2547,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
