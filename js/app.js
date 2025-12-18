@@ -1818,7 +1818,7 @@ async function onGroupChanged() {
 
   State.currentGroupId = nextGroupId;
 
-  // ★ role は必ず Firestore からのみ決定
+  // role は Firestore からのみ決定
   State.currentGroupRole = await resolveCurrentGroupRole();
 
   setSavedGroupIdFor(userMgr.getCurrentPersonalId(), State.currentGroupId);
@@ -1840,18 +1840,16 @@ async function onGroupChanged() {
         : "none";
   }
 
+  // ★ ここは1回だけ
   if (State.currentGroupId && State.currentGroupRole === "owner") {
     await loadPendingRequests();
-  } if (State.currentGroupId && State.currentGroupRole === "owner") {
-    await loadPendingRequests();
   } else {
-    // owner でない場合は単にクリアするだけ
     if (pendingList) pendingList.innerHTML = "";
   }
 
-
   await loadGroupRanking();
 }
+
 
 
 /* =========================================================
@@ -2534,6 +2532,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
