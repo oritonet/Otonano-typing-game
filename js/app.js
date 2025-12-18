@@ -1660,20 +1660,24 @@ async function loadMyAnalytics() {
    Group UI
 ========================================================= */
 async function refreshMyGroups() {
+  // Auth 未確定なら何もしない
   if (!State.authUser) return;
   if (!currentGroupSelect) return;
 
-  const uid = State.authUser.uid;
+  // ★ personalId 未確定なら何もしない（これが最重要）
   const personalId = userMgr.getCurrentPersonalId();
+  if (!personalId) return;
 
   let groups = [];
   try {
-    groups = await groupSvc.getMyGroups(userMgr.getCurrentPersonalId());
+    // ★ personalId を変数から渡す（再取得しない）
+    groups = await groupSvc.getMyGroups(personalId);
   } catch (e) {
     console.error("getMyGroups failed:", e);
     groups = [];
   }
 
+  // ここから先は「personalId が確定している時だけ」実行される
   currentGroupSelect.innerHTML = "";
 
   // empty option
@@ -1694,23 +1698,21 @@ async function refreshMyGroups() {
   const saved = getSavedGroupIdFor(personalId);
   const optionValues = Array.from(currentGroupSelect.options).map(o => o.value);
 
-  let nextGroupId = null;
+  let nextGroupId = "";
   if (saved && optionValues.includes(saved)) {
     nextGroupId = saved;
   } else if (groups.length > 0) {
     nextGroupId = groups[0].groupId;
   }
 
-  currentGroupSelect.value = nextGroupId || "";
+  currentGroupSelect.value = nextGroupId;
   State.currentGroupId = nextGroupId;
 
   setSavedGroupIdFor(personalId, nextGroupId);
 
   await onGroupChanged();
-
-  if (State.currentGroupId && State.currentGroupRole === "owner") {
-  }
 }
+
 
 async function updateCurrentGroupRoleUI() {
   // 何もしない
@@ -2513,6 +2515,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
