@@ -163,7 +163,10 @@ function scrollTextToTopOnMobile() {
 }
 
 async function startTypingByUserAction() {
-  if (engine.started || engine.ended) return;
+  // ★ 再入防止（最重要）
+  if (isCountingDown || engine.started || engine.ended) return;
+
+  isCountingDown = true; // ★ カウントダウン開始
 
   scrollTextToTopOnMobile();
 
@@ -174,42 +177,50 @@ async function startTypingByUserAction() {
 
   await showCountdownOverlay(3);
 
-  // ★ カウントダウン後ガイド表示
-  inputEl.readOnly = false;                 // ← いったん入力可能に
+  // ★ カウントダウン後ガイド
+  inputEl.readOnly = false;
   inputEl.value = "入力してください。";
-  
   inputEl.classList.remove("input-guide-before");
   inputEl.classList.add("input-guide-after");
-  
-  // ★ キャレットを確実に立てる
+
   requestAnimationFrame(() => {
     inputEl.focus({ preventScroll: true });
-  
-    // キャレットを先頭に明示
-    try {
-      inputEl.setSelectionRange(0, 0);
-    } catch (_) {}
-  
-    // ★ 直後に readOnly に戻す（入力はまだ禁止）
+    try { inputEl.setSelectionRange(0, 0); } catch (_) {}
     inputEl.readOnly = true;
   });
 
-
-  // ★ 最初の実入力でガイド解除 → 正式開始
   const onFirstInput = () => {
     inputEl.removeEventListener("input", onFirstInput);
 
-    // ★ ガイド用クラスをすべて外す（重要）
     inputEl.classList.remove("input-guide-before");
     inputEl.classList.remove("input-guide-after");
 
-    // ★ 通常入力状態に戻す
-    inputEl.style.textAlign = "";
-    inputEl.style.color = "";
+    inputEl.value = "";
     inputEl.readOnly = false;
 
+    isCountingDown = false; // ★ 解除
     engine.startNow();
   };
+
+  inputEl.addEventListener("input", onFirstInput);
+}
+
+
+// ★ 最初の実入力でガイド解除 → 正式開始
+const onFirstInput = () => {
+  inputEl.removeEventListener("input", onFirstInput);
+
+  // ★ ガイド用クラスをすべて外す（重要）
+  inputEl.classList.remove("input-guide-before");
+  inputEl.classList.remove("input-guide-after");
+
+  // ★ 通常入力状態に戻す
+  inputEl.style.textAlign = "";
+  inputEl.style.color = "";
+  inputEl.readOnly = false;
+
+  engine.startNow();
+};
 
   inputEl.addEventListener("input", onFirstInput);
 }
@@ -373,6 +384,7 @@ let isBooting = true; // ★起動中は true
   document.documentElement.style.setProperty("--sbw", sbw + "px");
 })();
 
+let isCountingDown = false;
 
 
 /* =========================================================
@@ -2540,6 +2552,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
