@@ -314,7 +314,14 @@ async function startTypingByUserAction() {
   // IME用（確定時）
   inputEl.addEventListener("compositionend", beginRealTypingOnceByCompositionEnd, { once: true });
 
-
+  // ★ IME変換開始時点でガイドだけ解除（色対策）
+  const clearGuideOnCompositionStart = () => {
+    inputEl.placeholder = "";
+    inputEl.classList.remove("input-guide-after");
+  };
+  
+  // once にはしない（複数回変換に対応）
+  inputEl.addEventListener("compositionstart", clearGuideOnCompositionStart);
 
 }
 
@@ -2666,6 +2673,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
