@@ -176,7 +176,7 @@ async function startTypingByUserAction() {
   inputEl.focus({ preventScroll: true });
 
   // カウントダウン
-  await engine.showCountdownInTextarea(3);
+　await showCountdownOverlay(3);
 
   // 開始
   engine.startNow();
@@ -2533,6 +2533,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
