@@ -248,6 +248,11 @@ async function startTypingByUserAction() {
   inputEl.readOnly = false;
   inputEl.disabled = false;
   inputEl.value = "";
+
+  // ★ 追加：カウントダウン開始と同時に「初期ガイド」を消す
+  inputEl.placeholder = "";
+  inputEl.classList.remove("input-guide-before");
+  
   inputEl.focus({ preventScroll: true });
 
   await showCountdownOverlay(3);
@@ -2654,6 +2659,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
