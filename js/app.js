@@ -166,7 +166,7 @@ async function startTypingByUserAction() {
   // ★ 再入防止（最重要）
   if (isCountingDown || engine.started || engine.ended) return;
 
-  isCountingDown = true; // ★ カウントダウン開始
+  isCountingDown = true;
 
   scrollTextToTopOnMobile();
 
@@ -189,6 +189,7 @@ async function startTypingByUserAction() {
     inputEl.readOnly = true;
   });
 
+  // ★ 最初の実入力でガイド解除 → 正式開始
   const onFirstInput = () => {
     inputEl.removeEventListener("input", onFirstInput);
 
@@ -198,34 +199,12 @@ async function startTypingByUserAction() {
     inputEl.value = "";
     inputEl.readOnly = false;
 
-    isCountingDown = false; // ★ 解除
+    isCountingDown = false;
     engine.startNow();
   };
 
   inputEl.addEventListener("input", onFirstInput);
-
-
-
-// ★ 最初の実入力でガイド解除 → 正式開始
-const onFirstInput = () => {
-  inputEl.removeEventListener("input", onFirstInput);
-
-  // ★ ガイド用クラスをすべて外す（重要）
-  inputEl.classList.remove("input-guide-before");
-  inputEl.classList.remove("input-guide-after");
-
-  // ★ 通常入力状態に戻す
-  inputEl.style.textAlign = "";
-  inputEl.style.color = "";
-  inputEl.readOnly = false;
-
-  engine.startNow();
-};
-
-  inputEl.addEventListener("input", onFirstInput);
-
-
-
+}
 
 const rankingSvc = new RankingService({ db });
 const groupSvc = new GroupService(db);
@@ -2565,6 +2544,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
