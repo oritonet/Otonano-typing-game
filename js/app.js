@@ -470,6 +470,12 @@ let isBooting = true; // ★起動中は true
 
 let isCountingDown = false;
 
+// ===== タッチスワイプ誤爆防止 =====
+let isTouchSwiping = false;
+let touchStartX = 0;
+let touchStartY = 0;
+const SWIPE_THRESHOLD = 10; // px
+
 
 /* =========================================================
    State
@@ -2648,6 +2654,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
