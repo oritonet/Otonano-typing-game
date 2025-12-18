@@ -162,6 +162,26 @@ function scrollTextToTopOnMobile() {
   }, 50);
 }
 
+async function startTypingByUserAction() {
+  // すでに開始 or 終了済みは無視
+  if (engine.started || engine.ended) return;
+
+  // 見本文を上へ（スマホ）
+  scrollTextToTopOnMobile();
+
+  // textarea を入力可能にして focus
+  inputEl.readOnly = false;
+  inputEl.value = "";
+  inputEl.focus({ preventScroll: true });
+
+  // カウントダウン
+  await engine.showCountdownInTextarea(3);
+
+  // 開始
+  engine.startNow();
+}
+
+
 const rankingSvc = new RankingService({ db });
 const groupSvc = new GroupService(db);
 
@@ -1916,48 +1936,29 @@ const AFTER_COUNTDOWN_GUIDE_TEXT = "入力してください。";
 function bindTextareaStart() {
   if (!inputEl) return;
 
-  const onTapStart = async () => {
-    if (engine.started || engine.ended) return;
-
-    // ① フリックを出す（最優先）
-    inputEl.readOnly = false;
-    inputEl.value = "";
-    inputEl.focus({ preventScroll: true });
-
-    // ② フリック後に本文スクロール
-    scrollTextToTopOnMobile();
-
-    // ③ カウントダウン（overlay）
-    await showCountdownOverlay(3);
-    
-    // ④ カウントダウン終了後ガイド
-    inputEl.readOnly = true;
-    inputEl.value = AFTER_COUNTDOWN_GUIDE_TEXT;
-    
-    // ★ クラス切り替え
-    inputEl.classList.remove("input-guide-before");
-    inputEl.classList.add("input-guide-after");
-
-    inputEl.focus({ preventScroll: true });
-
-    // ⑤ 最初の入力で開始
-    const onFirstInput = () => {
-      inputEl.removeEventListener("input", onFirstInput);
-      inputEl.classList.remove("input-guide-after");
-      inputEl.value = "";
-      inputEl.readOnly = false;
-
-      engine.startNow();
-    };
-    inputEl.addEventListener("input", onFirstInput);
-  };
-
-  inputEl.addEventListener("pointerdown", onTapStart);
+  inputEl.addEventListener(
+    "pointerdown",
+    () => {
+      startTypingByUserAction();
+    },
+    { passive: true }
+  );
 }
 
+function bindSpaceKeyStart() {
+  window.addEventListener("keydown", (e) => {
+    // IME変換中は無視
+    if (e.isComposing) return;
 
+    // すでに開始 or 終了済みは無視
+    if (engine.started || engine.ended) return;
 
-
+    if (e.code === "Space") {
+      e.preventDefault(); // ページスクロール防止
+      startTypingByUserAction();
+    }
+  });
+}
 
 
 function bindPracticeFilters() {
@@ -2455,6 +2456,7 @@ engine.attach();
   bindPracticeFilters();
   bindRankDiffTabs();
   bindTextareaStart(); 
+  bindSpaceKeyStart();
   bindGroupUI();
   bindUserSwitchHooks();
   bindToggle("toggleUserPanel", "userPanel");
@@ -2511,6 +2513,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
