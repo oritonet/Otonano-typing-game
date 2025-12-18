@@ -183,14 +183,20 @@ export class TypingEngine {
 
     // IME 変換開始
     this.inputEl.addEventListener("compositionstart", () => {
-    this.isComposing = true;
+      // ★ カウントダウン中（readOnly）は無視
+      if (this.inputEl.readOnly) return;
+    
+      this.isComposing = true;
     });
-
+    
     // IME 変換確定
     this.inputEl.addEventListener("compositionend", () => {
+      // ★ カウントダウン中（readOnly）は無視
+      if (this.inputEl.readOnly) return;
+    
       this.isComposing = false;
       this.lastCommittedValue = this._getCommittedValueSafe();
-
+    
       if (!this.started || this.ended) return;
     
       this._renderByCommitted(this.lastCommittedValue);
@@ -198,8 +204,10 @@ export class TypingEngine {
     });
 
 
+
     // 入力
     this.inputEl.addEventListener("input", () => {
+      if (isCountingDown) return;   // ★ 追加
       if (!this.started || this.ended) return;
     
       // ★ IME変換中は「確定済み文字」だけで描画（valueは見ない）
@@ -373,6 +381,7 @@ export class TypingEngine {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
+
 
 
 
