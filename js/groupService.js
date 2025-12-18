@@ -26,10 +26,10 @@ export class GroupService {
   /* =========================
      グループ作成（owner）
   ========================= */
-  async createGroup({ groupName, ownerPersonalId, ownerUid, ownerUserName }) {
+  async createGroup({ groupName, ownerPersonalId, ownerUid }) {
     const name = (groupName || "").toString().trim();
     if (!name) throw new Error("グループ名が空です");
-    if (!ownerPersonalId || !ownerUid || !ownerUserName) {
+    if (!ownerPersonalId || !ownerUid) {
       throw new Error("owner情報が不正です");
     }
   
@@ -44,7 +44,7 @@ export class GroupService {
     });
   
     await setDoc(
-      doc(this.db, "groupMembers", memberIdOf(ownerPersonalId, groupId)),
+      doc(this.db, "groupMembers", `${ownerPersonalId}::${groupId}`),
       {
         groupId,
         personalId: ownerPersonalId,
@@ -56,6 +56,7 @@ export class GroupService {
   
     return { groupId, name };
   }
+
 
 
   /* =========================
@@ -310,6 +311,7 @@ export class GroupService {
   }
 
 }
+
 
 
 
