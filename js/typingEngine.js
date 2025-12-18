@@ -171,14 +171,8 @@ export class TypingEngine {
 
     // IME 変換開始
     this.inputEl.addEventListener("compositionstart", () => {
-      // ★ started 前でも IME 状態だけは追う（順序問題対策）
-      this.isComposing = true;
-      this.lastCommittedValue = this._getCommittedValueSafe();
 
-      // ★ started になってからだけ見本文を更新
-      if (!this.started || this.ended) return;
-      this._renderByCommitted(this.lastCommittedValue);
-    });
+    this.isComposing = true;
 
     // IME 変換確定
     this.inputEl.addEventListener("compositionend", () => {
@@ -186,6 +180,7 @@ export class TypingEngine {
       this.lastCommittedValue = this._getCommittedValueSafe();
 
       if (!this.started || this.ended) return;
+    
       this._renderByCommitted(this.lastCommittedValue);
       this._tryFinishIfMatched();
     });
@@ -361,6 +356,7 @@ export class TypingEngine {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
+
 
 
 
