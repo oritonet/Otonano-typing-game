@@ -69,6 +69,7 @@ export class TypingEngine {
       this._restoreBasePadding();
 
       this.inputEl.value = "";
+      this.inputEl.placeholder = "";   // ★ 追加
       this.inputEl.disabled = false; // ← true をやめる
       this.inputEl.readOnly = true;  // ←開始前は readOnly
     }
@@ -94,6 +95,8 @@ export class TypingEngine {
 
     this.inputEl.disabled = false;   // ★ 無効化しない
     this.inputEl.readOnly = true;    // ★ 入力だけ禁止
+    this.inputEl.value = "";
+    this.inputEl.placeholder = "";  // ★ 追加
     this._showGuideCharInTextarea();
   }
 
@@ -139,6 +142,9 @@ export class TypingEngine {
     // ガイド・カウントダウン系クラスを外す
     this.inputEl.classList.remove("countdown", "input-guide");
     this._restoreBasePadding();
+
+    // ★ placeholder ガイドを消す
+    this._clearGuidePlaceholder();
   
     // ★ ここでは value を触らない
     this.inputEl.disabled = false;
@@ -165,8 +171,12 @@ export class TypingEngine {
 
     // IME 変換開始
     this.inputEl.addEventListener("compositionstart", () => {
+      // ★ started 前でも IME 状態だけは追う（順序問題対策）
       this.isComposing = true;
       this.lastCommittedValue = this._getCommittedValueSafe();
+
+      // ★ started になってからだけ見本文を更新
+      if (!this.started || this.ended) return;
       this._renderByCommitted(this.lastCommittedValue);
     });
 
@@ -174,9 +184,12 @@ export class TypingEngine {
     this.inputEl.addEventListener("compositionend", () => {
       this.isComposing = false;
       this.lastCommittedValue = this._getCommittedValueSafe();
+
+      if (!this.started || this.ended) return;
       this._renderByCommitted(this.lastCommittedValue);
       this._tryFinishIfMatched();
     });
+
 
     // 入力
     this.inputEl.addEventListener("input", () => {
@@ -285,26 +298,46 @@ export class TypingEngine {
     this.textEl.innerHTML = html;
   }
 
+    /* =========================
+     ガイド（placeholder 統一）
+  ========================= */
+  _setGuidePlaceholder(text, { before = false, after = false } = {}) {
+    if (!this.inputEl) return;
+    const el = this.inputEl;
+
+    // ガイドは value に入れない（IME未確定文字表示の邪魔をしない）
+    el.value = "";
+    el.placeholder = (text ?? "").toString();
+
+    el.classList.toggle("input-guide-before", !!before);
+    el.classList.toggle("input-guide-after", !!after);
+  }
+
+  _clearGuidePlaceholder() {
+    if (!this.inputEl) return;
+    this.inputEl.placeholder = "";
+    this.inputEl.classList.remove("input-guide-before", "input-guide-after");
+  }
+
+
   /* =========================
      ガイド表示（スタート前）
   ========================= */
   _showGuideCharInTextarea() {
     if (!this.inputEl) return;
-  
+
     const el = this.inputEl;
     this._ensureBasePadding();
-  
-    el.disabled = false;    // ←タップできる状態にする
-    el.readOnly = true;     // ←入力だけ禁止（タップ/フォーカスは可能）
-    el.classList.add("input-guide-before");
-    el.classList.remove("input-guide-after");
-  
-    // ★ スタート前専用ガイドを value に入れる
-    el.value = START_GUIDE_TEXT;
-  
-    // ★ 上下左右中央にする
-    this._applyVerticalCenterPadding();
+
+    el.disabled = false;
+    el.readOnly = true;
+
+    // ★ value ではなく placeholder に統一
+    this._setGuidePlaceholder(START_GUIDE_TEXT, { before: true, after: false });
+
+    this._restoreBasePadding();
   }
+
 
 
   /* =========================
@@ -328,6 +361,7 @@ export class TypingEngine {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
+
 
 
 
