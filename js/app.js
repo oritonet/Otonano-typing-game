@@ -59,6 +59,7 @@ function hide(el) {
   if (!el) return;
   el.style.display = "none"; // レイアウトから消す（余白が残らない）
 }
+
 function bindToggle(btnId, panelId) {
   const btn = $(btnId);
   const panel = $(panelId);
@@ -66,9 +67,17 @@ function bindToggle(btnId, panelId) {
 
   btn.addEventListener("click", () => {
     const open = panel.classList.toggle("open");
-    btn.textContent = open ? btn.textContent.replace("▾", "▲") : btn.textContent.replace("▲", "▾");
+    btn.textContent = open
+      ? btn.textContent.replace("▾", "▲")
+      : btn.textContent.replace("▲", "▾");
+
+    // ★ 追加：折り畳み後に見本文の基準Yを更新
+    if (textEl) {
+      textBaseY = textEl.offsetTop;
+    }
   });
 }
+
 
 
 
@@ -141,25 +150,20 @@ const deleteGroupBtn = $("deleteGroupBtn");
 const pendingBox = $("pendingBox");
 const pendingList = $("pendingList");
 
+let textBaseY = null;
 
 /* =========================================================
    Services
 ========================================================= */
 // ===== スマホ入力時：見本文を画面上へスクロール（少し下に余白）=====
 function scrollTextToTopOnMobile(offsetPx = 50) {
-  if (!textEl) return;
+  if (!textEl || textBaseY == null) return;
 
-  // スマホ判定（iOS / Android）
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   if (!isMobile) return;
 
-  // 少し遅らせて（キーボード表示後に）スクロール
   setTimeout(() => {
-    const rect = textEl.getBoundingClientRect();
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-
-    // ★ 見本文の位置 − オフセット
-    const targetY = rect.top + scrollTop - offsetPx;
+    const targetY = textBaseY - offsetPx;
 
     window.scrollTo({
       top: targetY,
@@ -167,6 +171,7 @@ function scrollTextToTopOnMobile(offsetPx = 50) {
     });
   }, 50);
 }
+
 
 
 function resetTypingUI() {
@@ -2508,6 +2513,11 @@ engine.attach();
   }
   updateMetaInfo();
   syncDailyInfoLabel();
+
+    // ★ ここで一度だけ基準Yを記録（初期化時）
+  if (textEl) {
+    textBaseY = textEl.offsetTop;
+  }
    
   bindModal();
   bindTypingButtons();
@@ -2524,17 +2534,6 @@ engine.attach();
   // 初回ランキング：activeRankDiff も復元済みの State.activeRankDiff で走る
   await reloadAllRankings();
   await loadMyAnalytics();
-
-
-  //if (!State.hasNoItem) {
-    //setCurrentItem(pickRandomDifferentText(), { daily: false });
-  //}
-  //updateMetaInfo();
-  //syncDailyInfoLabel();
-
-  // 初回ランキング
- //await reloadAllRankings();
- //await loadMyAnalytics();
 
   // ★ここまで来たら初期描画が完了している
   isBooting = false;
@@ -2583,6 +2582,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
