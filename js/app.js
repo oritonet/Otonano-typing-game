@@ -107,7 +107,9 @@ const skipBtn = $("skipBtn");
 const startBtn = $("startBtn");
 const inputEl = $("input");
 if (inputEl) {
+  // 指を置いた
   inputEl.addEventListener("touchstart", (e) => {
+    touchActive = true;
     touchMoved = false;
 
     const t = e.touches[0];
@@ -115,23 +117,27 @@ if (inputEl) {
     touchStartY = t.clientY;
   }, { passive: true });
 
+  // 指を動かした → スワイプ確定
   inputEl.addEventListener("touchmove", (e) => {
+    if (!touchActive) return;
+
     const t = e.touches[0];
     const dx = Math.abs(t.clientX - touchStartX);
     const dy = Math.abs(t.clientY - touchStartY);
 
     if (dx > SWIPE_THRESHOLD || dy > SWIPE_THRESHOLD) {
-      touchMoved = true; // ★ スワイプ確定
+      touchMoved = true;
     }
   }, { passive: true });
 
-  inputEl.addEventListener("touchend", (e) => {
-    // ★ 動いていなければ「タップ」なので開始
+  // 指を離した
+  inputEl.addEventListener("touchend", () => {
     if (!touchMoved) {
+      // ★ タップ確定 → ここで初めて開始
       startTypingByUserAction();
     }
 
-    // 次操作に備えてリセット
+    touchActive = false;
     touchMoved = false;
   });
 }
@@ -141,8 +147,8 @@ const resultEl = $("result");
 
 if (inputEl) {
   inputEl.addEventListener("focus", (e) => {
-    // touch 操作中のフォーカス誤爆を抑制
-    if (touchMoved) {
+    // タッチ操作中に focus されたら即戻す
+    if (touchActive) {
       e.preventDefault();
       inputEl.blur();
     }
@@ -494,7 +500,9 @@ let isCountingDown = false;
 let touchStartX = 0;
 let touchStartY = 0;
 let touchMoved = false;
+let touchActive = false;
 const SWIPE_THRESHOLD = 10;
+
 
 /* =========================================================
    State
@@ -2673,6 +2681,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
