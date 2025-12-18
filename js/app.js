@@ -274,9 +274,11 @@ async function startTypingByUserAction() {
 
   // ★ 最初の実入力でガイド解除 → 正式開始（確定後判定版）
   const beginRealTypingOnceByInput = () => {
+    // ★ IME変換中なら開始しない
+    if (engine.isComposing) return;
+  
     inputEl.removeEventListener("input", beginRealTypingOnceByInput);
   
-    // placeholder ガイド解除
     inputEl.placeholder = "";
     inputEl.classList.remove("input-guide-before");
     inputEl.classList.remove("input-guide-after");
@@ -284,9 +286,9 @@ async function startTypingByUserAction() {
   
     isCountingDown = false;
   
-    // ★ 物理キー入力なので即開始
     engine.startNow();
   };
+
   
   const beginRealTypingOnceByCompositionEnd = () => {
     inputEl.removeEventListener("compositionend", beginRealTypingOnceByCompositionEnd);
@@ -2661,6 +2663,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
