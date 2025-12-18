@@ -174,18 +174,26 @@ async function startTypingByUserAction() {
 
   await showCountdownOverlay(3);
 
-  // ★ カウントダウン後ガイドを表示
-  inputEl.readOnly = false;
+  // ★ カウントダウン後ガイド表示
+  inputEl.readOnly = false;                 // ← いったん入力可能に
   inputEl.value = "入力してください。";
   
-  // ガイド用クラスを明示的に付与
   inputEl.classList.remove("input-guide-before");
   inputEl.classList.add("input-guide-after");
   
-  // ★ ガイド表示後にフォーカスを戻す（重要）
+  // ★ キャレットを確実に立てる
   requestAnimationFrame(() => {
     inputEl.focus({ preventScroll: true });
+  
+    // キャレットを先頭に明示
+    try {
+      inputEl.setSelectionRange(0, 0);
+    } catch (_) {}
+  
+    // ★ 直後に readOnly に戻す（入力はまだ禁止）
+    inputEl.readOnly = true;
   });
+
 
   // ★ 最初の実入力でガイド解除 → 正式開始
   const onFirstInput = () => {
@@ -2532,6 +2540,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
