@@ -203,20 +203,17 @@ let textBaseY = null;
 ========================================================= */
 // ===== スマホ入力時：見本文を画面上へスクロール（少し下に余白）=====
 function scrollTextToTopOnMobile(offsetPx = 50) {
-  if (!textEl || textBaseY == null) return;
+  if (!textEl) return;
 
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   if (!isMobile) return;
 
   setTimeout(() => {
-    const targetY = textBaseY - offsetPx;
-
-    window.scrollTo({
-      top: targetY,
-      behavior: "smooth"
-    });
+    const baseY = textEl.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo({ top: baseY - offsetPx, behavior: "smooth" });
   }, 50);
 }
+
 
 
 
@@ -252,7 +249,17 @@ async function startTypingByUserAction() {
 
   isCountingDown = true;
 
+  // 先にフォーカス（キーボードを出す）
+  inputEl.readOnly = false;
+  inputEl.disabled = false;
+  inputEl.value = "";
+  inputEl.placeholder = "";
+  inputEl.classList.remove("input-guide-before");
+  inputEl.focus({ preventScroll: true });
+  
+  // フォーカス後にスクロール（キーボード反映後）
   scrollTextToTopOnMobile(50);
+
 
   inputEl.readOnly = false;
   inputEl.disabled = false;
@@ -321,15 +328,17 @@ async function startTypingByUserAction() {
   // IME用（確定時）
   inputEl.addEventListener("compositionend", beginRealTypingOnceByCompositionEnd, { once: true });
 
-  // ★ IME変換開始時点でガイドだけ解除（色対策）
-  const clearGuideOnCompositionStart = () => {
-    inputEl.placeholder = "";
-    inputEl.classList.remove("input-guide-after");
-  };
-  
-  // once にはしない（複数回変換に対応）
+  // ★ IME変換開始時点でガイドだけ解除（増殖防止）
+  inputEl.removeEventListener("compositionstart", clearGuideOnCompositionStart);
   inputEl.addEventListener("compositionstart", clearGuideOnCompositionStart);
 
+
+}
+
+function clearGuideOnCompositionStart() {
+  if (!inputEl) return;
+  inputEl.placeholder = "";
+  inputEl.classList.remove("input-guide-after");
 }
 
 
@@ -2681,6 +2690,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
