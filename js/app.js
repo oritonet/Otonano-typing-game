@@ -1877,35 +1877,45 @@ function syncRankDifficultyFromPractice(diff) {
   loadMyAnalytics();
 }
 
+async function showCountdownOverlay(sec = 3) {
+  const el = document.getElementById("countdownOverlay");
+  if (!el) return;
+
+  el.hidden = false;
+  for (let i = sec; i > 0; i--) {
+    el.textContent = i;
+    await new Promise(r => setTimeout(r, 1000));
+  }
+  el.hidden = true;
+}
+
 let startedByTap = false;
 
 function bindTextareaStart() {
   if (!inputEl) return;
 
   const onTapStart = async () => {
-    // すでに開始済みガード（必要なら）
     if (engine.started || engine.ended) return;
 
-    // ★① 先に入力可能にする
+    // ★① 入力可能に
     inputEl.readOnly = false;
-
-    // ★② Android対策：value を触る
     inputEl.value = "";
 
-    // ★③ ユーザー操作中に focus → ここでフリックが出る
+    // ★② ユーザー操作中に focus → 確実にフリックが出る
     inputEl.focus({ preventScroll: true });
 
-    // ★④ focus 後にスクロール（キーボード表示を邪魔しない）
+    // ★③ フリックが出た後でスクロール
     scrollTextToTopOnMobile();
 
-    // カウントダウン → 開始
-    await engine.showCountdownInTextarea(3);
+    // ★④ textarea を触らないカウントダウン
+    await showCountdownOverlay(3);
+
     engine.startNow();
   };
 
-  // pointerdown が最も成功率が高い
-  inputEl.addEventListener("pointerdown", onTapStart, { passive: true });
+  inputEl.addEventListener("pointerdown", onTapStart);
 }
+
 
 
 
@@ -2461,6 +2471,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
