@@ -1745,7 +1745,8 @@ async function loadPendingRequests() {
       li.style.alignItems = "center";
 
       const nameSpan = document.createElement("span");
-      nameSpan.textContent = r.userName || r.uid;
+      const name = await resolveUserName(db, r.personalId);
+      nameSpan.textContent = name;
 
       const ok = document.createElement("button");
       ok.textContent = "承認";
@@ -1756,8 +1757,7 @@ async function loadPendingRequests() {
       ok.addEventListener("click", async () => {
         await groupSvc.approveMember({
           requestId: r.id,
-          ownerUid: State.authUser.uid,
-          ownerUserName: userMgr.getCurrentUserName()
+          ownerUid: State.authUser.uid
         });
         await updateCurrentGroupRoleUI();
       });
@@ -2507,6 +2507,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
