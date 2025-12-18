@@ -171,8 +171,8 @@ export class TypingEngine {
 
     // IME 変換開始
     this.inputEl.addEventListener("compositionstart", () => {
-
     this.isComposing = true;
+    });
 
     // IME 変換確定
     this.inputEl.addEventListener("compositionend", () => {
@@ -356,6 +356,7 @@ export class TypingEngine {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
+
 
 
 
