@@ -228,22 +228,22 @@ async function startTypingByUserAction() {
   });
 
   // ★ 最初の実入力でガイド解除 → 正式開始
-  const onFirstInput = () => {
-    inputEl.removeEventListener("input", onFirstInput);
-
+  const onFirstCompositionEnd = () => {
+    inputEl.removeEventListener("compositionend", onFirstCompositionEnd);
+  
+    // ガイド解除（value は触らない）
     inputEl.classList.remove("input-guide-before");
     inputEl.classList.remove("input-guide-after");
-
-    inputEl.value = "";
-    inputEl.style.textAlign = "";
-    inputEl.style.color = "";
     inputEl.readOnly = false;
-
+  
     isCountingDown = false;
+  
+    // ★ IME確定後に正式スタート
     engine.startNow();
   };
+  
+  inputEl.addEventListener("compositionend", onFirstCompositionEnd);
 
-  inputEl.addEventListener("input", onFirstInput);
 }
 
 
@@ -2582,6 +2582,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
