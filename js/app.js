@@ -1790,7 +1790,7 @@ async function onGroupChanged() {
   State.currentGroupId = sel?.value ?? "";
   State.currentGroupRole = sel?.dataset?.role ?? null;
 
-  setSavedGroupIdFor(currentUserNameSafe(), State.currentGroupId);
+  setSavedGroupIdFor(userMgr.getCurrentPersonalId(), State.currentGroupId);
 
   if (leaveGroupBtn) leaveGroupBtn.disabled = !State.currentGroupId;
   if (deleteGroupBtn) deleteGroupBtn.disabled = !(State.currentGroupId && State.currentGroupRole === "owner");
@@ -2478,6 +2478,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
