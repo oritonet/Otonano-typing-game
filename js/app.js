@@ -260,17 +260,6 @@ async function startTypingByUserAction() {
   // フォーカス後にスクロール（キーボード反映後）
   scrollTextToTopOnMobile(50);
 
-
-  inputEl.readOnly = false;
-  inputEl.disabled = false;
-  inputEl.value = "";
-
-  // ★ 追加：カウントダウン開始と同時に「初期ガイド」を消す
-  inputEl.placeholder = "";
-  inputEl.classList.remove("input-guide-before");
-  
-  inputEl.focus({ preventScroll: true });
-
   await showCountdownOverlay(3);
 
   // ★ カウントダウン終了＝時間計測開始
@@ -2690,6 +2679,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
