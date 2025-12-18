@@ -135,6 +135,15 @@ if (inputEl) {
 const textEl = $("text");
 const resultEl = $("result");
 
+if (inputEl) {
+  inputEl.addEventListener("focus", (e) => {
+    if (isTouchSwiping) {
+      e.preventDefault();
+      inputEl.blur();
+    }
+  });
+}
+
 // modal
 const modalBackdrop = $("resultModalBackdrop");
 const closeModalBtn = $("closeModalBtn");
@@ -2639,6 +2648,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
