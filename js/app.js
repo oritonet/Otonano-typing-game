@@ -259,6 +259,9 @@ async function startTypingByUserAction() {
 
   await showCountdownOverlay(3);
 
+  // ★ カウントダウン終了＝時間計測開始
+  engine.startTimerOnly();
+
   // ★ カウントダウン後ガイド
   inputEl.readOnly = false;
   inputEl.value = "";
@@ -2663,6 +2666,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
