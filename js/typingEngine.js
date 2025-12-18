@@ -91,7 +91,8 @@ export class TypingEngine {
     this.lastCommittedValue = "";
     this.keystrokes = 0;
 
-    this.inputEl.disabled = true;
+    this.inputEl.disabled = false;   // ★ 無効化しない
+    this.inputEl.readOnly = true;    // ★ 入力だけ禁止
     this._showGuideCharInTextarea();
   }
 
@@ -325,6 +326,7 @@ export class TypingEngine {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
+
 
 
 
