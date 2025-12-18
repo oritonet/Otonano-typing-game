@@ -203,7 +203,7 @@ async function startTypingByUserAction() {
   };
 
   inputEl.addEventListener("input", onFirstInput);
-}
+
 
 
 // ★ 最初の実入力でガイド解除 → 正式開始
@@ -223,7 +223,7 @@ const onFirstInput = () => {
 };
 
   inputEl.addEventListener("input", onFirstInput);
-}
+
 
 
 
@@ -2565,6 +2565,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
