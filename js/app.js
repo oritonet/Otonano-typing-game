@@ -417,7 +417,7 @@ const State = {
 
   // グループ
   currentGroupId: "",
-  currentGroupRole: null
+  currentGroupRole: null,
   _lastPendingRenderKey: null,
 };
 
@@ -2565,6 +2565,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
