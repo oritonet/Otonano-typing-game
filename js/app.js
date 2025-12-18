@@ -217,7 +217,8 @@ async function startTypingByUserAction() {
 
   // ★ カウントダウン後ガイド
   inputEl.readOnly = false;
-  inputEl.value = "入力してください。";
+  inputEl.value = "";
+  inputEl.placeholder = AFTER_COUNTDOWN_GUIDE_TEXT; // ★ ここが重要
   inputEl.classList.remove("input-guide-before");
   inputEl.classList.add("input-guide-after");
 
@@ -227,22 +228,27 @@ async function startTypingByUserAction() {
     // readOnly は true にしない
   });
 
-  // ★ 最初の実入力でガイド解除 → 正式開始
-  const onFirstCompositionEnd = () => {
-    inputEl.removeEventListener("compositionend", onFirstCompositionEnd);
+  // ★ 最初の実入力でガイド解除 → 正式開始（placeholder版）
+  const beginRealTypingOnce = () => {
+    inputEl.removeEventListener("compositionstart", beginRealTypingOnce);
+    inputEl.removeEventListener("input", beginRealTypingOnce);
   
-    // ガイド解除（value は触らない）
+    // placeholder ガイド解除
+    inputEl.placeholder = "";
     inputEl.classList.remove("input-guide-before");
     inputEl.classList.remove("input-guide-after");
     inputEl.readOnly = false;
   
     isCountingDown = false;
   
-    // ★ IME確定後に正式スタート
+    // ★ ここで正式スタート
     engine.startNow();
   };
   
-  inputEl.addEventListener("compositionend", onFirstCompositionEnd);
+  // IMEでも物理キーでも反応
+  inputEl.addEventListener("compositionstart", beginRealTypingOnce);
+  inputEl.addEventListener("input", beginRealTypingOnce);
+
 
 }
 
@@ -2582,6 +2588,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
