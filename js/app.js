@@ -1767,43 +1767,6 @@ async function loadPendingRequests() {
       pendingList.appendChild(li);
     }
 
-
-    for (const r of map.values()) {
-      const li = document.createElement("li");
-      li.style.display = "flex";
-      li.style.gap = "8px";
-      li.style.alignItems = "center";
-
-      const nameSpan = document.createElement("span");
-      const name = await resolveUserName(db, r.personalId);
-      nameSpan.textContent = name;
-
-      const ok = document.createElement("button");
-      ok.textContent = "承認";
-
-      const ng = document.createElement("button");
-      ng.textContent = "却下";
-
-      ok.addEventListener("click", async () => {
-        await groupSvc.approveMember({
-          requestId: r.id,
-          ownerUid: State.authUser.uid
-        });
-        await onGroupChanged();
-
-      });
-
-      ng.addEventListener("click", async () => {
-        await groupSvc.rejectMember({ requestId: r.id });
-        await onGroupChanged();
-      });
-
-      li.appendChild(nameSpan);
-      li.appendChild(ok);
-      li.appendChild(ng);
-      pendingList.appendChild(li);
-    }
-
   } catch (e) {
     console.error("loadPendingRequests failed:", e);
     const li = document.createElement("li");
@@ -2545,6 +2508,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
