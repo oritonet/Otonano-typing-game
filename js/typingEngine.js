@@ -2,7 +2,7 @@
 // ・IME（日本語変換）中は判定しない
 // ・確定文字だけで青赤表示
 // ・CPM = 文章長 ÷ 完了時間
-// ・スタート前は index.html の data-guide を表示（上揃え・横中央）
+// ・スタート前は textarea の placeholder にガイドを表示
 // ・カウントダウン時のみ上下中央
 import { rankByCPM } from "./rankUtil.js";
 export class TypingEngine {
@@ -92,36 +92,11 @@ export class TypingEngine {
     this.keystrokes = 0;
 
     this.inputEl.disabled = false;   // ★ 無効化しない
-    this.inputEl.readOnly = true;    // ★ 入力だけ禁止
+    this.inputEl.readOnly = false;
     this.inputEl.value = "";
     this.inputEl.placeholder = "";  // ★ 追加
     this._showGuideCharInTextarea();
   }
-
-  /* =========================
-     カウントダウン表示
-  ========================= */
-  async showCountdownInTextarea(sec = 3) {
-    const el = this.inputEl;
-    this._ensureBasePadding();
-  
-    el.disabled = true;
-    el.classList.remove("input-guide");
-    el.classList.add("countdown");
-  
-    // ★ 最初に1回だけ中央計算
-    this._applyVerticalCenterPadding();
-  
-    for (let i = Number(sec) || 3; i > 0; i--) {
-      el.value = String(i);
-      await this._sleep(1000);
-    }
-  
-    el.value = "";
-    el.classList.remove("countdown");
-    this._restoreBasePadding();
-  }
-
 
   /* =========================
      開始
@@ -342,6 +317,7 @@ export class TypingEngine {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
+
 
 
 
