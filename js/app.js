@@ -111,8 +111,8 @@ const resultEl = $("result");
 
 if (inputEl) {
   inputEl.addEventListener("focus", (e) => {
-    // タッチ操作中に focus されたら即戻す
-    if (touchActive) {
+    // ★ typing未開始なら blur しない
+    if (touchActive && engine.started) {
       e.preventDefault();
       inputEl.blur();
     }
@@ -165,7 +165,6 @@ let textBaseY = null;
 /* =========================================================
    Services
 ========================================================= */
-// ===== スマホ：キーボード表示後に問題文を必ず見せる（ズレに強い版） =====
 function setupStableAutoScrollOnKeyboard() {
   if (!inputEl || !textEl) return;
 
@@ -174,21 +173,23 @@ function setupStableAutoScrollOnKeyboard() {
 
   let pending = false;
 
-  // ユーザーが入力欄をタップしたら「次の viewport 変化でスクロールする」
   inputEl.addEventListener("focus", () => {
     pending = true;
   });
 
   inputEl.addEventListener("blur", () => {
+    if (window.visualViewport) {
+      if (window.visualViewport.height < window.innerHeight) {
+        return; // キーボード表示中のblurは無視
+      }
+    }
     pending = false;
   });
 
   const scrollTextIntoView = () => {
     if (!pending) return;
-
     pending = false;
 
-    // viewport確定後に実行（重要）
     requestAnimationFrame(() => {
       textEl.scrollIntoView({
         behavior: "smooth",
@@ -197,14 +198,13 @@ function setupStableAutoScrollOnKeyboard() {
     });
   };
 
-  // Android / 多くのブラウザ
   window.addEventListener("resize", scrollTextIntoView);
 
-  // iOS Safari 対策（こちらの方が安定することが多い）
   if (window.visualViewport) {
     window.visualViewport.addEventListener("resize", scrollTextIntoView);
   }
 }
+
 
 
 function resetTypingUI() {
@@ -2585,6 +2585,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
