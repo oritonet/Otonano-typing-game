@@ -193,13 +193,12 @@ function setupStableAutoScrollOnKeyboard() {
     if (!pending) return;
     pending = false;
   
-    // ① 慣性スクロールが止まるのを待つ
+    // 慣性スクロールが止まるのを待つ
     await waitForScrollSettled();
   
-    // ② 上部タブの表示確定を待つ
+    // タブ表示確定後に、Y座標指定スクロール
     scrollAfterTopTabsReady();
   };
-
 
   window.addEventListener("resize", scrollTextIntoView);
 
@@ -209,32 +208,32 @@ function setupStableAutoScrollOnKeyboard() {
 }
 
 function scrollAfterTopTabsReady() {
-  if (!textEl || !topTabsEl) {
-    textEl?.scrollIntoView({ behavior: "auto", block: "start" });
+  if (!topTabsEl) {
+    scrollTextToTopConsideringTabs();
     return;
   }
 
   const tryScroll = () => {
     if (topTabsEl.offsetHeight > 0) {
-      textEl.scrollIntoView({ behavior: "auto", block: "start" });
+      scrollTextToTopConsideringTabs();
       return true;
     }
     return false;
   };
 
-  // ① まず即チェック
+  // ① すでに出ていれば即
   if (tryScroll()) return;
 
-  // ② 次フレーム
+  // ② レンダリングを2フレーム待つ（スワイプ表示対策）
   requestAnimationFrame(() => {
     if (tryScroll()) return;
 
-    // ③ さらに次フレーム（アニメーション対策）
     requestAnimationFrame(() => {
-      tryScroll(); // ここで出ていればOK
+      scrollTextToTopConsideringTabs();
     });
   });
 }
+
 
 function waitForScrollSettled({ thresholdMs = 120, maxWaitMs = 500 } = {}) {
   return new Promise(resolve => {
@@ -277,6 +276,26 @@ function waitForScrollSettled({ thresholdMs = 120, maxWaitMs = 500 } = {}) {
     function cleanup() {
       window.removeEventListener("scroll", onScroll);
     }
+  });
+}
+
+function scrollTextToTopConsideringTabs() {
+  if (!textEl) return;
+
+  const rect = textEl.getBoundingClientRect();
+
+  // 上部タブが存在し、表示されていればその高さを引く
+  const tabsHeight =
+    topTabsEl && topTabsEl.offsetHeight > 0
+      ? topTabsEl.offsetHeight
+      : 0;
+
+  const targetY =
+    rect.top + window.scrollY - tabsHeight;
+
+  window.scrollTo({
+    top: Math.max(targetY, 0),
+    behavior: "auto"
   });
 }
 
@@ -2659,6 +2678,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
