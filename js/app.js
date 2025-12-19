@@ -165,11 +165,6 @@ let textBaseY = null;
 /* =========================================================
    Services
 ========================================================= */
-function hasTopTabs() {
-  const tabs = document.getElementById("diffTabsUnified"); // 実際のIDに合わせる
-  return tabs && tabs.offsetParent !== null;
-}
-
 function setupStableAutoScrollOnKeyboard() {
   if (!inputEl || !textEl) return;
 
@@ -198,7 +193,7 @@ function setupStableAutoScrollOnKeyboard() {
     requestAnimationFrame(() => {
       textEl.scrollIntoView({
         behavior: "smooth",
-        block: hasTopTabs() ? "start" : "center"
+        block: "start"
       });
     });
   };
@@ -2591,6 +2586,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
