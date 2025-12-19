@@ -206,33 +206,33 @@ function setupStableAutoScrollOnKeyboard() {
 }
 
 function scrollAfterTopTabsReady() {
-  if (!textEl || !topTabsEl) return;
-
-  const h = topTabsEl.offsetHeight;
-
-  // すでに表示済みなら即スクロール
-  if (h > 0) {
-    textEl.scrollIntoView({ behavior: "auto", block: "start" });
+  if (!textEl || !topTabsEl) {
+    textEl?.scrollIntoView({ behavior: "auto", block: "start" });
     return;
   }
 
-  // 初期非表示 → 表示されるのを監視
-  const ro = new ResizeObserver(entries => {
-    const height = entries[0].contentRect.height;
-    if (height > 0) {
-      ro.disconnect();
-
-      requestAnimationFrame(() => {
-        textEl.scrollIntoView({
-          behavior: "auto",
-          block: "start"
-        });
-      });
+  const tryScroll = () => {
+    if (topTabsEl.offsetHeight > 0) {
+      textEl.scrollIntoView({ behavior: "auto", block: "start" });
+      return true;
     }
-  });
+    return false;
+  };
 
-  ro.observe(topTabsEl);
+  // ① まず即チェック
+  if (tryScroll()) return;
+
+  // ② 次フレーム
+  requestAnimationFrame(() => {
+    if (tryScroll()) return;
+
+    // ③ さらに次フレーム（アニメーション対策）
+    requestAnimationFrame(() => {
+      tryScroll(); // ここで出ていればOK
+    });
+  });
 }
+
 
 
 function resetTypingUI() {
@@ -2613,6 +2613,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
