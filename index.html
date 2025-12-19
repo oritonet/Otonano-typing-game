@@ -492,32 +492,21 @@
 
 <body class="preload">
   <header>
+
+    <!-- ===============================
+         タイトル
+    ================================ -->
     <h1>漢字変換対応の日本語タイピングゲーム</h1>
+
     <p class="lead">
-      <strong>雑学・豆知識100テーマ</strong>の文章で、IMEの<strong>漢字変換</strong>を含む日本語入力を実践的に練習できます。
-      <strong>グループ作成</strong>で身内と競え、<strong>全国ランキング</strong>にも参加可能。
-      さらに<strong>スコア推移グラフ</strong>で日々の成長を可視化します。
+      IMEの<strong>漢字変換</strong>を含めた、実用的な<strong>日本語タイピング練習</strong>ができます。
     </p>
 
-    <!-- ===== SEO：強みを文章で明文化（検索エンジン向け説明） ===== -->
-    <section class="card" aria-label="このタイピングゲームの特徴" style="margin-top:12px;">
-      <h2 style="margin-top:0;">漢字変換（IME）を含めた実用的な日本語タイピング練習</h2>
-      <p class="muted" style="margin:0 0 10px;">
-        ローマ字入力の速度だけでなく、<strong>漢字変換（IME）を含めた完全一致</strong>を前提にした練習ができます。
-        仕事・レポート作成・事務入力など、実務に近い日本語入力のトレーニング向けです。
-      </p>
-      <ul class="featureList" style="margin:0;">
-        <li><strong>雑学・豆知識100テーマ</strong>：飽きずに続けやすい</li>
-        <li><strong>グループ作成</strong>：友人・会社・学校で身内対戦（グループランキング）</li>
-        <li><strong>全国ランキング</strong>：他ユーザーとも競える</li>
-        <li><strong>スコア推移グラフ</strong>：日々の成長を可視化</li>
-        <li><strong>難易度×文章長×カテゴリ/テーマ</strong>：目的別に練習を最適化</li>
-      </ul>
-    </section>
-    
-    <!-- 上段：カードで囲う -->
+    <!-- ===============================
+         ユーザー / グループ（最優先操作）
+    ================================ -->
     <div class="row topControls">
-    
+
       <!-- ユーザーカード -->
       <div class="card headerCard">
         <div class="row">
@@ -525,8 +514,7 @@
           <select id="userSelect"></select>
           <button id="toggleUserPanel" class="toggleBtn">ユーザー設定 ▾</button>
         </div>
-    
-        <!-- 開いた時 -->
+
         <div id="userPanel" class="collapsible">
           <div class="dividerLine"></div>
           <button id="addUserBtn">ユーザー追加</button>
@@ -534,7 +522,7 @@
           <button id="deleteUserBtn">削除</button>
         </div>
       </div>
-    
+
       <!-- グループカード -->
       <div class="card headerCard">
         <div class="row">
@@ -542,55 +530,70 @@
           <select id="currentGroupSelect"></select>
           <button id="toggleGroupPanel" class="toggleBtn">グループ設定 ▾</button>
         </div>
-    
-        <!-- 開いた時 -->
+
         <div id="groupPanel" class="collapsible">
           <div class="dividerLine"></div>
-    
+
           <div class="inlineBtns">
             <button id="leaveGroupBtn">退出</button>
             <button id="deleteGroupBtn">グループ削除</button>
           </div>
-    
+
           <p class="hint">
-            ※ 参加中グループを選ぶと、以降のスコアはそのグループにも記録されます。
+            ※ 選択中のグループにスコアが記録されます。
           </p>
-    
+
           <div class="dividerLine"></div>
-    
+
           <input id="groupCreateName" type="text" placeholder="新しいグループ名" />
           <button id="groupCreateBtn">グループ作成</button>
-    
+
           <div class="dividerLine"></div>
-    
+
           <input id="groupSearchInput" type="text" placeholder="グループ名で検索" />
           <button id="groupSearchBtn">検索</button>
-    
+
           <ul id="groupSearchResult"></ul>
-    
+
           <div id="pendingBox">
             <h3>参加申請（承認待ち）</h3>
             <ul id="pendingList"></ul>
           </div>
         </div>
-      </div> 
+      </div>
+
     </div>
+
+    <!-- ===============================
+         特徴（折りたたみ：SEO用）
+    ================================ -->
+    <details class="card" style="margin-top:12px;">
+      <summary><strong>このタイピングゲームの特徴を見る</strong></summary>
+
+      <h2>漢字変換（IME）を含めた実用的な日本語タイピング練習</h2>
+
+      <p class="muted">
+        ローマ字入力の速度だけでなく、
+        <strong>漢字変換を含めた完全一致</strong>を前提にした練習ができます。
+        仕事・レポート作成・事務入力など、実務に近い日本語入力のトレーニング向けです。
+      </p>
+
+      <ul>
+        <li><strong>雑学・豆知識100テーマ</strong>で飽きずに続けられる</li>
+        <li><strong>グループ作成</strong>で身内対戦（グループランキング）</li>
+        <li><strong>全国ランキング</strong>対応</li>
+        <li><strong>スコア推移グラフ</strong>で成長を可視化</li>
+        <li>難易度・文章長・カテゴリ／テーマを選択可能</li>
+      </ul>
+    </details>
+
   </header>
 
   <main>
-    <!-- ===== 遊び方（検索/滞在時間対策） ===== -->
-    <section class="card" aria-label="遊び方" style="margin-top:16px;">
-      <h2 style="margin-top:0;">遊び方（3ステップ）</h2>
-      <ol style="margin:0; padding-left: 1.2em;">
-        <li>難易度・文章長・カテゴリ/テーマを選びます（迷ったら「今日の課題」）。</li>
-        <li>文章を読み、IMEで漢字変換を含めて入力します（確定した文字だけ判定）。</li>
-        <li>完了するとスコア（CPM）が自動保存され、ランキングと推移グラフに反映されます。</li>
-      </ol>
-      <p class="muted" style="margin:10px 0 0;">
-        <strong>スコア（CPM）＝文章長 ÷ 完了時間</strong>（1分換算）。
-      </p>
-    </section>
 
+    <!-- ===============================
+         タイピング練習（主役）
+    ================================ -->
     <section id="play" class="card" aria-label="タイピング練習" style="margin-top:16px;">
       <h2 style="margin-top:0;">タイピング練習</h2>
 
@@ -600,7 +603,7 @@
         <select id="category" aria-label="カテゴリ"></select>
         <select id="theme" aria-label="テーマ"></select>
 
-        <label class="toggle" title="今日の課題に固定します（難度別に1日1文）">
+        <label class="toggle">
           <span>今日の課題</span>
           <input type="checkbox" id="dailyTask" />
         </label>
@@ -787,6 +790,7 @@
   <script type="module" src="./js/app.js"></script>
 </body>
 </html>
+
 
 
 
