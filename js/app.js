@@ -211,11 +211,10 @@ function startTypingImmediately() {
   inputEl.readOnly = false;
   inputEl.disabled = false;
 
-  // ★ 次のフレームで開始（inputイベントを消費しない）
-  requestAnimationFrame(() => {
-    engine.startNow();
-  });
+  // requestAnimationFrame をやめる（1文字目を捨てないため）
+  engine.startNow();
 }
+
 
 function startTypingByUserAction() {
   if (!inputEl) return;
@@ -237,8 +236,8 @@ function startTypingByUserAction() {
   inputEl.removeEventListener("compositionstart", startTypingImmediately);
   inputEl.removeEventListener("input", startTypingImmediately);
 
-  inputEl.addEventListener("compositionstart", startTypingImmediately, { once: true });
-  inputEl.addEventListener("input", startTypingImmediately, { once: true });
+  inputEl.addEventListener("compositionstart", startTypingImmediately, { once: true, capture: true });
+  inputEl.addEventListener("input",            startTypingImmediately, { once: true, capture: true });
 }
 
 const rankingSvc = new RankingService({ db });
@@ -2538,6 +2537,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
