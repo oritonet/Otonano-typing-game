@@ -215,6 +215,23 @@ function startTypingImmediately() {
   engine.startNow();
 }
 
+function armStartOnFirstType() {
+  if (!inputEl) return;
+  if (engine.started || engine.ended) return;
+
+  // 入力できる状態にしておく（ここはフォーカスしない）
+  inputEl.readOnly = false;
+  inputEl.disabled = false;
+
+  // ★ removeEventListener は capture を揃えないと外れません
+  inputEl.removeEventListener("compositionstart", startTypingImmediately, true);
+  inputEl.removeEventListener("input",            startTypingImmediately, true);
+
+  // ★ 最初の1回だけ開始（IMEにも対応）
+  inputEl.addEventListener("compositionstart", startTypingImmediately, { once: true, capture: true });
+  inputEl.addEventListener("input",            startTypingImmediately, { once: true, capture: true });
+}
+
 
 function startTypingByUserAction() {
   if (!inputEl) return;
@@ -1214,6 +1231,9 @@ function setCurrentItem(item, { daily = false } = {}) {
   });
 
   engine.enableReadyState();
+
+    // ★ これを追加
+  armStartOnFirstType();
 }
 
 
@@ -2537,6 +2557,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
