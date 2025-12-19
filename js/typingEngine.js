@@ -310,15 +310,13 @@ export class TypingEngine {
     // ガイドは value に入れない（IME未確定文字表示の邪魔をしない）
     el.value = "";
     el.placeholder = (text ?? "").toString();
-
-    el.classList.toggle("input-guide-before", !!before);
     el.classList.toggle("input-guide-after", !!after);
   }
 
   _clearGuidePlaceholder() {
     if (!this.inputEl) return;
     this.inputEl.placeholder = "";
-    this.inputEl.classList.remove("input-guide-before", "input-guide-after");
+    this.inputEl.classList.remove("input-guide-after");
   }
 
 
@@ -363,6 +361,7 @@ export class TypingEngine {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
+
 
 
 
