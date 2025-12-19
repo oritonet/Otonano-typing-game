@@ -242,99 +242,50 @@ function resetTypingUI() {
   }
 }
 
+function startTypingImmediately() {
+  // 二重開始防止
+  if (engine.started || engine.ended) return;
 
-async function startTypingByUserAction() {
-  // ★ 再入防止（最重要）
-  if (isCountingDown || engine.started || engine.ended) return;
-
-  isCountingDown = true;
-
-  // ★ カウントダウン中は入力禁止
-  inputEl.readOnly = true;
-  inputEl.disabled = false; // キーボードは出す
-
-  // 先にフォーカス（キーボードを出す）
-  inputEl.readOnly = false;
-  inputEl.disabled = false;
-  inputEl.value = "";
+  // ガイド解除
   inputEl.placeholder = "";
   inputEl.classList.remove("input-guide-before");
-  inputEl.classList.remove("input-guide-after"); // ★ 追加
-  inputEl.focus({ preventScroll: true });
-  
-  // フォーカス後にスクロール（キーボード反映後）
-  scrollTextToTopOnMobile(50);
+  inputEl.classList.remove("input-guide-after");
 
-  await showCountdownOverlay(3);
-
-  // ★ カウントダウン終了＝時間計測開始
-  engine.startTimerOnly();
-
-  // ★ 入力解禁
   inputEl.readOnly = false;
-  isCountingDown = false;
+  inputEl.disabled = false;
 
-  // ★ カウントダウン後ガイド
-  inputEl.readOnly = false;
+  // ★ ここで正式スタート
+  engine.startNow();
+}
+
+
+function startTypingByUserAction() {
+  if (!inputEl) return;
+  if (engine.started || engine.ended) return;
+
+  // textarea 初期化
   inputEl.value = "";
-  inputEl.placeholder = AFTER_COUNTDOWN_GUIDE_TEXT; // ★ ここが重要
+  inputEl.readOnly = false;
+  inputEl.disabled = false;
+
+  // ガイド表示（開始前）
+  inputEl.placeholder = "入力してください";
   inputEl.classList.remove("input-guide-before");
   inputEl.classList.add("input-guide-after");
 
-  requestAnimationFrame(() => {
-    inputEl.focus({ preventScroll: true });
-    try { inputEl.setSelectionRange(0, 0); } catch (_) {}
-    // readOnly は true にしない
-  });
+  // フォーカス → スクロール
+  inputEl.focus({ preventScroll: true });
+  scrollTextToTopOnMobile(50);
 
-  // ★ 最初の実入力でガイド解除 → 正式開始（確定後判定版）
-  const beginRealTypingOnceByInput = () => {
-    if (engine.isComposing) {
-      // ★ 次の input を待つ
-      inputEl.addEventListener("input", beginRealTypingOnceByInput, { once: true });
-      return;
-    }
-  
-    inputEl.removeEventListener("input", beginRealTypingOnceByInput);
-  
-    inputEl.placeholder = "";
-    inputEl.classList.remove("input-guide-before");
-    inputEl.classList.remove("input-guide-after");
-    inputEl.readOnly = false;
-  
-    isCountingDown = false;
-  
-    engine.startNow();
-  };
+  // ★ 既存リスナーを外す（増殖防止）
+  inputEl.removeEventListener("compositionstart", startTypingImmediately);
+  inputEl.removeEventListener("input", startTypingImmediately);
 
-  
-  const beginRealTypingOnceByCompositionEnd = () => {
-    inputEl.removeEventListener("compositionend", beginRealTypingOnceByCompositionEnd);
-  
-    // placeholder ガイド解除
-    inputEl.placeholder = "";
-    inputEl.classList.remove("input-guide-before");
-    inputEl.classList.remove("input-guide-after");
-    inputEl.readOnly = false;
-  
-    isCountingDown = false;
-  
-    // ★ IME確定後に開始（未確定中は評価しない）
-    engine.startNow();
-  };
-  
-  // 物理キーボード用
-  inputEl.addEventListener("input", beginRealTypingOnceByInput, { once: true });
-  
-  // IME用（確定時）
-  inputEl.addEventListener("compositionend", beginRealTypingOnceByCompositionEnd, { once: true });
-
-  // ★ IME変換開始時点でガイドだけ解除（増殖防止）
-  inputEl.removeEventListener("compositionstart", clearGuideOnCompositionStart);
-  inputEl.addEventListener("compositionstart", clearGuideOnCompositionStart);
-
-
+  // ★ 最初の入力意思で即開始（IME含む）
+  inputEl.addEventListener("compositionstart", startTypingImmediately, { once: true });
+  inputEl.addEventListener("input", startTypingImmediately, { once: true });
 }
+
 
 function clearGuideOnCompositionStart() {
   if (!inputEl) return;
@@ -2691,6 +2642,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
