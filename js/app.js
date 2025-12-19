@@ -266,9 +266,8 @@ function startTypingByUserAction() {
   inputEl.disabled = false;
 
   // ガイド表示（開始前）
-  inputEl.placeholder = "入力してください";
   inputEl.classList.remove("input-guide-before");
-  inputEl.classList.add("input-guide-after");
+  engine.enableReadyState();
 
   // フォーカス → スクロール
   inputEl.focus({ preventScroll: true });
@@ -2610,6 +2609,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
