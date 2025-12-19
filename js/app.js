@@ -106,42 +106,6 @@ const dailyInfoEl = $("dailyInfo");
 const skipBtn = $("skipBtn");
 const startBtn = $("startBtn");
 const inputEl = $("input");
-if (inputEl) {
-  // 指を置いた
-  inputEl.addEventListener("touchstart", (e) => {
-    touchActive = true;
-    touchMoved = false;
-
-    const t = e.touches[0];
-    touchStartX = t.clientX;
-    touchStartY = t.clientY;
-  }, { passive: true });
-
-  // 指を動かした → スワイプ確定
-  inputEl.addEventListener("touchmove", (e) => {
-    if (!touchActive) return;
-
-    const t = e.touches[0];
-    const dx = Math.abs(t.clientX - touchStartX);
-    const dy = Math.abs(t.clientY - touchStartY);
-
-    if (dx > SWIPE_THRESHOLD || dy > SWIPE_THRESHOLD) {
-      touchMoved = true;
-    }
-  }, { passive: true });
-
-  // 指を離した
-  inputEl.addEventListener("touchend", () => {
-    if (!touchMoved) {
-      // ★ タップ確定 → ここで初めて開始
-      startTypingByUserAction();
-    }
-
-    touchActive = false;
-    touchMoved = false;
-  });
-}
-
 const textEl = $("text");
 const resultEl = $("result");
 
@@ -226,7 +190,6 @@ function resetTypingUI() {
   inputEl.disabled = false;
 
   // ガイド用クラス解除
-  inputEl.classList.remove("input-guide-before");
   inputEl.classList.remove("input-guide-after");
 
   // 見た目リセット
@@ -245,7 +208,6 @@ function startTypingImmediately() {
 
   // ガイド解除
   inputEl.placeholder = "";
-  inputEl.classList.remove("input-guide-before");
   inputEl.classList.remove("input-guide-after");
 
   inputEl.readOnly = false;
@@ -267,7 +229,6 @@ function startTypingByUserAction() {
 
   // ★ 初期から「入力してください。」を表示
   inputEl.placeholder = "入力してください。";
-  inputEl.classList.remove("input-guide-before");
   inputEl.classList.add("input-guide-after");
 
   // フォーカス & スクロール
@@ -2021,34 +1982,6 @@ function syncRankDifficultyFromPractice(diff) {
 
 let startedByTap = false;
 
-function bindTextareaStart() {
-  if (!inputEl) return;
-
-  inputEl.addEventListener(
-    "pointerdown",
-    () => {
-      startTypingByUserAction();
-    },
-    { passive: true }
-  );
-}
-
-function bindSpaceKeyStart() {
-  window.addEventListener("keydown", (e) => {
-    // IME変換中は無視
-    if (e.isComposing) return;
-
-    // すでに開始 or 終了済みは無視
-    if (engine.started || engine.ended) return;
-
-    if (e.code === "Space") {
-      e.preventDefault(); // ページスクロール防止
-      startTypingByUserAction();
-    }
-  });
-}
-
-
 function bindPracticeFilters() {
   on(difficultyEl, "change", () => {
     const diff = getPracticeDifficulty();
@@ -2548,8 +2481,6 @@ engine.attach();
   bindTypingButtons();
   bindPracticeFilters();
   bindRankDiffTabs();
-  bindTextareaStart(); 
-  bindSpaceKeyStart();
   bindGroupUI();
   bindUserSwitchHooks();
   bindToggle("toggleUserPanel", "userPanel");
@@ -2611,6 +2542,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
