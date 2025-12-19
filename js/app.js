@@ -195,7 +195,7 @@ function setupStableAutoScrollOnKeyboard() {
         behavior: "auto",   // smooth をやめる
         block: "start"
       });
-    }, 150); // 100〜200ms
+    }, 200); // 100〜200ms
   };
 
 
@@ -2586,6 +2586,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
