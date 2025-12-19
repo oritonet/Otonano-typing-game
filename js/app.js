@@ -168,6 +168,16 @@ let textBaseY = null;
 /* =========================================================
    Services
 ========================================================= */
+function applyFontSizeByLength(lengthGroup) {
+  document.body.classList.remove("long-text", "xl-text");
+
+  if (lengthGroup === "long") {
+    document.body.classList.add("long-text");
+  } else if (lengthGroup === "xl") {
+    document.body.classList.add("xl-text");
+  }
+}
+
 function setupStableAutoScrollOnKeyboard() {
   if (!inputEl || !textEl) return;
 
@@ -1336,6 +1346,13 @@ function setCurrentItem(item, { daily = false } = {}) {
 
   const text = item?.text ?? "";
   if (textEl) textEl.textContent = text;
+
+    // ★ 追加
+  const lg = daily
+    ? State.daily.lengthGroup
+    : getPracticeLengthGroup();
+
+  applyFontSizeByLength(lg);
 
   engine.setTarget(text, {
     daily,
@@ -2678,6 +2695,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
