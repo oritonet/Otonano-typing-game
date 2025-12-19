@@ -110,7 +110,6 @@ const skipBtn = $("skipBtn");
 const startBtn = $("startBtn");
 const inputEl = $("input");
 const textEl = $("text");
-const INPUT_SAFE_RATIO = 0.85;
 const resultEl = $("result");
 
 if (inputEl) {
@@ -194,12 +193,13 @@ function setupStableAutoScrollOnKeyboard() {
     if (!pending) return;
     pending = false;
   
-    // 慣性スクロールが止まるのを待つ
+    // ① 慣性スクロールが止まるのを待つ
     await waitForScrollSettled();
   
-    // タブ表示確定後に、Y座標指定スクロール
+    // ② 上部タブの表示確定を待つ
     scrollAfterTopTabsReady();
   };
+
 
   window.addEventListener("resize", scrollTextIntoView);
 
@@ -209,21 +209,32 @@ function setupStableAutoScrollOnKeyboard() {
 }
 
 function scrollAfterTopTabsReady() {
-  const doScroll = () => {
-    scrollTextToTopConsideringTabs();
-    ensureInputVisible();
-  };
-
-  if (!topTabsEl || topTabsEl.offsetHeight > 0) {
-    doScroll();
+  if (!textEl || !topTabsEl) {
+    textEl?.scrollIntoView({ behavior: "auto", block: "start" });
     return;
   }
 
+  const tryScroll = () => {
+    if (topTabsEl.offsetHeight > 0) {
+      textEl.scrollIntoView({ behavior: "auto", block: "start" });
+      return true;
+    }
+    return false;
+  };
+
+  // ① まず即チェック
+  if (tryScroll()) return;
+
+  // ② 次フレーム
   requestAnimationFrame(() => {
-    requestAnimationFrame(doScroll);
+    if (tryScroll()) return;
+
+    // ③ さらに次フレーム（アニメーション対策）
+    requestAnimationFrame(() => {
+      tryScroll(); // ここで出ていればOK
+    });
   });
 }
-
 
 function waitForScrollSettled({ thresholdMs = 120, maxWaitMs = 500 } = {}) {
   return new Promise(resolve => {
@@ -267,42 +278,6 @@ function waitForScrollSettled({ thresholdMs = 120, maxWaitMs = 500 } = {}) {
       window.removeEventListener("scroll", onScroll);
     }
   });
-}
-
-function scrollTextToTopConsideringTabs() {
-  if (!textEl) return;
-
-  const rect = textEl.getBoundingClientRect();
-
-  const tabsHeight =
-    topTabsEl && topTabsEl.offsetHeight > 0
-      ? topTabsEl.offsetHeight
-      : 0;
-
-  const targetY =
-    rect.top + window.scrollY - tabsHeight;
-
-  window.scrollTo({
-    top: Math.max(targetY, 0),
-    behavior: "auto"
-  });
-}
-
-function ensureInputVisible() {
-  if (!inputEl) return;
-
-  const r = inputEl.getBoundingClientRect();
-  const vh = window.innerHeight;
-
-  const dangerLine = vh * INPUT_SAFE_RATIO;
-
-  // 本当に隠れそうな場合だけ調整
-  if (r.bottom > dangerLine) {
-    window.scrollBy({
-      top: r.bottom - dangerLine,
-      behavior: "auto"
-    });
-  }
 }
 
 
@@ -2684,8 +2659,6 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
-
-
 
 
 
