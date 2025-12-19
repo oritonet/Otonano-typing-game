@@ -382,7 +382,7 @@ function startTypingByUserAction() {
   inputEl.disabled = false;
 
   inputEl.value = "";
-  inputEl.placeholder = "入力してください。";
+  inputEl.placeholder = "ここに文字を打つと計測開始します。)";
   inputEl.classList.add("input-guide-after");
 
   // フォーカス & スクロール
@@ -2708,6 +2708,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
