@@ -233,9 +233,6 @@ function resetTypingUI() {
   inputEl.style.textAlign = "";
   inputEl.style.color = "";
 
-  // 状態フラグ
-  isCountingDown = false;
-
   // TypingEngine 側リセット（あれば）
   if (engine && typeof engine.reset === "function") {
     engine.reset();
@@ -285,14 +282,6 @@ function startTypingByUserAction() {
   inputEl.addEventListener("compositionstart", startTypingImmediately, { once: true });
   inputEl.addEventListener("input", startTypingImmediately, { once: true });
 }
-
-
-function clearGuideOnCompositionStart() {
-  if (!inputEl) return;
-  inputEl.placeholder = "";
-  inputEl.classList.remove("input-guide-after");
-}
-
 
 const rankingSvc = new RankingService({ db });
 const groupSvc = new GroupService(db);
@@ -454,8 +443,6 @@ let isBooting = true; // ★起動中は true
 
   document.documentElement.style.setProperty("--sbw", sbw + "px");
 })();
-
-let isCountingDown = false;
 
 // ===== タップ / スワイプ判定 =====
 let touchStartX = 0;
@@ -2031,26 +2018,7 @@ function syncRankDifficultyFromPractice(diff) {
   loadMyAnalytics();
 }
 
-async function showCountdownOverlay(sec = 3) {
-  const el = document.getElementById("countdownOverlay");
-  if (!el) return;
-
-  try {
-    for (let i = sec; i > 0; i--) {
-      el.setAttribute("data-text", String(i));
-      await new Promise(r => setTimeout(r, 1000));
-    }
-  } finally {
-    // ★ 必ず消す
-    el.removeAttribute("data-text");
-  }
-}
-
-
-
 let startedByTap = false;
-
-const AFTER_COUNTDOWN_GUIDE_TEXT = "入力してください。";
 
 function bindTextareaStart() {
   if (!inputEl) return;
@@ -2642,6 +2610,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
