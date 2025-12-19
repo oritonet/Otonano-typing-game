@@ -203,18 +203,18 @@ function resetTypingUI() {
 }
 
 function startTypingImmediately() {
-  // 二重開始防止
   if (engine.started || engine.ended) return;
 
-  // ガイド解除
   inputEl.placeholder = "";
   inputEl.classList.remove("input-guide-after");
 
   inputEl.readOnly = false;
   inputEl.disabled = false;
 
-  // ★ ここで正式スタート
-  engine.startNow();
+  // ★ 次のフレームで開始（inputイベントを消費しない）
+  requestAnimationFrame(() => {
+    engine.startNow();
+  });
 }
 
 function startTypingByUserAction() {
@@ -2538,6 +2538,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
