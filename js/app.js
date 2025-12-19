@@ -217,17 +217,15 @@ function startTypingImmediately() {
   engine.startNow();
 }
 
-
 function startTypingByUserAction() {
   if (!inputEl) return;
   if (engine.started || engine.ended) return;
 
-  // textarea 初期化
-  inputEl.value = "";
+  // ★ ここが重要：最初から入力可能にする
   inputEl.readOnly = false;
   inputEl.disabled = false;
 
-  // ★ 初期から「入力してください。」を表示
+  inputEl.value = "";
   inputEl.placeholder = "入力してください。";
   inputEl.classList.add("input-guide-after");
 
@@ -235,15 +233,13 @@ function startTypingByUserAction() {
   inputEl.focus({ preventScroll: true });
   scrollTextToTopOnMobile(50);
 
-  // 念のためリスナー整理
+  // 開始トリガー登録（IME含む）
   inputEl.removeEventListener("compositionstart", startTypingImmediately);
   inputEl.removeEventListener("input", startTypingImmediately);
 
-  // ★ 最初の入力意思で即開始（IME含む）
   inputEl.addEventListener("compositionstart", startTypingImmediately, { once: true });
   inputEl.addEventListener("input", startTypingImmediately, { once: true });
 }
-
 
 const rankingSvc = new RankingService({ db });
 const groupSvc = new GroupService(db);
@@ -2542,6 +2538,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
