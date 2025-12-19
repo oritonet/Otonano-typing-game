@@ -107,12 +107,6 @@
     }
 
     .typingArea { position: relative; }
-    .countdown {
-      text-align: center;
-      font-size: 10rem;
-      font-weight: 700;
-      line-height: 1;
-    }
 
     #result { margin-top: 10px; font-weight: 800; }
 
@@ -431,57 +425,6 @@
       }
     }
 
-    /* カウントダウン専用 */
-    textarea.countdown {
-      font-size: 30px !important;
-      font-weight: 700;
-      text-align: center;
-      line-height: 1;
-
-      height: 100px;        /* ★ 固定 */
-      min-height: 100px;    /* ★ 解除されないよう同値 */
-      resize: none;
-      color: #000;
-    }
-    
-    .typingArea {
-      position: relative;
-    }
-    
-    #countdownOverlay {
-      position: absolute;
-      inset: 0;
-    
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    
-      font-size: 64px;
-      font-weight: 700;
-      color: #000;
-    
-      pointer-events: none;   /* 入力を邪魔しない */
-      z-index: 10;
-    }
-
-    
-    /* 数字まわりの白背景（そのまま使える） */
-    /* data-text がある時だけ表示 */
-    #countdownOverlay[data-text]::before {
-      content: attr(data-text);
-    
-      padding: 24px 36px;
-      background: transparent;
-      box-shadow: none;   /* 影も不要なら */
-      border-radius: 16px;
-    }
-    
-    #countdownOverlay:not([data-text]) {
-      display: none;
-    }
-
-  
-  
     /* 入力前ガイド（左上詰め表示） */
     textarea.input-guide {
       text-align: left;        /* 左寄せ */
@@ -491,6 +434,37 @@
       padding-top: 6px;        
       padding-left: 6px;
     }
+
+    /* 通常 */
+    #text {
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+    
+    #input {
+      font-size: 1rem;
+    }
+    
+    /* 長 */
+    .long-text #text {
+      font-size: 0.95rem;
+      line-height: 1.55;
+    }
+    
+    .long-text #input {
+      font-size: 0.95rem;
+    }
+    
+    /* 極長 */
+    .xl-text #text {
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    
+    .xl-text #input {
+      font-size: 0.9rem;
+    }
+
 
     /* ===== 初期ロード時のガタつき防止 ===== */
     body.preload {
@@ -718,6 +692,7 @@
   <script type="module" src="./js/app.js"></script>
 </body>
 </html>
+
 
 
 
