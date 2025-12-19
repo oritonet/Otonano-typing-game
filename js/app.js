@@ -190,12 +190,12 @@ function setupStableAutoScrollOnKeyboard() {
     if (!pending) return;
     pending = false;
   
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       textEl.scrollIntoView({
-        behavior: "smooth",
+        behavior: "auto",   // smooth をやめる
         block: "start"
       });
-    });
+    }, 150); // 100〜200ms
   };
 
 
@@ -2586,6 +2586,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
