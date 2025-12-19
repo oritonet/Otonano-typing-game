@@ -120,6 +120,16 @@ if (inputEl) {
       inputEl.blur();
     }
   });
+
+  // ペースト禁止
+  inputEl.addEventListener("paste", (e) => {
+    e.preventDefault();
+  });
+
+  // ドラッグ＆ドロップも禁止
+  inputEl.addEventListener("drop", (e) => {
+    e.preventDefault();
+  });
 }
 
 // modal
@@ -2760,6 +2770,7 @@ if ("scrollRestoration" in history) {
 window.addEventListener("load", () => {
   window.scrollTo(0, 0);
 });
+
 
 
 
