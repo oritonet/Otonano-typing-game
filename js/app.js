@@ -110,6 +110,7 @@ const skipBtn = $("skipBtn");
 const startBtn = $("startBtn");
 const inputEl = $("input");
 const textEl = $("text");
+const INPUT_SAFE_RATIO = 0.85;
 const resultEl = $("result");
 
 if (inputEl) {
@@ -208,29 +209,18 @@ function setupStableAutoScrollOnKeyboard() {
 }
 
 function scrollAfterTopTabsReady() {
-  if (!topTabsEl) {
+  const doScroll = () => {
     scrollTextToTopConsideringTabs();
+    ensureInputVisible();
+  };
+
+  if (!topTabsEl || topTabsEl.offsetHeight > 0) {
+    doScroll();
     return;
   }
 
-  const tryScroll = () => {
-    if (topTabsEl.offsetHeight > 0) {
-      scrollTextToTopConsideringTabs();
-      return true;
-    }
-    return false;
-  };
-
-  // ① すでに出ていれば即
-  if (tryScroll()) return;
-
-  // ② レンダリングを2フレーム待つ（スワイプ表示対策）
   requestAnimationFrame(() => {
-    if (tryScroll()) return;
-
-    requestAnimationFrame(() => {
-      scrollTextToTopConsideringTabs();
-    });
+    requestAnimationFrame(doScroll);
   });
 }
 
@@ -284,7 +274,6 @@ function scrollTextToTopConsideringTabs() {
 
   const rect = textEl.getBoundingClientRect();
 
-  // 上部タブが存在し、表示されていればその高さを引く
   const tabsHeight =
     topTabsEl && topTabsEl.offsetHeight > 0
       ? topTabsEl.offsetHeight
@@ -297,6 +286,23 @@ function scrollTextToTopConsideringTabs() {
     top: Math.max(targetY, 0),
     behavior: "auto"
   });
+}
+
+function ensureInputVisible() {
+  if (!inputEl) return;
+
+  const r = inputEl.getBoundingClientRect();
+  const vh = window.innerHeight;
+
+  const dangerLine = vh * INPUT_SAFE_RATIO;
+
+  // 本当に隠れそうな場合だけ調整
+  if (r.bottom > dangerLine) {
+    window.scrollBy({
+      top: r.bottom - dangerLine,
+      behavior: "auto"
+    });
+  }
 }
 
 
@@ -2678,6 +2684,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
