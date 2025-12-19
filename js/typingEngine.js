@@ -323,17 +323,10 @@ export class TypingEngine {
   ========================= */
   _showGuideCharInTextarea() {
     if (!this.inputEl) return;
-
-    const el = this.inputEl;
-    this._ensureBasePadding();
-
-    el.disabled = false;
-    el.readOnly = true;
-
-    _setGuidePlaceholder("入力してください。");
+  
+    this.inputEl.value = "";
+    this.inputEl.placeholder = "入力してください。";
     this.inputEl.classList.add("input-guide-after");
-    
-    this._restoreBasePadding();
   }
 
 
@@ -359,6 +352,7 @@ export class TypingEngine {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
+
 
 
 
