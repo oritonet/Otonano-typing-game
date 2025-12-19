@@ -178,6 +178,44 @@ function scrollTextToTopOnMobile(offsetPx = 50) {
   }, 50);
 }
 
+// ===== スマホ：キーボード表示で見本文上部が隠れたら、自動で見える位置へ =====
+function setupAutoScrollForKeyboard() {
+  if (!inputEl || !textEl) return;
+
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if (!isMobile) return;
+
+  // 「今のfocusはユーザーがタップして起きた」ことを覚えるフラグ
+  let pending = false;
+
+  // 入力欄をタップしてキーボードが出そうなときに pending を立てる
+  inputEl.addEventListener("focus", () => {
+    pending = true;
+  });
+
+  // キーボードが閉じたら解除（連続スクロール防止）
+  inputEl.addEventListener("blur", () => {
+    pending = false;
+  });
+
+  const doScroll = () => {
+    if (!pending) return;
+    // キーボード表示直後はレイアウトがまだ揺れるので、1フレーム待ってからスクロール
+    requestAnimationFrame(() => {
+      scrollTextToTopOnMobile(50);
+    });
+  };
+
+  // Android/多くのブラウザは window resize で取れる
+  window.addEventListener("resize", doScroll);
+
+  // iOS Safari は visualViewport の方が安定することが多い
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", doScroll);
+  }
+}
+
+
 
 
 
@@ -2491,6 +2529,9 @@ engine.attach();
   if (textEl) {
     textBaseY = textEl.offsetTop;
   }
+
+    // ★追加：スマホでキーボードが出たら見本文が見えるように自動スクロール
+  setupAutoScrollForKeyboard();
    
   bindModal();
   bindTypingButtons();
@@ -2557,6 +2598,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
