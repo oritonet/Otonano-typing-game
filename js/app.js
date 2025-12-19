@@ -2647,6 +2647,7 @@ const engine = new TypingEngine({
   inputEl,
   resultEl,
   onFinish: onTypingFinish
+  stopElapsedTimeDisplay();
 });
 engine.attach();
 
@@ -2751,6 +2752,7 @@ onAuthStateChanged(auth, async (user) => {
 //window.addEventListener("load", () => {
   //document.body.classList.remove("preload");
 //});
+
 
 
 
