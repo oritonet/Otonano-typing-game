@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg"
-     viewBox="0 0 720 200"
+     viewBox="0 0 960 200"
      role="img"
      aria-label="IME漢字変換対応 日本語タイピングゲーム 社会人向け">
 
@@ -23,17 +23,14 @@
     }
   </style>
 
-  <!-- サブタイトル -->
   <text x="0" y="44" class="sub">
     IME KANJI TYPING FOR WORK
   </text>
 
-  <!-- 擬似押し出し（影） -->
   <text x="2" y="128" class="main-shadow">
     IME漢字変換対応 日本語タイピング
   </text>
 
-  <!-- 本体 -->
   <text x="0" y="124" class="main">
     IME漢字変換対応 日本語タイピング
   </text>
