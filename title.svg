@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg"
-     viewBox="0 0 1100 230"
+     viewBox="0 0 1150 230"
      role="img"
      aria-label="漢字変換対応タイピングゲーム｜社会人向け・実務練習">
 
@@ -11,13 +11,13 @@
       letter-spacing: 0.12em;
     }
     .main-shadow {
-      font-size: 90px;
+      font-size: 80px;
       fill: #000;
       font-weight: 900;
       opacity: 0.18;
     }
     .main {
-      font-size: 90px;
+      font-size: 80px;
       fill: #111;
       font-weight: 900;
     }
@@ -37,6 +37,8 @@
 <text x="0" y="48" class="main" dominant-baseline="hanging">
   <tspan x="0" dy="0">漢字変換対応タイピングゲーム</tspan>
   <tspan x="50" dy="94">｜社会人向け・実務練習</tspan>
-</text>
+</text>
+
 </svg>
+
 
