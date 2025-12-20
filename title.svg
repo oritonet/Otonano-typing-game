@@ -11,13 +11,13 @@
       letter-spacing: 0.12em;
     }
     .main-shadow {
-      font-size: 100px;
+      font-size: 90px;
       fill: #000;
       font-weight: 900;
       opacity: 0.18;
     }
     .main {
-      font-size: 100px;
+      font-size: 90px;
       fill: #111;
       font-weight: 900;
     }
@@ -30,13 +30,13 @@
 <!-- メインタイトル影 -->
 <text x="2" y="52" class="main-shadow" dominant-baseline="hanging">
   <tspan x="2" dy="0">漢字変換対応タイピングゲーム</tspan>
-  <tspan x="52" dy="64">｜社会人向け・実務練習</tspan>
+  <tspan x="52" dy="94">｜社会人向け・実務練習</tspan>
 </text>
 
 <!-- メインタイトル本体 -->
 <text x="0" y="48" class="main" dominant-baseline="hanging">
   <tspan x="0" dy="0">漢字変換対応タイピングゲーム</tspan>
-  <tspan x="50" dy="64">｜社会人向け・実務練習</tspan>
+  <tspan x="50" dy="94">｜社会人向け・実務練習</tspan>
 </text>
 </svg>
 
