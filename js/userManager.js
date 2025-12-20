@@ -254,7 +254,7 @@ export class UserManager {
     if (!name) throw new Error("ユーザー名が空です");
 
     if (countChars(name) > MAX_USER_NAME_LENGTH) {
-      throw new Error("ユーザー名は10文字以内で入力してください");
+      throw new Error("ユーザー名は8文字以内で入力してください");
     }
 
     const newRef = doc(this.db, "userNames", name);
@@ -372,6 +372,7 @@ export class UserManager {
     if (personalId) localStorage.removeItem(`currentGroupId_v1:${personalId}`);
   }
 }
+
 
 
 
