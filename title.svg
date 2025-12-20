@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg"
      viewBox="0 0 1100 230"
      role="img"
-     aria-label="漢字変換対応の日本語タイピングゲーム｜社会人向け・実務練習">
+     aria-label="漢字変換対応タイピングゲーム｜社会人向け・実務練習">
 
   <style>
     .sub {
@@ -29,13 +29,13 @@
   </text>
 <!-- メインタイトル影 -->
 <text x="2" y="52" class="main-shadow" dominant-baseline="hanging">
-  <tspan x="2" dy="0">漢字変換対応の日本語タイピングゲーム</tspan>
+  <tspan x="2" dy="0">漢字変換対応タイピングゲーム</tspan>
   <tspan x="22" dy="64">｜社会人向け・実務練習</tspan>
 </text>
 
 <!-- メインタイトル本体 -->
 <text x="0" y="48" class="main" dominant-baseline="hanging">
-  <tspan x="0" dy="0">漢字変換対応の日本語タイピングゲーム</tspan>
+  <tspan x="0" dy="0">漢字変換対応タイピングゲーム</tspan>
   <tspan x="20" dy="64">｜社会人向け・実務練習</tspan>
 </text>
 </svg>
