@@ -11,8 +11,8 @@ import {
   where
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const MAX_USER_NAME_LENGTH = 10;
-const MAX_USERS_PER_DEVICE = 10;
+const MAX_USER_NAME_LENGTH = 8;
+const MAX_USERS_PER_DEVICE = 8;
 
 function countChars(str) {
   return [...str].length; // 絵文字も1文字扱い
@@ -217,7 +217,7 @@ export class UserManager {
     if (!name) throw new Error("ユーザー名が空です");
 
     if (countChars(name) > MAX_USER_NAME_LENGTH) {
-      throw new Error("ユーザー名は10文字以内で入力してください");
+      throw new Error("ユーザー名は8文字以内で入力してください");
     }
 
     const nameRef = doc(this.db, "userNames", name);
@@ -372,6 +372,7 @@ export class UserManager {
     if (personalId) localStorage.removeItem(`currentGroupId_v1:${personalId}`);
   }
 }
+
 
 
 
