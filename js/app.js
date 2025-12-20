@@ -434,7 +434,7 @@ function startTypingByUserAction() {
   inputEl.disabled = false;
 
   inputEl.value = "";
-  inputEl.placeholder = "ここに文字を打つと計測開始します。)";
+  inputEl.placeholder = "ここに文字を打つと計測開始します。";
   inputEl.classList.add("input-guide-after");
 
   // フォーカス & スクロール
@@ -2779,6 +2779,7 @@ window.addEventListener("pageshow", () => {
     });
   });
 });
+
 
 
 
