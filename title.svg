@@ -1,10 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 140" role="img" aria-label="IME漢字変換対応 日本語タイピングゲーム 社会人向け">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 140" role="img"
+     aria-label="IME漢字変換対応 日本語タイピングゲーム 社会人向け">
+
   <style>
     .sub {
       font-size: 24px;
       fill: #666;
       font-weight: 700;
       letter-spacing: 0.12em;
+    }
+    .main-shadow {
+      font-size: 56px;
+      fill: #000;
+      font-weight: 900;
+      opacity: 0.18;
     }
     .main {
       font-size: 56px;
@@ -13,6 +21,16 @@
     }
   </style>
 
+  <!-- サブタイトル -->
   <text x="0" y="40" class="sub">IME KANJI TYPING FOR WORK</text>
-  <text x="0" y="108" class="main">IME漢字変換対応 日本語タイピング</text>
+
+  <!-- 擬似押し出し（影レイヤー） -->
+  <text x="2" y="110" class="main-shadow">
+    IME漢字変換対応 日本語タイピング
+  </text>
+
+  <!-- メイン文字 -->
+  <text x="0" y="108" class="main">
+    IME漢字変換対応 日本語タイピング
+  </text>
 </svg>
