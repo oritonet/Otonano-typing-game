@@ -242,8 +242,7 @@ function applyFontSizeByLength(lengthGroup) {
 function setupStableAutoScrollOnKeyboard() {
   if (!inputEl || !textEl) return;
 
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  if (!isMobile) return;
+  if (!isMobileDevice()) return;
 
   let pending = false;
 
@@ -2779,6 +2778,7 @@ window.addEventListener("pageshow", () => {
     });
   });
 });
+
 
 
 
