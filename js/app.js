@@ -2373,6 +2373,10 @@ function bindGroupUI() {
       alert("グループ名を入力してください。");
       return;
     }
+    if (groupName.length > 8) {
+      alert("グループ名は8文字以内にしてください。");
+      return;
+    }
 
     try {
       const created = await groupSvc.createGroup({
@@ -2774,3 +2778,4 @@ window.addEventListener("pageshow", () => {
     });
   });
 });
+
