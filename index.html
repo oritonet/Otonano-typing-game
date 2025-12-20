@@ -72,8 +72,16 @@
       padding-right: calc(16px + var(--sbw, 0px));
     }
     
-    /*.ok { color: #0b5ed7; font-weight: 700; }*/
-    /*.ng { color: #c00000; font-weight: 700; }*/
+        /* 長 */
+    .long-text #text {
+      font-size: 0.85rem;
+      line-height: 1.3;
+    }
+        /* 極長 */
+    .xl-text #text {
+      font-size: 0.8rem;
+      line-height: 1.3;
+    }
 
     .ok {
       color: #0b5ed7;              /* 青 */
@@ -109,6 +117,16 @@
       background: #fff;
     
       overflow-y: scroll;              /* ★ 常時スクロールバー確保 */
+    }
+
+        /* 長 */ 
+    .long-text #input {
+      font-size: 0.85rem;
+    }
+    
+        /* 極長 */
+    .xl-text #input {
+      font-size: 0.8rem;
     }
 
     .typingArea { position: relative; }
@@ -438,36 +456,6 @@
       line-height: 1.4;
       padding-top: 6px;        
       padding-left: 6px;
-    }
-
-    /* 通常 */
-    #text {
-      font-size: 1rem;
-      line-height: 1.6;
-    }
-    
-    #input {
-      font-size: 1rem;
-    }
-    
-    /* 長 */
-    .long-text #text {
-      font-size: 0.85rem;
-      line-height: 1.3;
-    }
-    
-    .long-text #input {
-      font-size: 0.85rem;
-    }
-    
-    /* 極長 */
-    .xl-text #text {
-      font-size: 0.8rem;
-      line-height: 1.3;
-    }
-    
-    .xl-text #input {
-      font-size: 0.8rem;
     }
     
     /* SEO用：画面には出さないが検索エンジンには見せる */
@@ -864,6 +852,7 @@
   <script type="module" src="./js/app.js"></script>
 </body>
 </html>
+
 
 
 
