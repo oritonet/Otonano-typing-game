@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg"
-     viewBox="0 0 960 150"
+     viewBox="0 0 1500 115"
      role="img"
-     aria-label="大人の日本語タイピングゲーム｜漢字変換対応・実務向け練習">
+     aria-label="日本語タイピングゲーム｜漢字変換対応・雑学100テーマ">
 
   <style>
     .sub {
@@ -23,17 +23,19 @@
     }
   </style>
 
-  <text x="0" y="44" class="sub">
+  <!-- サブタイトル（上余白なし） -->
+  <text x="0" y="0" class="sub" dominant-baseline="hanging">
     IME KANJI TYPING FOR WORK
   </text>
 
-  <text x="2" y="128" class="main-shadow">
-    大人の日本語タイピングゲーム｜漢字変換対応・実務向け練習
+  <!-- メインタイトル影 -->
+  <text x="2" y="52" class="main-shadow" dominant-baseline="hanging">
+    日本語タイピングゲーム｜漢字変換対応・雑学100テーマ
   </text>
 
-  <text x="0" y="124" class="main">
-    大人の日本語タイピングゲーム｜漢字変換対応・実務向け練習
+  <!-- メインタイトル本体 -->
+  <text x="0" y="48" class="main" dominant-baseline="hanging">
+    日本語タイピングゲーム｜漢字変換対応・雑学100テーマ
   </text>
+
 </svg>
-
-
