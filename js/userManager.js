@@ -113,7 +113,7 @@ export class UserManager {
 
     if (this.addBtn) {
       this.addBtn.addEventListener("click", async () => {
-        const name = prompt("ユーザー名を入力してください（全体で一意）");
+        const name = prompt("ユーザー名を8字以内で入力してください。");
         if (!name) return;
         try {
           await this.addUser(name);
@@ -372,6 +372,7 @@ export class UserManager {
     if (personalId) localStorage.removeItem(`currentGroupId_v1:${personalId}`);
   }
 }
+
 
 
 
