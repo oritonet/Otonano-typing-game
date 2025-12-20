@@ -326,6 +326,11 @@
       min-height: 36px;
     }
 
+    /* 特徴・違い・遊び方（details の summary）を大きくする */
+    .featureCard summary {
+      font-size: 1.05rem;
+    }
+
     /* select 内文字の上下余白を均等にする */
     .headerCard select {
       height: 36px;
@@ -841,8 +846,8 @@
      向いている人（既存セクションを強化）
      ========================================================= -->
 <section class="card" style="margin-top:16px;">
-<h2>このタイピングゲームが向いている人</h2>
-<ul style="margin:0;">
+  <h2 style="margin-top:0;">このタイピングゲームが向いている人</h2>
+  <ul style="margin:0;">
 <li>社会人・大人向けの<strong>日本語タイピング練習</strong>を探している</li>
 <li>ブラインドタッチはできるが、<strong>漢字変換が遅い</strong>・ミスが多いと感じる</li>
 <li><strong>実務レベルの入力速度と正確性</strong>を上げたい</li>
@@ -855,9 +860,9 @@
 <!-- =========================================================
      FAQ（既存を差し替え）
      ========================================================= -->
-<section aria-label="よくある質問" class="card" style="margin-top:16px;">
-<h2>よくある質問（FAQ）</h2>
-
+<section class="card" style="margin-top:16px;">
+  <h2 style="margin-top:0;">よくある質問（FAQ）</h2>
+  <ul style="margin:0;">
 <details>
 <summary>漢字変換のあるタイピング練習はできますか？</summary>
 <p>はい。本ゲームは<strong>IMEによる漢字変換を前提</strong>に入力を判定します。ローマ字入力の速度だけでなく、実務に近い<strong>日本語入力</strong>として練習できます。</p>
