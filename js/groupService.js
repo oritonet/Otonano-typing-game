@@ -29,6 +29,9 @@ export class GroupService {
   async createGroup({ groupName, ownerPersonalId, ownerUid }) {
     const name = (groupName || "").toString().trim();
     if (!name) throw new Error("グループ名が空です");
+    if (name.length > 8) {
+      throw new Error("グループ名は8文字以内にしてください");
+    }
     if (!ownerPersonalId || !ownerUid) {
       throw new Error("owner情報が不正です");
     }
@@ -311,6 +314,7 @@ export class GroupService {
   }
 
 }
+
 
 
 
