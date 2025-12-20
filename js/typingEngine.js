@@ -3,7 +3,6 @@
 // ・確定文字だけで青赤表示
 // ・CPM = 文章長 ÷ 完了時間
 // ・スタート前は textarea の placeholder にガイドを表示
-// ・カウントダウン時のみ上下中央
 import { rankByCPM } from "./rankUtil.js";
 export class TypingEngine {
   constructor(opts = {}) {
@@ -138,18 +137,12 @@ export class TypingEngine {
     });
 
     // IME 変換開始
-    this.inputEl.addEventListener("compositionstart", () => {
-      // ★ カウントダウン中（readOnly）は無視
-      if (this.inputEl.readOnly) return;
-    
+    this.inputEl.addEventListener("compositionstart", () => {    
       this.isComposing = true;
     });
     
     // IME 変換確定
     this.inputEl.addEventListener("compositionend", () => {
-      // ★ カウントダウン中（readOnly）は無視
-      if (this.inputEl.readOnly) return;
-    
       this.isComposing = false;
       this.lastCommittedValue = this._getCommittedValueSafe();
     
@@ -293,31 +286,6 @@ export class TypingEngine {
     this.inputEl.placeholder = "上の文章を入力してください。\n(入力が始まると計測開始)";
     this.inputEl.classList.add("input-guide-after");
   }
-
-
-
-  /* =========================
-     縦中央用（カウントダウン）
-  ========================= */
-  _applyVerticalCenterPadding() {
-    if (!this.inputEl) return;
-
-    const el = this.inputEl;
-    const cs = getComputedStyle(el);
-    const fontSize = parseFloat(cs.fontSize) || 0;
-    const h = el.clientHeight;
-    const OFFSET_UP = 13; // 好みで調整（px）
-    const padTop = Math.max(0, Math.floor((h - fontSize) / 2) - OFFSET_UP);
-
-    el.style.paddingTop = `${padTop}px`;
-    el.style.paddingBottom = "0px";
-  }
-
-  _sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-}
-
 
 
 
