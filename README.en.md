@@ -10,10 +10,7 @@ Live: https://espresso-taro.github.io/Otonano-typing-game/
 ---
 
 ## Screenshot
-
-> Place an image at `docs/screenshot.png` in your repository.
-
-![App screenshot](docs/screenshot.png)
+![App screenshot](docs/Screenshot_20251221-161633~2.png)
 
 ---
 
