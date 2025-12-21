@@ -19,14 +19,14 @@
 
 <!-- メインタイトル影 -->
 <text x="2" y="4" class="main-shadow" dominant-baseline="hanging">
-  <tspan x="2" dy="0">漢字変換タイピングゲーム</tspan>
-  <tspan x="112" dy="50">｜社会人向け日本語入力練習</tspan>
+  <tspan x="2" dy="5">漢字変換タイピングゲーム</tspan>
+  <tspan x="112" dy="55">｜社会人向け日本語入力練習</tspan>
 </text>
 
 <!-- メインタイトル本体 -->
 <text x="0" y="0" class="main" dominant-baseline="hanging">
   <tspan x="0" dy="5">漢字変換タイピングゲーム</tspan>
-  <tspan x="110" dy="50">｜社会人向け日本語入力練習</tspan>
+  <tspan x="110" dy="55">｜社会人向け日本語入力練習</tspan>
 </text>
 
 </svg>
