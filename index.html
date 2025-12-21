@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
 <title>漢字変換タイピングゲーム｜社会人向け日本語入力練習</title>
-<meta name="description" content="漢字変換（IME）に対応した日本語タイピングゲーム。社会人向けの実務レベル入力練習に最適。文章内容は雑学・豆知識中心で、飽きずに継続できます。スマートフォンでも使いやすく、フリック入力・外付けキーボードの両方に対応。"/>
+<meta name="description" content="漢字変換（IME）を含めた日本語タイピング練習ができる社会人向けゲーム。仕事で使う実務レベルの入力スキルを効率よく鍛えられます。"/>
 <meta name="robots" content="index,follow"/>
 <meta property="og:title" content="漢字変換タイピングゲーム｜社会人向け日本語入力練習"/>
 <meta property="og:description" content="IME漢字変換を含めた実用的な日本語タイピング練習。社会人向けの文章で、成長グラフ・ランキング・グループ対戦にも対応。スマートフォンでも使いやすく、フリック入力・外付けキーボードの両方に対応。"/>
@@ -116,28 +116,54 @@
   "operatingSystem": "Web",
   "description": "IME漢字変換を含めた実用的な日本語タイピング練習ゲーム。社会人向けの実務レベル入力練習に最適で、成長グラフ・ランキング・グループ対戦に対応しています。スマートフォンでも使いやすく、フリック入力・外付けキーボードの両方に対応。"
 }
-  </script>
-
-<!-- FAQ 構造化データ（追加） -->
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
-{"@type":"Question","name":"IMEとは何ですか？","acceptedAnswer":{"@type":"Answer","text":"IME（Input Method Editor）とは、日本語を入力するための仕組みです。ローマ字入力をひらがな・漢字・カタカナへ変換する機能を指します。本タイピングゲームでは、この漢字変換操作も含めた実務に近い日本語入力練習ができます。"}},
-{"@type":"Question","name":"CPMとは何ですか？","acceptedAnswer":{"@type":"Answer","text":"CPM（Characters Per Minute）とは、1分間に入力できた文字数を表す指標です。日本語タイピングにおいて入力速度と正確性を評価しやすく、本ゲームではこのCPMをスコアとして使用しています。"}},
-{"@type":"Question","name":"漢字変換のあるタイピング練習はできますか？","acceptedAnswer":{"@type":"Answer","text":"はい。本ゲームはIMEによる漢字変換を前提に入力を判定します。ローマ字入力の速度だけでなく、実務に近い日本語入力として練習できます。"}},
-{"@type":"Question","name":"社会人向けのタイピング練習として使えますか？","acceptedAnswer":{"@type":"Answer","text":"はい。文章内容は雑学・豆知識中心ですが、社会人が日常的に目にする語彙や文体に近い日本語を使用しています。漢字変換を含めた実用的な入力練習として利用できます。"}},
-{"@type":"Question","name":"グループ対戦（身内ランキング）はできますか？","acceptedAnswer":{"@type":"Answer","text":"はい。グループを作成・参加すると、友人・会社・学校などのメンバーでランキング形式の対戦ができます。全国ランキングにも同時参加できます。"}},
-{"@type":"Question","name":"タイピングの成長をグラフで確認できますか？","acceptedAnswer":{"@type":"Answer","text":"はい。スコア（CPM）の推移グラフを自動生成し、日々の成長を視覚的に確認できます。"}}
-]},
 {
-  "@type": "Question",
-  "name": "スマートフォンのフリック入力でも対戦やランキングに参加できますか？",
-  "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "はい。スマートフォンのフリック入力でもスコアが計測され、フリック操作による入力でランキングやグループ対戦に参加できます。外付けキーボードを接続しての入力にも対応しています。"
-  }
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "IMEとは何ですか？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "IME（Input Method Editor）とは、日本語を入力するための仕組みです。ローマ字入力をひらがな・漢字・カタカナへ変換する機能を指します。本タイピングゲームでは、この漢字変換操作も含めた実務に近い日本語入力練習ができます。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "CPMとは何ですか？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "CPM（Characters Per Minute）とは、1分間に入力できた文字数を表す指標です。本ゲームでは入力速度と正確性を評価するために使用しています。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "漢字変換のあるタイピング練習はできますか？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "はい。本ゲームはIMEによる漢字変換を前提に入力を判定します。実務に近い日本語入力として練習できます。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "社会人向けのタイピング練習として使えますか？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "はい。社会人が日常的に使う語彙や文体に近い文章で、日本語入力を実践的に練習できます。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "スマートフォンのフリック入力でも使えますか？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "はい。スマートフォンのフリック入力でもスコア計測・ランキング参加が可能です。"
+      }
+    }
+  ]
 }
-</script>
-
+</script>
 
 </head>
 
@@ -149,7 +175,7 @@
     <div class="title-hero">
       <img
         src="./title.svg"
-        alt="漢字変換対応タイピングゲーム｜社会人向け・実務練習"
+        alt="漢字変換を含めた社会人向け日本語タイピング練習サイト"
         loading="eager"
       />
     </div>
@@ -186,7 +212,7 @@
       「子供向けタイピング」では物足りない方に向けて、実務に近い文章入力を重視しています。
     </p>
 
-  <h3 class="section-heading">一般的なタイピングゲームとの違い</h3>
+  <h2 class="section-heading">一般的なタイピングゲームとの違い</h2>
     <p class="indent"> 
     一般的なタイピングゲームはローマ字入力の速さに寄りがちですが、
     本サイトは<strong>日本語変換（IME）込み</strong>で判定するため、仕事で必要な入力スキルに直結します。
@@ -285,7 +311,7 @@
       タイピング練習（主役）
 ================================ -->
 <section id="play" class="card" aria-label="タイピング練習" style="margin-top:16px;">
-  <h2 style="margin-top:0;">タイピング練習</h2>
+  <h2 style="margin-top:0;">漢字変換（IME）対応の日本語タイピング練習</h2>
 
   <div class="row" style="margin-bottom:10px;">
     <select id="difficulty" aria-label="難易度"></select>
