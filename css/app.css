@@ -427,7 +427,7 @@ textarea.input-guide{
 .input-time{
   font-size:.85rem;
   color:#666;
-  margin-top:4px;
+  margin-top:1px;
   text-align:right;
   min-height:1em;
 }
