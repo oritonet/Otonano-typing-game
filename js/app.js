@@ -1055,7 +1055,7 @@ function hideModal() {
    Trivia load
 ========================================================= */
 async function loadTrivia() {
-  const res = await fetch("./trivia.json", { cache: "no-cache" });
+  const res = await fetch("./trivia.json", );
   if (!res.ok) throw new Error("trivia.json load failed");
   const json = await res.json();
   if (!Array.isArray(json)) throw new Error("trivia.json must be an array");
@@ -2778,6 +2778,7 @@ window.addEventListener("pageshow", () => {
     });
   });
 });
+
 
 
 
